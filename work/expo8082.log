@@ -1,0 +1,11 @@
+Starting project at C:\Users\ontri\Documents\Codex\2026-06-05\files-mentioned-by-the-user-pasted
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+iOS node_modules\expo\AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS node_modules\expo\AppEntry.js ▓▓▓▓░░░░░░░░░░░░ 27.8% (30/58)
+iOS node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.6% (143/352)
+iOS node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.6% (612/792)
+iOS node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.8% (965/966)
+iOS Bundled 16761ms node_modules\expo\AppEntry.js (1049 modules)

@@ -1,0 +1,232 @@
+Starting project at D:\EXE101\Meal_Planner
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8083
+An update for expo is available: 56.0.1 → ~56.0.12
+1 other package may need updating. Run npx expo install --check for details.
+Logs for your project will appear below.
+Web Bundled 9141ms node_modules\expo\AppEntry.js (634 modules)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web Bundled 43ms node_modules\expo\AppEntry.js (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  props.pointerEvents is deprecated. Use style.pointerEvents
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
+Web Bundling failed 32ms node_modules\expo\AppEntry.js (1 module)
+Unable to resolve "./QueryParams" from "node_modules\expo-auth-session\build\AuthRequest.js"
+[0m [90m  5 |[39m [36mimport[39m { [33mAuthError[39m } [36mfrom[39m [32m'./Errors'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mPKCE[39m [36mfrom[39m [32m'./PKCE'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mQueryParams[39m [36mfrom[39m [32m'./QueryParams'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mTokenResponse[39m } [36mfrom[39m [32m'./TokenRequest'[39m[33m;[39m
+ [90m  9 |[39m [36mlet[39m _authLock [33m=[39m [36mfalse[39m[33m;[39m
+ [90m 10 |[39m [90m// @needsAudit @docsMissing[39m[0m
+
+Import stack:
+
+ node_modules\expo-auth-session\build\AuthRequest.js
+ | import "./QueryParams"
+
+ node_modules\expo-auth-session\build\providers\Facebook.js
+ | import "../AuthRequest"
+
+ node_modules\expo-auth-session\providers\facebook.js
+ | import "../build/providers/Facebook"
+
+ src\screens\LoginScreen.tsx
+ | import "expo-auth-session/providers/facebook"
+
+ src\navigation\AppNavigator.tsx
+ | import "@/screens/LoginScreen"
+
+ App.tsx
+ | import "./src/navigation/AppNavigator"
+
+ node_modules\expo\AppEntry.js
+ | import "../../App"
+
+ 
+ | import "./node_modules/expo/AppEntry"
+
