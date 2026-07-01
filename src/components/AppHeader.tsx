@@ -1,5 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import { colors } from "@/constants/colors";
 
 type Props = {
@@ -11,29 +10,20 @@ export default function AppHeader({ title = "Z-Pantry", subtitle }: Props) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
       <View>
-        <Text style={{ color: colors.dark, fontSize: 30, fontWeight: "900", letterSpacing: 0 }} selectable>
-          {title}
-        </Text>
+        {title === "Z-Pantry" ? (
+          <Image source={require("../../assets/images/z-pantry-logo.png")} resizeMode="contain" style={{ width: 156, height: 50 }} />
+        ) : (
+          <Text style={{ color: colors.text, fontSize: 26, fontWeight: "900", letterSpacing: 0 }} selectable>
+            {title}
+          </Text>
+        )}
         {subtitle ? (
-          <Text style={{ color: colors.muted, fontSize: 15, marginTop: 4 }} selectable>
+          <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "800", marginTop: 4 }} selectable>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 18,
-          borderCurve: "continuous",
-          backgroundColor: colors.card,
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 8px 20px rgba(29, 36, 40, 0.12)"
-        }}
-      >
-        <MaterialCommunityIcons name="chef-hat" size={26} color={colors.primary} />
-      </View>
+      <Image source={require("../../assets/images/z-pantry-logo.png")} resizeMode="contain" style={{ width: 72, height: 44 }} />
     </View>
   );
 }

@@ -18,7 +18,16 @@
     },
     "plugins": [
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1506339687638007",
+          "clientToken": "74f281c8137fa577c8ee452f9b41d58a",
+          "displayName": "Z Pantry"
+        }
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

@@ -19,24 +19,24 @@ export default function PrimaryButton({ title, icon, variant = "solid", onPress,
       style={({ pressed }) => [
         {
           minHeight: 50,
-          borderRadius: 18,
+          borderRadius: 14,
           borderCurve: "continuous",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "row",
           gap: 8,
           paddingHorizontal: 18,
-          backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.secondary : "transparent",
+          backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.card : "transparent",
           borderWidth: variant === "outline" ? 1 : 0,
-          borderColor: colors.primary,
+          borderColor: colors.line,
           opacity: pressed ? 0.82 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }]
         },
         style
       ]}
     >
-      {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.dark} /> : null}
-      <Text style={{ color: isSolid ? colors.white : colors.dark, fontWeight: "800", fontSize: 15 }} selectable>
+      {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.text} /> : null}
+      <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "900", fontSize: 15 }} selectable>
         {title}
       </Text>
     </Pressable>

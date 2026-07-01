@@ -12,21 +12,22 @@ export default function ExpiryAlertCard({ title, tone = "warning" }: Props) {
   return (
     <View
       style={{
-        backgroundColor: colors.card,
-        borderRadius: 22,
+        backgroundColor: tone === "warning" ? "rgba(244,162,28,0.72)" : colors.card,
+        borderRadius: 16,
         borderCurve: "continuous",
         padding: 16,
         flexDirection: "row",
         gap: 12,
         alignItems: "center",
-        borderLeftWidth: 5,
-        borderLeftColor: toneColor
+        borderWidth: 1,
+        borderColor: tone === "warning" ? "rgba(255,255,255,0.22)" : colors.line,
+        boxShadow: "0 10px 22px rgba(0,0,0,0.18)"
       }}
     >
-      <View style={{ width: 42, height: 42, borderRadius: 15, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-        <MaterialCommunityIcons name="alert-circle" size={23} color={toneColor} />
+      <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: "rgba(255,255,255,0.26)", alignItems: "center", justifyContent: "center" }}>
+        <MaterialCommunityIcons name="lightbulb-on-outline" size={23} color={toneColor === colors.warning ? colors.white : toneColor} />
       </View>
-      <Text style={{ flex: 1, color: colors.text, fontSize: 15, fontWeight: "800", lineHeight: 21 }} selectable>
+      <Text style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "800", lineHeight: 20 }} selectable>
         {title}
       </Text>
     </View>

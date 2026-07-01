@@ -14,38 +14,36 @@ export default function PantryItemCard({ item }: Props) {
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 24,
+        borderRadius: 14,
         borderCurve: "continuous",
         padding: 16,
         flexDirection: "row",
         gap: 14,
         alignItems: "center",
-        boxShadow: "0 8px 20px rgba(29, 36, 40, 0.08)"
+        borderWidth: 1,
+        borderColor: colors.line,
+        boxShadow: "0 10px 22px rgba(0,0,0,0.20)"
       }}
     >
-      <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
         <MaterialCommunityIcons name={item.icon as never} size={27} color={colors.primary} />
       </View>
       <View style={{ flex: 1, gap: 8 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.dark, fontWeight: "900", fontSize: 16 }} selectable>
+            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 15 }} selectable>
               {item.name}
             </Text>
-            <Text style={{ color: colors.muted, marginTop: 2, fontWeight: "600" }} selectable>
+            <Text style={{ color: colors.primary, marginTop: 2, fontWeight: "800", fontSize: 13 }} selectable>
               {item.quantity}
             </Text>
           </View>
-          <View style={{ borderRadius: 999, backgroundColor: `${color}18`, paddingHorizontal: 10, height: 28, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color, fontWeight: "900", fontSize: 12 }} selectable>
-              {item.status === "danger" ? "Gấp" : item.status === "warning" ? "Sớm" : "Ổn"}
-            </Text>
-          </View>
+          <MaterialCommunityIcons name={item.status === "safe" ? "check-circle" : "alert"} size={22} color={color} />
         </View>
-        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 13 }} selectable>
+        <Text style={{ color: item.status === "danger" ? colors.danger : colors.primary, fontWeight: "800", fontSize: 12 }} selectable>
           {item.expiryLabel}
         </Text>
-        <View style={{ height: 8, borderRadius: 999, backgroundColor: "#F0D8AF", overflow: "hidden" }}>
+        <View style={{ height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.30)", overflow: "hidden" }}>
           <View style={{ width: `${item.progress}%`, height: "100%", backgroundColor: color }} />
         </View>
       </View>

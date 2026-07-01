@@ -1,0 +1,63 @@
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL EXPO_PUBLIC_FACEBOOK_ANDROID_CLIENT_ID EXPO_PUBLIC_FACEBOOK_APP_ID EXPO_PUBLIC_FACEBOOK_IOS_CLIENT_ID EXPO_PUBLIC_FACEBOOK_WEB_CLIENT_ID EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+Starting project at D:\EXE101\Meal_Planner
+Starting Metro Bundler
+
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Web Bundled 7036ms node_modules\expo\AppEntry.js (710 modules)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  expo-file-system is not supported on web
+Web  WARN  expo-file-system is not supported on web
+Web  ERROR  [TypeError: this.validatePath is not a function] 
+
+Code: authStorage.ts
+[0m [90m  7 |[39m [36mconst[39m [33mUSER_KEY[39m [33m=[39m [32m"zpantry.user"[39m[33m;[39m
+ [90m  8 |[39m [36mconst[39m memoryStore [33m=[39m [36mnew[39m [33mMap[39m[33m<[39m[33mstring[39m[33m,[39m string[33m>[39m()[33m;[39m
+[31m[1m>[22m[39m[90m  9 |[39m [36mconst[39m sessionFile [33m=[39m [36mnew[39m [33mFile[39m([33mPaths[39m[33m.[39mdocument[33m,[39m [32m"zpantry-session.json"[39m)[33m;[39m
+ [90m    |[39m                                    [31m[1m^[22m[39m
+ [90m 10 |[39m
+ [90m 11 |[39m [36mexport[39m type [33mStoredUser[39m [33m=[39m [33mPick[39m[33m<[39m[33mLoginResponse[39m[33m,[39m [32m"userId"[39m [33m|[39m [32m"fullName"[39m [33m|[39m [32m"email"[39m [33m|[39m [32m"role"[39m [33m|[39m [32m"expiresAt"[39m[33m>[39m[33m;[39m
+ [90m 12 |[39m type [33mStoredSession[39m [33m=[39m {[0m
+Call Stack
+  <global> (src\utils\authStorage.ts:9:36)
+  <global> (src\api\client.ts:1)
+Web Bundled 42ms node_modules\expo\AppEntry.js (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  An error occurred in the <ForwardRef> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+Web  ERROR  [Error: No safe area value available. Make sure you are rendering `<SafeAreaProvider>` at the top of your app.] 
+
+Code: SplashScreen.tsx
+[0m [90m 26 |[39m
+ [90m 27 |[39m   [36mreturn[39m (
+[31m[1m>[22m[39m[90m 28 |[39m     [33m<[39m[33mSafeAreaView[39m style[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m backgroundColor[33m:[39m colors[33m.[39mbackground }}[33m>[39m
+ [90m    |[39m     [31m[1m^[22m[39m
+ [90m 29 |[39m       [33m<[39m[33mView[39m style[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m alignItems[33m:[39m [32m"center"[39m[33m,[39m justifyContent[33m:[39m [32m"center"[39m }}[33m>[39m
+ [90m 30 |[39m         [33m<[39m[33mAnimated[39m[33m.[39m[33mImage[39m
+ [90m 31 |[39m           source[33m=[39m{require([32m"../../assets/images/z-pantry-logo.png"[39m)}[0m
+Call Stack
+  SplashScreen (src\screens\SplashScreen.tsx:28:5)
+  AppNavigator (src\navigation\AppNavigator.tsx:215:12)
+  App (App.tsx:11:9)
+Web  WARN  Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md
+Web Bundled 46ms node_modules\expo\AppEntry.js (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md
+Web Bundled 56ms node_modules\expo\AppEntry.js (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md

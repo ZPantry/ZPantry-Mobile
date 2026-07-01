@@ -51,6 +51,7 @@ export type UserProfile = {
 
 export type RootStackParamList = {
   Login: undefined;
+  Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AddIngredient: undefined;
   RecipeDetail: { mealId: string };
