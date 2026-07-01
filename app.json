@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Z-Pantry",
+    "slug": "z-pantry-ai-meal-planner",
+    "version": "1.0.0",
+    "scheme": "zpantry",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.zpantry.app",
+      "versionCode": 1
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-status-bar",
+      "expo-web-browser",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1506339687638007",
+          "clientToken": "74f281c8137fa577c8ee452f9b41d58a",
+          "displayName": "Z Pantry"
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f37a60ff-1cad-4dd5-8de1-3007e4ba553d"
+      }
+    }
+  }
+}

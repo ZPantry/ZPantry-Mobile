@@ -1,0 +1,14 @@
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL EXPO_PUBLIC_FACEBOOK_ANDROID_CLIENT_ID EXPO_PUBLIC_FACEBOOK_APP_ID EXPO_PUBLIC_FACEBOOK_IOS_CLIENT_ID EXPO_PUBLIC_FACEBOOK_WEB_CLIENT_ID EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+Starting project at D:\EXE101\Meal_Planner
+Starting Metro Bundler
+
+Waiting on http://localhost:8083
+Logs for your project will appear below.
+Web Bundled 2229ms node_modules\expo\AppEntry.js (692 modules)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md

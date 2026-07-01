@@ -1,0 +1,22 @@
+export const colors = {
+  primary: "#F4A21C",
+  primaryDark: "#B87507",
+  secondary: "#FFE0A3",
+  background: "#003B1E",
+  surface: "#164F31",
+  surface2: "#2C6847",
+  glass: "rgba(255,255,255,0.14)",
+  glassStrong: "rgba(255,255,255,0.22)",
+  dark: "#062817",
+  text: "#F7FFF8",
+  textDark: "#172219",
+  muted: "rgba(255,255,255,0.72)",
+  mutedDark: "#6B7C6F",
+  success: "#39D98A",
+  warning: "#F4A21C",
+  danger: "#FF4D4F",
+  card: "rgba(255,255,255,0.16)",
+  white: "#FFFFFF",
+  line: "rgba(255,255,255,0.34)",
+  tabText: "#4A3210"
+};
