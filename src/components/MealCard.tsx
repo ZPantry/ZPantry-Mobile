@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
 import { colors } from "@/constants/colors";
 import type { Meal } from "@/types";
+import { getGradientPair } from "@/utils/gradients";
 
 type Props = {
   meal: Meal;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function MealCard({ meal, compact = false, onPress }: Props) {
+  const palette = getGradientPair(meal);
   return (
     <Pressable
       onPress={onPress}
@@ -24,7 +26,22 @@ export default function MealCard({ meal, compact = false, onPress }: Props) {
         transform: [{ scale: pressed ? 0.985 : 1 }]
       })}
     >
-      <Image source={{ uri: meal.image }} style={{ width: "100%", height: compact ? 104 : 176, backgroundColor: colors.secondary }} />
+      <View style={{ width: "100%", height: compact ? 104 : 176, backgroundColor: palette.start, position: "relative", overflow: "hidden" }}>
+        {meal.image ? <Image source={{ uri: meal.image }} style={{ width: "100%", height: "100%", opacity: 0.78 }} /> : null}
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundColor: palette.start,
+            opacity: meal.image ? 0.28 : 1
+          }}
+        />
+        <View style={{ position: "absolute", right: -28, top: -18, width: 120, height: 120, borderRadius: 60, backgroundColor: palette.end, opacity: 0.36 }} />
+        <View style={{ position: "absolute", left: -24, bottom: -24, width: 110, height: 110, borderRadius: 55, backgroundColor: "rgba(255,255,255,0.18)" }} />
+      </View>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
           <Text style={{ flex: 1, color: colors.textDark, fontWeight: "900", fontSize: compact ? 15 : 20, lineHeight: compact ? 20 : 25 }} selectable>

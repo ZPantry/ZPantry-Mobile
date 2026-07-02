@@ -2,6 +2,7 @@ import { apiRequest } from "@/api/client";
 
 export type SelectedIngredientPayload = {
   ingredientId: string;
+  name?: string;
   quantity: number;
   unit: string;
 };
@@ -25,6 +26,9 @@ export type MealRecommendation = {
   missingIngredientCount?: number;
   matchedIngredients: string[];
   missingIngredients: string[];
+  imageUrl?: string;
+  gradientFrom?: string;
+  gradientTo?: string;
 };
 
 export type MealRecommendationResponse = {
@@ -37,6 +41,9 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
     id?: string;
     name?: string;
     description?: string;
+    imageUrl?: string;
+    gradientFrom?: string | null;
+    gradientTo?: string | null;
   };
   recipeName?: string;
   matchScore?: number;
@@ -69,7 +76,10 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
     reason: item.reason || "",
     missingIngredientCount: Number(item.missingIngredientCount ?? item.missingIngredientNames?.length ?? item.missingIngredients?.length ?? 0),
     matchedIngredients: item.matchedIngredients || item.matchingIngredientNames || item.matching || [],
-    missingIngredients: item.missingIngredients || item.missingIngredientNames || item.missing || []
+    missingIngredients: item.missingIngredients || item.missingIngredientNames || item.missing || [],
+    imageUrl: item.imageUrl || item.recipe?.imageUrl || undefined,
+    gradientFrom: item.gradientFrom || item.recipe?.gradientFrom || undefined,
+    gradientTo: item.gradientTo || item.recipe?.gradientTo || undefined
   };
 }
 

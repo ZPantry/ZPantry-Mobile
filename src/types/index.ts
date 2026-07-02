@@ -54,6 +54,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AddIngredient: undefined;
+  CreateRecipe: undefined;
   RecipeDetail: { mealId: string };
 };
 

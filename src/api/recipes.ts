@@ -2,6 +2,7 @@ import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/a
 
 export type RecipeIngredientPayload = {
   ingredientId: string;
+  ingredientName?: string;
   quantity: number;
   unit: string;
   isRequired: boolean;
@@ -11,17 +12,22 @@ export type RecipeIngredientPayload = {
 export type Recipe = {
   id: string;
   name: string;
-  description: string;
-  cookingTimeMinutes: number;
-  difficulty: string;
-  servingSize: number;
-  instructionText: string;
-  imageUrl: string;
-  sourceType: string;
+  description?: string | null;
+  cookingTimeMinutes?: number | null;
+  difficulty?: string | null;
+  servingSize?: number | null;
+  instructionText?: string | null;
+  imageUrl?: string | null;
+  sourceType?: string | null;
+  gradientFrom?: string | null;
+  gradientTo?: string | null;
+  ingredients?: RecipeIngredientPayload[];
 };
 
 export type RecipePayload = Omit<Recipe, "id"> & {
-  ingredients?: RecipeIngredientPayload[];
+  gradientFrom?: string;
+  gradientTo?: string;
+  ingredients: RecipeIngredientPayload[];
 };
 
 export const recipesApi = {

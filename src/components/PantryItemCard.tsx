@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { colors } from "@/constants/colors";
 import type { PantryItem } from "@/types";
 import { statusColor } from "@/utils/helpers";
+import { getGradient } from "@/utils/gradients";
 
 type Props = {
   item: PantryItem;
@@ -10,6 +11,7 @@ type Props = {
 
 export default function PantryItemCard({ item }: Props) {
   const color = statusColor(item.status);
+  const palette = getGradient([item.name, item.location, item.id]);
   return (
     <View
       style={{
@@ -25,7 +27,16 @@ export default function PantryItemCard({ item }: Props) {
         boxShadow: "0 10px 22px rgba(0,0,0,0.20)"
       }}
     >
-      <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 14,
+          backgroundColor: palette.start,
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
         <MaterialCommunityIcons name={item.icon as never} size={27} color={colors.primary} />
       </View>
       <View style={{ flex: 1, gap: 8 }}>

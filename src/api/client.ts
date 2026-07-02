@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { authStorage } from "@/utils/authStorage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -47,21 +48,33 @@ export class ApiError extends Error {
 
 function getApiBaseUrl() {
   if (!API_BASE_URL) {
-    throw new ApiError("Chưa kết nối được nguồn dữ liệu.", 0);
+    throw new ApiError("Chua ket noi duoc nguon du lieu.", 0);
   }
 
   const normalizedUrl = API_BASE_URL.replace(/\/+$/, "");
+  let urlToUse = normalizedUrl;
 
   try {
-    const url = new URL(normalizedUrl);
+    const parsed = new URL(normalizedUrl);
+    const isLoopback = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    if (Platform.OS === "android" && isLoopback) {
+      parsed.hostname = "10.0.2.2";
+      urlToUse = parsed.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // validated below
+  }
+
+  try {
+    const url = new URL(urlToUse);
     if (!url.protocol.startsWith("http")) {
       throw new Error("Invalid protocol");
     }
   } catch {
-    throw new ApiError("Nguồn dữ liệu chưa sẵn sàng.", 0);
+    throw new ApiError("Nguon du lieu chua san sang.", 0);
   }
 
-  return normalizedUrl;
+  return urlToUse;
 }
 
 async function readResponse(response: Response) {
@@ -113,7 +126,7 @@ function unwrapEnvelope<T>(body: unknown): T {
   }
 
   if (envelope.success === false) {
-    throw new ApiError(getMessage(envelope, "Yêu cầu thất bại."), 200);
+    throw new ApiError(getMessage(envelope, "Yeu cau that bai."), 200);
   }
 
   if ((Array.isArray(envelope.data) || Array.isArray(envelope.items)) && "pageIndex" in envelope) {
@@ -160,13 +173,13 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       }
     });
   } catch {
-    throw new ApiError("Chưa kết nối được dữ liệu. Vui lòng thử lại sau.", 0);
+    throw new ApiError("Chua ket noi duoc du lieu. Vui long thu lai sau.", 0);
   }
 
   const body = await readResponse(response);
 
   if (!response.ok) {
-    throw new ApiError(getMessage(body, `Yêu cầu thất bại (${response.status}).`), response.status);
+    throw new ApiError(getMessage(body, `Yeu cau that bai (${response.status}).`), response.status);
   }
 
   return unwrapEnvelope<T>(body);

@@ -11,6 +11,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { getGradientPair } from "@/utils/gradients";
 
 const defaultImageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
@@ -105,6 +106,13 @@ export default function AddIngredientScreen() {
     setIsSaving(true);
     setErrorMessage("");
     try {
+      const gradient = getGradientPair({
+        ingredientId: selectedIngredient?.id,
+        name: cleanName,
+        gradientFrom: selectedIngredient?.gradientFrom,
+        gradientTo: selectedIngredient?.gradientTo
+      });
+
       const ingredient =
         selectedIngredient && selectedIngredient.name === cleanName
           ? selectedIngredient
@@ -116,7 +124,9 @@ export default function AddIngredientScreen() {
               proteinPerUnit: 0,
               fatPerUnit: 0,
               carbPerUnit: 0,
-              imageUrl: defaultImageUrl
+              imageUrl: defaultImageUrl,
+              gradientFrom: gradient.start,
+              gradientTo: gradient.end
             });
 
       await pantryApi.saveItem(user.userId, {

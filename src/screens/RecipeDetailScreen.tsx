@@ -1,35 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
-import type { Meal, RootStackParamList } from "@/types";
-import { useCallback, useEffect, useState } from "react";
+import type { RootStackParamList } from "@/types";
+import { getGradientPair } from "@/utils/gradients";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetail">;
 
-function recipeToMeal(recipe: Recipe): Meal {
-  return {
-    id: recipe.id,
-    name: recipe.name,
-    image: recipe.imageUrl,
-    calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
-    time: `${recipe.cookingTimeMinutes} phút`,
-    matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
-    difficulty: recipe.difficulty,
-    availableIngredients: recipe.description ? [recipe.description] : [],
-    missingIngredients: [],
-    steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
-  };
+function splitInstructions(text?: string | null) {
+  if (!text?.trim()) return [];
+  const normalized = text
+    .replace(/\r\n/g, "\n")
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=\.)\s+|\d+\.\s+/))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return normalized;
+}
+
+function formatDifficulty(value?: string | null) {
+  if (!value) return "Unknown";
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export default function RecipeDetailScreen({ route, navigation }: Props) {
-  const [meal, setMeal] = useState<Meal | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -37,11 +39,11 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const recipe = await recipesApi.get(route.params.mealId);
-      setMeal(recipeToMeal(recipe));
+      const result = await recipesApi.get(route.params.mealId);
+      setRecipe(result);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được chi tiết công thức.");
-      setMeal(null);
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load recipe detail.");
+      setRecipe(null);
     } finally {
       setIsLoading(false);
     }
@@ -51,17 +53,22 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
     loadRecipe();
   }, [loadRecipe]);
 
+  const gradient = useMemo(() => getGradientPair(recipe || { id: route.params.mealId, name: "Recipe" }), [recipe, route.params.mealId]);
+  const ingredients = recipe?.ingredients || [];
+  const steps = splitInstructions(recipe?.instructionText);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 34 }}>
-        <View>
-          {meal?.image ? (
-            <Image source={{ uri: meal.image }} style={{ width: "100%", height: 280, backgroundColor: colors.secondary }} />
-          ) : (
-            <View style={{ width: "100%", height: 220, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="restaurant-outline" size={54} color={colors.primary} />
-            </View>
-          )}
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingBottom: 36 }}
+      >
+        <View style={{ height: 300, backgroundColor: gradient.start, overflow: "hidden" }}>
+          {recipe?.imageUrl ? <Image source={{ uri: recipe.imageUrl }} style={{ width: "100%", height: "100%", opacity: 0.8 }} /> : null}
+          <View style={{ position: "absolute", top: -30, right: -18, width: 150, height: 150, borderRadius: 75, backgroundColor: gradient.end, opacity: 0.32 }} />
+          <View style={{ position: "absolute", left: -24, bottom: -28, width: 140, height: 140, borderRadius: 70, backgroundColor: "rgba(255,255,255,0.18)" }} />
+
           <Pressable
             onPress={() => navigation.goBack()}
             style={({ pressed }) => ({
@@ -70,58 +77,101 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
               left: 18,
               width: 46,
               height: 46,
-              borderRadius: 17,
-              backgroundColor: colors.card,
+              borderRadius: 16,
+              backgroundColor: "rgba(255,255,255,0.28)",
               borderWidth: 1,
-              borderColor: colors.line,
+              borderColor: "rgba(255,255,255,0.24)",
               alignItems: "center",
               justifyContent: "center",
-              opacity: pressed ? 0.82 : 1
+              opacity: pressed ? 0.84 : 1
             })}
           >
-            <Ionicons name="chevron-back" size={26} color={colors.text} />
+            <Ionicons name="chevron-back" size={26} color={colors.textDark} />
           </Pressable>
+
+          <View style={{ position: "absolute", left: 18, right: 18, bottom: 18, gap: 8 }}>
+            <Text style={{ color: colors.textDark, fontSize: 30, lineHeight: 36, fontWeight: "900" }} selectable>
+              {recipe?.name || "Recipe detail"}
+            </Text>
+            <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700", lineHeight: 19, opacity: 0.92 }} selectable>
+              {recipe?.description || "Recipe prepared from backend catalog."}
+            </Text>
+            {recipe ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                <CategoryChip label={`${recipe.cookingTimeMinutes || 0} min`} icon="clock-outline" active />
+                <CategoryChip label={formatDifficulty(recipe.difficulty)} icon="chef-hat" />
+                <CategoryChip label={`${recipe.servingSize || 1} servings`} icon="account-group-outline" />
+              </View>
+            ) : null}
+          </View>
         </View>
 
-        <View style={{ padding: 22, gap: 18 }}>
-          {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
-              {errorMessage}
-            </Text>
+        <View style={{ padding: 20, gap: 16 }}>
+          {isLoading ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={{ color: colors.muted, fontWeight: "700" }} selectable>
+                Loading recipe...
+              </Text>
+            </View>
           ) : null}
 
-          {!meal ? (
+          {errorMessage ? (
+            <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14 }}>
+              <Text style={{ color: "#FFE2E2", fontWeight: "800", lineHeight: 20 }} selectable>
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
+
+          {!recipe ? (
             <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
               <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
-                Chưa có chi tiết món ăn
+                No recipe found
               </Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-                Kéo xuống để tải lại hoặc quay về danh sách công thức.
+                Pull to refresh or go back to the recipe list.
               </Text>
             </View>
           ) : (
             <>
-              <Text style={{ color: colors.text, fontSize: 31, lineHeight: 38, fontWeight: "900" }} selectable>
-                {meal.name}
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                <CategoryChip label={meal.difficulty} icon="chef-hat" active />
-                <CategoryChip label={meal.time} icon="clock-outline" />
-                <CategoryChip label={`${meal.calories} kcal`} icon="fire" />
-              </View>
+              <Section title="Recipe info">
+                <InfoRow icon="information-circle-outline" text={recipe.sourceType || "manual"} />
+                <InfoRow icon="timer-outline" text={`${recipe.cookingTimeMinutes || 0} minutes`} />
+                <InfoRow icon="layers-outline" text={`${ingredients.length} ingredients`} />
+              </Section>
 
-              <RecipeSection title="Mô tả món ăn">
-                {meal.availableIngredients.length > 0 ? meal.availableIngredients.map((item) => <Row key={item} icon="information-circle-outline" color={colors.success} text={item} />) : <Row icon="information-circle-outline" color={colors.success} text="Món ăn này chưa có mô tả." />}
-              </RecipeSection>
+              <Section title="Ingredients">
+                {ingredients.length === 0 ? (
+                  <EmptyRow icon="basket-outline" text="No ingredient data available." />
+                ) : (
+                  ingredients.map((item) => (
+                    <View key={`${item.ingredientId}-${item.ingredientName || item.note}`} style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, padding: 12, gap: 6 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                        <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900", flex: 1 }} selectable>
+                          {item.ingredientName || item.ingredientId}
+                        </Text>
+                        <View style={{ borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, backgroundColor: item.isRequired ? "rgba(57,217,138,0.16)" : "rgba(244,162,28,0.16)" }}>
+                          <Text style={{ color: colors.textDark, fontSize: 11, fontWeight: "900" }} selectable>
+                            {item.isRequired ? "Required" : "Optional"}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700" }} selectable>
+                        {item.quantity} {item.unit}
+                        {item.note ? ` · ${item.note}` : ""}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </Section>
 
-              <RecipeSection title="Cần mua thêm">
-                {meal.missingIngredients.length > 0 ? meal.missingIngredients.map((item) => <Row key={item} icon="cart-outline" color={colors.warning} text={item} />) : <Row icon="checkmark-circle" color={colors.success} text="Chưa có danh sách nguyên liệu cần mua." />}
-              </RecipeSection>
-
-              <RecipeSection title="Cách nấu">
-                {meal.steps.length > 0 ? (
-                  meal.steps.map((step, index) => (
-                    <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12 }}>
+              <Section title="Instructions">
+                {steps.length === 0 ? (
+                  <EmptyRow icon="document-text-outline" text="No instruction text available." />
+                ) : (
+                  steps.map((step, index) => (
+                    <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
                       <View style={{ width: 30, height: 30, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
                           {index + 1}
@@ -132,13 +182,13 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
                       </Text>
                     </View>
                   ))
-                ) : (
-                  <Row icon="reader-outline" color={colors.primary} text="Món ăn này chưa có hướng dẫn nấu." />
                 )}
-              </RecipeSection>
+              </Section>
 
-              <PrimaryButton title="Thêm vào thực đơn hôm nay" icon="calendar-plus" />
-              <PrimaryButton title="Tạo danh sách mua sắm" icon="cart" variant="outline" />
+              <View style={{ gap: 10 }}>
+                <PrimaryButton title="Create similar recipe" icon="notebook-edit-outline" onPress={() => navigation.navigate("CreateRecipe")} />
+                <PrimaryButton title="Back to meals" icon="arrow-left" variant="outline" onPress={() => navigation.goBack()} />
+              </View>
             </>
           )}
         </View>
@@ -147,10 +197,10 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   );
 }
 
-function RecipeSection({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 18, gap: 14, borderWidth: 1, borderColor: colors.line }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+    <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
+      <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
         {title}
       </Text>
       {children}
@@ -158,11 +208,22 @@ function RecipeSection({ title, children }: { title: string; children: ReactNode
   );
 }
 
-function Row({ icon, color, text }: { icon: keyof typeof Ionicons.glyphMap; color: string; text: string }) {
+function InfoRow({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <Ionicons name={icon} size={22} color={color} />
+      <Ionicons name={icon} size={20} color={colors.primary} />
       <Text style={{ color: colors.text, fontWeight: "800", flex: 1 }} selectable>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+function EmptyRow({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Ionicons name={icon} size={20} color={colors.muted} />
+      <Text style={{ color: colors.muted, fontWeight: "700", flex: 1, lineHeight: 20 }} selectable>
         {text}
       </Text>
     </View>

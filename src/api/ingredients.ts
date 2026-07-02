@@ -12,9 +12,14 @@ export type Ingredient = {
   fatPerUnit: number;
   carbPerUnit: number;
   imageUrl: string;
+  gradientFrom?: string;
+  gradientTo?: string;
 };
 
-export type IngredientPayload = Pick<Ingredient, "name" | "category" | "unit" | "caloriesPerUnit" | "proteinPerUnit" | "fatPerUnit" | "carbPerUnit" | "imageUrl">;
+export type IngredientPayload = Pick<Ingredient, "name" | "category" | "unit" | "caloriesPerUnit" | "proteinPerUnit" | "fatPerUnit" | "carbPerUnit" | "imageUrl"> & {
+  gradientFrom?: string;
+  gradientTo?: string;
+};
 
 export const ingredientsApi = {
   list(pageIndex = 1, pageSize = 50) {

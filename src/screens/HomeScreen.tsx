@@ -19,22 +19,25 @@ import type { Meal } from "@/types";
 const shortcuts = [
   { label: "Thêm nhanh", icon: "plus-circle-outline", target: "AddIngredient" },
   { label: "Gợi ý món", icon: "chef-hat", target: "MealSuggestion" },
+  { label: "Tạo công thức", icon: "notebook-edit-outline", target: "CreateRecipe" },
   { label: "Lập kế hoạch", icon: "calendar-check", target: "Plan" },
   { label: "Tủ lạnh", icon: "fridge-outline", target: "Pantry" }
 ];
 
 function recipeToMeal(recipe: Recipe): Meal {
+  const ingredients = recipe.ingredients?.map((item) => item.ingredientName || item.ingredientId).filter(Boolean) || [];
+  const steps = recipe.instructionText ? recipe.instructionText.split(/\n|(?<=[.!?])\s+/).map((step) => step.trim()).filter(Boolean) : [];
   return {
     id: recipe.id,
     name: recipe.name,
-    image: recipe.imageUrl,
+    image: recipe.imageUrl || "",
     calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
-    time: `${recipe.cookingTimeMinutes} phút`,
-    matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
-    difficulty: recipe.difficulty,
-    availableIngredients: recipe.description ? [recipe.description] : [],
+    time: `${recipe.cookingTimeMinutes || 20} phút`,
+    matchPercent: recipe.difficulty?.toLowerCase() === "easy" ? 90 : recipe.difficulty?.toLowerCase() === "medium" ? 75 : 62,
+    difficulty: recipe.difficulty || "Dễ",
+    availableIngredients: ingredients,
     missingIngredients: [],
-    steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
+    steps
   };
 }
 

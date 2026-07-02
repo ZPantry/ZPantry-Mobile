@@ -15,6 +15,7 @@ import PantryScreen from "@/screens/PantryScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
+import CreateRecipeScreen from "@/screens/CreateRecipeScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import type { RootStackParamList, TabParamList } from "@/types";
 
@@ -225,6 +226,7 @@ export default function AppNavigator() {
         <>
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
+          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
         </>
       ) : (
