@@ -6,6 +6,7 @@ import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { normalizeRemoteImageUrl } from "@/utils/image";
 
 const dayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
@@ -136,7 +137,7 @@ export default function PlanScreen() {
                     </Text>
                   </View>
                 </View>
-                {recipe.imageUrl ? <Image source={{ uri: recipe.imageUrl }} style={{ width: "100%", height: 150, backgroundColor: colors.surface }} /> : null}
+                {recipe.imageUrl ? <Image source={{ uri: normalizeRemoteImageUrl(recipe.imageUrl) }} style={{ width: "100%", height: 150, backgroundColor: colors.surface }} /> : null}
                 <View style={{ padding: 12, gap: 8 }}>
                   <Text style={{ color: colors.text, fontSize: index === 0 ? 20 : 17, fontWeight: "900" }} selectable>
                     {recipe.name}

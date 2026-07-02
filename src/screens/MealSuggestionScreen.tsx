@@ -10,6 +10,7 @@ import { recommendationsApi } from "@/api/recommendations";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { authStorage } from "@/utils/authStorage";
+import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 
 type SelectedIngredient = SelectedIngredientPayload & {
   name: string;
@@ -17,16 +18,12 @@ type SelectedIngredient = SelectedIngredientPayload & {
   imageUrl?: string | null;
 };
 
-const ingredientFallbackImage = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
-
 function getIngredientUnit(ingredient: Ingredient) {
   return ingredient.defaultUnit || ingredient.unit || "g";
 }
 
 function getIngredientImageUrl(imageUrl?: string | null) {
-  const cleanUrl = imageUrl?.trim();
-  if (!cleanUrl) return ingredientFallbackImage;
-  return cleanUrl;
+  return normalizeRemoteImageUrl(imageUrl);
 }
 
 function normalizeText(value: string) {
@@ -615,7 +612,7 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
 
 function RemoteIngredientImage({ uri, style }: { uri?: string | null; style: object }) {
   const [hasError, setHasError] = useState(false);
-  const sourceUri = hasError ? ingredientFallbackImage : getIngredientImageUrl(uri);
+  const sourceUri = hasError ? FALLBACK_FOOD_IMAGE_URL : getIngredientImageUrl(uri);
 
   return <Image source={{ uri: sourceUri }} onError={() => setHasError(true)} style={style} />;
 }

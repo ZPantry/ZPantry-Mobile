@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
 import { colors } from "@/constants/colors";
 import type { Meal } from "@/types";
+import { normalizeRemoteImageUrl } from "@/utils/image";
 
 type Props = {
   meal: Meal;
@@ -24,7 +25,7 @@ export default function MealCard({ meal, compact = false, onPress }: Props) {
         transform: [{ scale: pressed ? 0.985 : 1 }]
       })}
     >
-      <Image source={{ uri: meal.image }} style={{ width: "100%", height: compact ? 104 : 176, backgroundColor: colors.secondary }} />
+      <Image source={{ uri: normalizeRemoteImageUrl(meal.image) }} style={{ width: "100%", height: compact ? 104 : 176, backgroundColor: colors.secondary }} />
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
           <Text style={{ flex: 1, color: colors.textDark, fontWeight: "900", fontSize: compact ? 15 : 20, lineHeight: compact ? 20 : 25 }} selectable>

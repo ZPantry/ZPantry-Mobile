@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
+import type { Recipe } from "@/api/recipes";
 
 export type PantryStatus = "safe" | "warning" | "danger";
 
@@ -55,6 +56,9 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
+  AdminManagement: { initialTab?: "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
+  AdminRecipeForm: { recipe?: Recipe } | undefined;
+  AdminIngredientForm: { ingredient?: Ingredient } | undefined;
   AddIngredient: undefined;
   PantryItemDetail: { pantryItem: PantryApiItem; ingredient?: Ingredient };
   RecipeDetail: { mealId: string };

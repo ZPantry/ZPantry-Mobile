@@ -9,6 +9,7 @@ import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import type { Meal, RootStackParamList } from "@/types";
+import { normalizeRemoteImageUrl } from "@/utils/image";
 import { useCallback, useEffect, useState } from "react";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetail">;
@@ -56,7 +57,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 34 }}>
         <View>
           {meal?.image ? (
-            <Image source={{ uri: meal.image }} style={{ width: "100%", height: 280, backgroundColor: colors.secondary }} />
+            <Image source={{ uri: normalizeRemoteImageUrl(meal.image) }} style={{ width: "100%", height: 280, backgroundColor: colors.secondary }} />
           ) : (
             <View style={{ width: "100%", height: 220, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" }}>
               <Ionicons name="restaurant-outline" size={54} color={colors.primary} />

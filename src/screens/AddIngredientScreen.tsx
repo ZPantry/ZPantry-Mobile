@@ -12,8 +12,9 @@ import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 
-const defaultImageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
+const defaultImageUrl = FALLBACK_FOOD_IMAGE_URL;
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
 function toInputDate(date: Date) {
@@ -231,7 +232,7 @@ export default function AddIngredientScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
               {ingredients.slice(0, 8).map((ingredient) => (
                 <Pressable key={ingredient.id} onPress={() => selectIngredient(ingredient)} style={{ width: 148, backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: ingredient.id === selectedIngredientId ? colors.primary : colors.line, overflow: "hidden" }}>
-                  <Image source={{ uri: ingredient.imageUrl || defaultImageUrl }} style={{ width: "100%", height: 82, backgroundColor: colors.surface }} />
+                  <Image source={{ uri: normalizeRemoteImageUrl(ingredient.imageUrl || defaultImageUrl) }} style={{ width: "100%", height: 82, backgroundColor: colors.surface }} />
                   <View style={{ padding: 11, gap: 5 }}>
                     <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: "900" }}>
                       {ingredient.name}

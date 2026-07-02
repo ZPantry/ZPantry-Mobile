@@ -6,6 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
+import AdminManagementScreen from "@/screens/AdminManagementScreen";
+import AdminRecipeFormScreen from "@/screens/AdminRecipeFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -199,8 +202,9 @@ function Tabs() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
+  const isAdmin = ["admin", "administrator"].includes((user?.role ?? "").toLowerCase());
 
   useEffect(() => {
     if (isLoading) return;
@@ -222,7 +226,13 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-      {isAuthenticated ? (
+      {isAuthenticated && isAdmin ? (
+        <>
+          <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
+          <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
+          <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
+        </>
+      ) : isAuthenticated ? (
         <>
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />

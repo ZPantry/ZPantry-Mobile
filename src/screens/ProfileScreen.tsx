@@ -97,9 +97,10 @@ export default function ProfileScreen() {
   );
 }
 
-function QuickButton({ icon, label }: { icon: ComponentProps<typeof MaterialCommunityIcons>["name"]; label: string }) {
+function QuickButton({ icon, label, onPress }: { icon: ComponentProps<typeof MaterialCommunityIcons>["name"]; label: string; onPress?: () => void }) {
   return (
     <Pressable
+      onPress={onPress}
       style={({ pressed }) => ({
         flex: 1,
         minHeight: 70,
