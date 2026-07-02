@@ -11,7 +11,8 @@
     },
     "android": {
       "package": "com.zpantry.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro"

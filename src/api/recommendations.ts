@@ -2,6 +2,7 @@ import { apiRequest } from "@/api/client";
 
 export type SelectedIngredientPayload = {
   ingredientId: string;
+  name?: string;
   quantity: number;
   unit: string;
 };
@@ -85,6 +86,9 @@ export const recommendationsApi = {
     const response = await apiRequest<RawMealRecommendationResponse>("/api/recommendations/meals", {
       method: "POST",
       auth: true,
+      headers: {
+        "X-User-Id": payload.userId
+      },
       body: JSON.stringify(payload)
     });
 

@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -9,14 +9,24 @@ import type { MealRecommendation, SelectedIngredientPayload } from "@/api/recomm
 import { recommendationsApi } from "@/api/recommendations";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { authStorage } from "@/utils/authStorage";
 
 type SelectedIngredient = SelectedIngredientPayload & {
   name: string;
   category: string;
+  imageUrl?: string | null;
 };
+
+const ingredientFallbackImage = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
 
 function getIngredientUnit(ingredient: Ingredient) {
   return ingredient.defaultUnit || ingredient.unit || "g";
+}
+
+function getIngredientImageUrl(imageUrl?: string | null) {
+  const cleanUrl = imageUrl?.trim();
+  if (!cleanUrl) return ingredientFallbackImage;
+  return cleanUrl;
 }
 
 function normalizeText(value: string) {
@@ -34,6 +44,50 @@ function matchesIngredientSearch(ingredient: Ingredient, search: string) {
   return [ingredient.name, ingredient.normalizedName, ingredient.category].some((value) => normalizeText(value || "").includes(keyword));
 }
 
+function uniqueTextItems(items: string[]) {
+  const seen = new Set<string>();
+  return items
+    .map((item) => item.trim())
+    .filter((item) => {
+      const key = normalizeText(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function splitFreeText(value: string) {
+  return uniqueTextItems(value.split(/[,;\n/|]+/));
+}
+
+function decodeJwtPayload(token: string) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const decoded =
+      typeof atob === "function"
+        ? atob(padded)
+        : "";
+    if (!decoded) return null;
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function getUserIdFromToken(token: string | null) {
+  if (!token) return "";
+  const payload = decodeJwtPayload(token);
+  const claimValue =
+    payload?.userId ||
+    payload?.nameid ||
+    payload?.sub ||
+    payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+  return typeof claimValue === "string" ? claimValue : "";
+}
+
 function formatPercent(score: number) {
   const normalizedScore = score > 1 ? score : score * 100;
   return Math.max(0, Math.min(100, Math.round(normalizedScore)));
@@ -43,10 +97,13 @@ export default function MealSuggestionScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const displayName = user?.fullName || "bạn";
+  const [resolvedUserId, setResolvedUserId] = useState(user?.userId || "");
   const [searchText, setSearchText] = useState("");
   const [freeText, setFreeText] = useState("");
   const [topK, setTopK] = useState(5);
+  const [ingredientCatalog, setIngredientCatalog] = useState<Ingredient[]>([]);
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
   const [recommendations, setRecommendations] = useState<MealRecommendation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -54,10 +111,46 @@ export default function MealSuggestionScreen() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
+    if (user?.userId) {
+      setResolvedUserId(user.userId);
+      return;
+    }
+
+    let isActive = true;
+    authStorage.getAccessToken().then((token) => {
+      if (isActive) {
+        setResolvedUserId(getUserIdFromToken(token));
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.userId]);
+
+  const loadIngredientCatalog = useCallback(async () => {
+    setIsLoadingCatalog(true);
+    setErrorMessage("");
+    try {
+      const page = await ingredientsApi.list(1, 100);
+      setIngredientCatalog(page.data);
+    } catch (error) {
+      setIngredientCatalog([]);
+      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được danh sách nguyên liệu.");
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadIngredientCatalog();
+  }, [loadIngredientCatalog]);
+
+  useEffect(() => {
     const keyword = searchText.trim();
     let isActive = true;
 
-    if (keyword.length < 2) {
+    if (!keyword) {
       setIngredientResults([]);
       setIsSearching(false);
       return;
@@ -68,12 +161,18 @@ export default function MealSuggestionScreen() {
       try {
         const page = await ingredientsApi.search(keyword, 1, 10);
         if (isActive) {
-          setIngredientResults(page.data.filter((ingredient) => matchesIngredientSearch(ingredient, keyword)));
+          const apiResults = page.data.filter((ingredient) => matchesIngredientSearch(ingredient, keyword));
+          const merged = new Map<string, Ingredient>();
+          [...apiResults, ...ingredientCatalog.filter((ingredient) => matchesIngredientSearch(ingredient, keyword))].forEach((ingredient) => {
+            merged.set(ingredient.id, ingredient);
+          });
+          setIngredientResults(Array.from(merged.values()).slice(0, 12));
         }
       } catch (error) {
         if (isActive) {
-          setIngredientResults([]);
-          setErrorMessage(error instanceof Error ? error.message : "Chưa tìm được nguyên liệu.");
+          const fallbackResults = ingredientCatalog.filter((ingredient) => matchesIngredientSearch(ingredient, keyword)).slice(0, 12);
+          setIngredientResults(fallbackResults);
+          setErrorMessage(fallbackResults.length > 0 ? "" : error instanceof Error ? error.message : "Chưa tìm được nguyên liệu.");
         }
       } finally {
         if (isActive) {
@@ -86,9 +185,14 @@ export default function MealSuggestionScreen() {
       isActive = false;
       clearTimeout(timer);
     };
-  }, [searchText]);
+  }, [ingredientCatalog, searchText]);
 
   const selectedIds = useMemo(() => new Set(selectedIngredients.map((item) => item.ingredientId)), [selectedIngredients]);
+  const displayedIngredients = useMemo(() => {
+    if (searchText.trim()) return ingredientResults;
+    return ingredientCatalog.slice(0, 16);
+  }, [ingredientCatalog, ingredientResults, searchText]);
+  const isShowingSearchResults = Boolean(searchText.trim());
 
   const addIngredient = useCallback(
     (ingredient: Ingredient) => {
@@ -101,11 +205,10 @@ export default function MealSuggestionScreen() {
           name: ingredient.name,
           category: ingredient.category,
           quantity: 1,
-          unit: getIngredientUnit(ingredient)
+          unit: getIngredientUnit(ingredient),
+          imageUrl: ingredient.imageUrl
         }
       ]);
-      setSearchText("");
-      setIngredientResults([]);
       setErrorMessage("");
     },
     [selectedIds]
@@ -119,8 +222,20 @@ export default function MealSuggestionScreen() {
     setSelectedIngredients((current) => current.filter((item) => item.ingredientId !== ingredientId));
   }, []);
 
+  const toggleIngredient = useCallback(
+    (ingredient: Ingredient) => {
+      if (selectedIds.has(ingredient.id)) {
+        removeSelectedIngredient(ingredient.id);
+        return;
+      }
+
+      addIngredient(ingredient);
+    },
+    [addIngredient, removeSelectedIngredient, selectedIds]
+  );
+
   const validateRequest = useCallback(() => {
-    if (!user?.userId) return "Bạn cần đăng nhập để nhận gợi ý món.";
+    if (!resolvedUserId) return "Phiên đăng nhập chưa có userId. Vui lòng đăng xuất rồi đăng nhập lại.";
     if (selectedIngredients.length === 0 && !freeText.trim()) return "Chọn ít nhất một nguyên liệu hoặc nhập nguyên liệu thủ công.";
 
     const invalidIndex = selectedIngredients.findIndex((item) => item.quantity <= 0 || !Number.isFinite(item.quantity));
@@ -130,7 +245,7 @@ export default function MealSuggestionScreen() {
     if (missingUnitIndex >= 0) return `${selectedIngredients[missingUnitIndex].name}: đơn vị không được để trống.`;
 
     return "";
-  }, [freeText, selectedIngredients, user?.userId]);
+  }, [freeText, resolvedUserId, selectedIngredients]);
 
   const requestRecommendations = useCallback(async () => {
     const validationMessage = validateRequest();
@@ -143,11 +258,12 @@ export default function MealSuggestionScreen() {
     setErrorMessage("");
     try {
       const response = await recommendationsApi.suggestMeals({
-        userId: user!.userId,
-        inputIngredientText: freeText.trim(),
-        ingredients: [],
-        selectedIngredients: selectedIngredients.map(({ ingredientId, quantity, unit }) => ({
+        userId: resolvedUserId,
+        inputIngredientText: uniqueTextItems([...selectedIngredients.map((item) => item.name), ...splitFreeText(freeText)]).join(", "),
+        ingredients: uniqueTextItems([...selectedIngredients.map((item) => item.name), ...splitFreeText(freeText)]),
+        selectedIngredients: selectedIngredients.map(({ ingredientId, name, quantity, unit }) => ({
           ingredientId,
+          name,
           quantity,
           unit: unit.trim()
         })),
@@ -162,7 +278,14 @@ export default function MealSuggestionScreen() {
     } finally {
       setIsSuggesting(false);
     }
-  }, [freeText, selectedIngredients, topK, user, validateRequest]);
+  }, [freeText, resolvedUserId, selectedIngredients, topK, validateRequest]);
+
+  const refreshScreen = useCallback(async () => {
+    await loadIngredientCatalog();
+    if (selectedIngredients.length > 0 || freeText.trim()) {
+      await requestRecommendations();
+    }
+  }, [freeText, loadIngredientCatalog, requestRecommendations, selectedIngredients.length]);
 
   const header = (
     <View style={{ gap: 18 }}>
@@ -221,48 +344,40 @@ export default function MealSuggestionScreen() {
           {isSearching ? <ActivityIndicator color={colors.primary} size="small" /> : null}
         </View>
 
-        {searchText.trim().length >= 2 ? (
-          <View style={{ gap: 8 }}>
-            {ingredientResults.length === 0 && !isSearching ? (
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable>
+              {isShowingSearchResults ? "Kết quả tìm kiếm" : "Nguyên liệu có sẵn"}
+            </Text>
+            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
+              {displayedIngredients.length} món
+            </Text>
+          </View>
+
+          {isLoadingCatalog && !isShowingSearchResults ? (
+            <View style={{ minHeight: 52, borderRadius: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: "rgba(255,255,255,0.10)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={{ color: colors.text, fontSize: 13, fontWeight: "800" }} selectable>
+                Đang tải nguyên liệu...
+              </Text>
+            </View>
+          ) : displayedIngredients.length === 0 && !isSearching ? (
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }} selectable>
-                Không tìm thấy nguyên liệu phù hợp. Bạn có thể thử từ khóa khác hoặc nhập nguyên liệu thủ công.
+                {isShowingSearchResults ? "Không tìm thấy nguyên liệu phù hợp. Bạn có thể thử từ khóa khác hoặc nhập nguyên liệu thủ công." : "Chưa có nguyên liệu để chọn. Kéo xuống để tải lại hoặc nhập thủ công."}
               </Text>
             ) : (
-              ingredientResults.map((ingredient) => {
-                const isSelected = selectedIds.has(ingredient.id);
-                return (
-                  <Pressable
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                {displayedIngredients.map((ingredient) => (
+                  <IngredientOption
                     key={ingredient.id}
-                    disabled={isSelected}
-                    onPress={() => addIngredient(ingredient)}
-                    style={({ pressed }) => ({
-                      minHeight: 48,
-                      borderRadius: 12,
-                      backgroundColor: isSelected ? "rgba(57,217,138,0.18)" : colors.white,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 10,
-                      opacity: pressed ? 0.82 : 1
-                    })}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.textDark, fontSize: 14, fontWeight: "900" }} selectable>
-                        {ingredient.name}
-                      </Text>
-                      <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "800", marginTop: 2 }} selectable>
-                        {ingredient.category || "Nguyên liệu"} · {getIngredientUnit(ingredient)}
-                      </Text>
-                    </View>
-                    <Ionicons name={isSelected ? "checkmark-circle" : "add-circle"} size={24} color={isSelected ? colors.success : colors.primary} />
-                  </Pressable>
-                );
-              })
+                    ingredient={ingredient}
+                    selected={selectedIds.has(ingredient.id)}
+                    onPress={() => toggleIngredient(ingredient)}
+                  />
+                ))}
+              </View>
             )}
-          </View>
-        ) : null}
+        </View>
 
         <TextInput
           value={freeText}
@@ -309,13 +424,16 @@ export default function MealSuggestionScreen() {
           selectedIngredients.map((item) => (
             <View key={item.ingredientId} style={{ backgroundColor: colors.white, borderRadius: 12, padding: 12, gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
-                    {item.name}
-                  </Text>
-                  <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "800", marginTop: 2 }} selectable>
-                    {item.category || "Nguyên liệu"}
-                  </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                  <RemoteIngredientImage uri={item.imageUrl} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.secondary }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+                      {item.name}
+                    </Text>
+                    <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "800", marginTop: 2 }} selectable>
+                      {item.category || "Nguyên liệu"}
+                    </Text>
+                  </View>
                 </View>
                 <Pressable onPress={() => removeSelectedIngredient(item.ingredientId)} hitSlop={10}>
                   <Ionicons name="close-circle" size={24} color={colors.danger} />
@@ -431,7 +549,7 @@ export default function MealSuggestionScreen() {
       <FlatList
         data={recommendations}
         keyExtractor={(item) => item.recipeId}
-        refreshControl={<RefreshControl refreshing={isSuggesting} onRefresh={requestRecommendations} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isSuggesting || isLoadingCatalog} onRefresh={refreshScreen} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 14 }}
         ListHeaderComponent={header}
@@ -490,6 +608,64 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
           Xem chi tiết món
         </Text>
         <Ionicons name="arrow-forward-circle" size={25} color={colors.primary} />
+      </View>
+    </Pressable>
+  );
+}
+
+function RemoteIngredientImage({ uri, style }: { uri?: string | null; style: object }) {
+  const [hasError, setHasError] = useState(false);
+  const sourceUri = hasError ? ingredientFallbackImage : getIngredientImageUrl(uri);
+
+  return <Image source={{ uri: sourceUri }} onError={() => setHasError(true)} style={style} />;
+}
+
+function IngredientOption({ ingredient, selected, onPress }: { ingredient: Ingredient; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        width: "48%",
+        minWidth: 150,
+        flexGrow: 1,
+        borderRadius: 14,
+        backgroundColor: colors.white,
+        overflow: "hidden",
+        borderWidth: 2,
+        borderColor: selected ? colors.success : "transparent",
+        opacity: pressed ? 0.84 : 1,
+        boxShadow: "0 10px 20px rgba(0,0,0,0.16)"
+      })}
+    >
+      <View style={{ height: 86, backgroundColor: colors.secondary }}>
+        <RemoteIngredientImage uri={ingredient.imageUrl} style={{ width: "100%", height: "100%" }} />
+        <View style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: 15, backgroundColor: selected ? colors.success : colors.primary, alignItems: "center", justifyContent: "center" }}>
+          <Ionicons name={selected ? "remove" : "add"} size={20} color={colors.white} />
+        </View>
+        {selected ? (
+          <View style={{ position: "absolute", left: 8, top: 8, borderRadius: 999, backgroundColor: "rgba(57,217,138,0.92)", paddingHorizontal: 8, paddingVertical: 4 }}>
+            <Text style={{ color: colors.white, fontSize: 10, fontWeight: "900" }} selectable>
+              Đã chọn
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ padding: 11, gap: 7 }}>
+        <Text numberOfLines={2} style={{ color: colors.textDark, fontSize: 15, fontWeight: "900", lineHeight: 19 }}>
+          {ingredient.name}
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <View style={{ borderRadius: 999, backgroundColor: "#EEF3EF", paddingHorizontal: 8, paddingVertical: 4 }}>
+            <Text style={{ color: colors.mutedDark, fontSize: 10, fontWeight: "900" }} selectable>
+              {ingredient.category || "Nguyên liệu"}
+            </Text>
+          </View>
+          <View style={{ borderRadius: 999, backgroundColor: colors.secondary, paddingHorizontal: 8, paddingVertical: 4 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 10, fontWeight: "900" }} selectable>
+              {getIngredientUnit(ingredient)}
+            </Text>
+          </View>
+        </View>
       </View>
     </Pressable>
   );

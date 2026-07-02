@@ -1,6 +1,8 @@
 import { authStorage } from "@/utils/authStorage";
+import { Platform } from "react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const ANDROID_API_BASE_URL = process.env.EXPO_PUBLIC_ANDROID_API_BASE_URL;
 
 export type ApiMessageResponse = {
   message: string;
@@ -59,6 +61,15 @@ function getApiBaseUrl() {
     }
   } catch {
     throw new ApiError("Nguồn dữ liệu chưa sẵn sàng.", 0);
+  }
+
+  if (Platform.OS === "android") {
+    const url = new URL(normalizedUrl);
+    const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+
+    if (isLocalhost) {
+      return ANDROID_API_BASE_URL?.replace(/\/+$/, "") || normalizedUrl.replace(url.host, `10.0.2.2${url.port ? `:${url.port}` : ""}`);
+    }
   }
 
   return normalizedUrl;

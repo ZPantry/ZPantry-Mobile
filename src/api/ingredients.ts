@@ -11,7 +11,7 @@ export type Ingredient = {
   proteinPerUnit: number;
   fatPerUnit: number;
   carbPerUnit: number;
-  imageUrl: string;
+  imageUrl: string | null;
 };
 
 export type IngredientPayload = Pick<Ingredient, "name" | "category" | "unit" | "caloriesPerUnit" | "proteinPerUnit" | "fatPerUnit" | "carbPerUnit" | "imageUrl">;
