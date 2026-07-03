@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
 import { colors } from "@/constants/colors";
 import type { PantryItem } from "@/types";
@@ -16,6 +16,17 @@ function statusCopy(status: PantryItem["status"]) {
   return "Còn tốt";
 }
 
+function locationCopy(location: PantryItem["location"]) {
+  if (location === "Ngan dong") return "Ngăn đông";
+  return "Tủ lạnh";
+}
+
+function statusIcon(status: PantryItem["status"]): keyof typeof Ionicons.glyphMap {
+  if (status === "safe") return "checkmark-circle";
+  if (status === "danger") return "alert-circle";
+  return "time";
+}
+
 export default function PantryItemCard({ item, onPress }: Props) {
   const color = statusColor(item.status);
   const imageUrl = normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL);
@@ -25,57 +36,50 @@ export default function PantryItemCard({ item, onPress }: Props) {
       onPress={onPress}
       style={({ pressed }) => ({
         backgroundColor: colors.white,
-        borderRadius: 16,
+        borderRadius: 12,
         borderCurve: "continuous",
-        overflow: "hidden",
+        padding: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
         borderWidth: 1,
-        borderColor: item.status === "safe" ? "rgba(255,255,255,0.42)" : `${color}66`,
-        boxShadow: "0 16px 30px rgba(0,0,0,0.24)",
-        opacity: pressed ? 0.9 : 1,
+        borderColor: item.status === "safe" ? "transparent" : `${color}4D`,
+        opacity: pressed ? 0.86 : 1,
         transform: [{ scale: pressed ? 0.99 : 1 }]
       })}
     >
-      <View style={{ height: 132, backgroundColor: colors.secondary }}>
-        <Image source={{ uri: imageUrl }} style={{ width: "100%", height: "100%" }} />
-        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 58, backgroundColor: "rgba(0,0,0,0.28)" }} />
+      <Image source={{ uri: imageUrl }} style={{ width: 58, height: 58, borderRadius: 14, backgroundColor: colors.secondary }} />
 
-        <View style={{ position: "absolute", left: 12, top: 12, borderRadius: 999, backgroundColor: `${color}E6`, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <MaterialCommunityIcons name={item.status === "safe" ? "check-circle" : "alert-circle"} size={15} color={colors.white} />
-          <Text style={{ color: colors.white, fontSize: 11, fontWeight: "900" }} selectable>
-            {statusCopy(item.status)}
+      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text numberOfLines={1} style={{ flex: 1, color: colors.textDark, fontSize: 16, lineHeight: 21, fontWeight: "900" }} selectable>
+            {item.name}
           </Text>
-        </View>
-
-        <View style={{ position: "absolute", right: 12, top: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.92)", alignItems: "center", justifyContent: "center" }}>
-          <MaterialCommunityIcons name={item.icon as never} size={20} color={colors.primaryDark} />
-        </View>
-      </View>
-
-      <View style={{ padding: 14, gap: 11 }}>
-        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text numberOfLines={2} style={{ color: colors.textDark, fontWeight: "900", fontSize: 18, lineHeight: 23 }} selectable>
-              {item.name}
-            </Text>
-            <Text style={{ color: colors.primaryDark, marginTop: 3, fontWeight: "900", fontSize: 13 }} selectable>
-              {item.quantity}
+          <View style={{ borderRadius: 999, backgroundColor: `${color}18`, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <Text style={{ color, fontSize: 10, fontWeight: "900" }} selectable>
+              {statusCopy(item.status)}
             </Text>
           </View>
-          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primaryDark} />
-          </View>
         </View>
 
-        <View style={{ borderRadius: 12, backgroundColor: "#F3F7F1", padding: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <MaterialCommunityIcons name="calendar-clock" size={18} color={color} />
-          <Text style={{ flex: 1, color: item.status === "danger" ? colors.danger : colors.mutedDark, fontWeight: "800", fontSize: 12, lineHeight: 17 }} selectable>
+        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, lineHeight: 17, fontWeight: "800" }} selectable>
+          {item.quantity} · {locationCopy(item.location)}
+        </Text>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Ionicons name={statusIcon(item.status)} size={14} color={color} />
+          <Text numberOfLines={1} style={{ flex: 1, color: item.status === "danger" ? colors.danger : colors.mutedDark, fontSize: 12, lineHeight: 17, fontWeight: "800" }} selectable>
             {item.expiryLabel}
           </Text>
         </View>
 
-        <View style={{ height: 8, borderRadius: 999, backgroundColor: "#E6EEE4", overflow: "hidden" }}>
+        <View style={{ height: 4, borderRadius: 999, backgroundColor: "#E6EEE4", overflow: "hidden", marginTop: 2 }}>
           <View style={{ width: `${item.progress}%`, height: "100%", borderRadius: 999, backgroundColor: color }} />
         </View>
+      </View>
+
+      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+        <MaterialCommunityIcons name="chevron-right" size={23} color={colors.primaryDark} />
       </View>
     </Pressable>
   );

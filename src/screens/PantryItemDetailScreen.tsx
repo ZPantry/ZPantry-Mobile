@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
@@ -12,6 +12,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { statusColor } from "@/utils/helpers";
+import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 function toInputDate(value: string) {
@@ -52,6 +53,16 @@ function pantryTone(expiredAt: string) {
   return "safe";
 }
 
+function iconForIngredient(category?: string): keyof typeof MaterialCommunityIcons.glyphMap {
+  const value = (category || "").toLowerCase();
+  if (value.includes("fish") || value.includes("cá")) return "fish";
+  if (value.includes("meat") || value.includes("thịt")) return "food-steak";
+  if (value.includes("fruit") || value.includes("trái")) return "fruit-cherries";
+  if (value.includes("grain") || value.includes("gạo")) return "rice";
+  if (value.includes("protein") || value.includes("trứng")) return "egg";
+  return "food-apple-outline";
+}
+
 export default function PantryItemDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -73,6 +84,11 @@ export default function PantryItemDetailScreen() {
   const toneColor = statusColor(tone);
 
   const title = ingredient?.name || item?.note || "Nguyên liệu";
+  const imageUrl = normalizeRemoteImageUrl(ingredient?.imageUrl || FALLBACK_FOOD_IMAGE_URL);
+  const category = ingredient?.category || "Nguyên liệu trong tủ";
+  const storageText = item ? displayStorageLocation(item.storageLocation) : "Ngăn mát";
+  const expiredDateText = item ? new Date(item.expiredAt).toLocaleDateString("vi-VN") : "";
+  const heroIcon = iconForIngredient(ingredient?.category);
 
   const validate = () => {
     const amount = Number(quantity.replace(",", "."));
@@ -163,61 +179,83 @@ export default function PantryItemDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <AppBackButton variant="icon" onPress={() => navigation.goBack()} />
-          <Pressable
-            onPress={() => setIsEditing((current) => !current)}
-            style={({ pressed }) => ({
-              minHeight: 44,
-              borderRadius: 22,
-              backgroundColor: isEditing ? colors.primary : colors.card,
-              borderWidth: 1,
-              borderColor: isEditing ? colors.primary : colors.line,
-              paddingHorizontal: 14,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              opacity: pressed ? 0.82 : 1
-            })}
-          >
-            <MaterialCommunityIcons name={isEditing ? "eye-outline" : "pencil-outline"} size={19} color={isEditing ? colors.textDark : colors.text} />
-            <Text style={{ color: isEditing ? colors.textDark : colors.text, fontSize: 13, fontWeight: "900" }} selectable>
-              {isEditing ? "Xem lại" : "Chỉnh sửa"}
-            </Text>
-          </Pressable>
-        </View>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 42 }}>
+        <View style={{ height: 312, backgroundColor: colors.surface }}>
+          <Image source={{ uri: imageUrl }} resizeMode="cover" style={{ width: "100%", height: "100%" }} />
+          <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,37,17,0.26)" }} />
+          <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 132, backgroundColor: "rgba(0,59,30,0.42)" }} />
 
-        <View style={{ backgroundColor: colors.white, borderRadius: 16, padding: 18, gap: 14, boxShadow: "0 14px 28px rgba(0,0,0,0.22)" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <View style={{ width: 62, height: 62, borderRadius: 18, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name={ingredient?.category?.toLowerCase().includes("meat") ? "food-steak" : "food-apple-outline"} size={33} color={colors.primaryDark} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textDark, fontSize: 26, fontWeight: "900", lineHeight: 31 }} selectable>
-                {title}
+          <View style={{ position: "absolute", left: 22, right: 22, top: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <AppBackButton variant="floating" onPress={() => navigation.goBack()} />
+            <Pressable
+              onPress={() => setIsEditing((current) => !current)}
+              style={({ pressed }) => ({
+                minHeight: 44,
+                borderRadius: 22,
+                backgroundColor: isEditing ? colors.primary : "rgba(255,255,255,0.18)",
+                borderWidth: 1,
+                borderColor: isEditing ? colors.primary : "rgba(255,255,255,0.48)",
+                paddingHorizontal: 15,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                opacity: pressed ? 0.82 : 1
+              })}
+            >
+              <MaterialCommunityIcons name={isEditing ? "eye-outline" : "pencil-outline"} size={19} color={isEditing ? colors.textDark : colors.white} />
+              <Text style={{ color: isEditing ? colors.textDark : colors.white, fontSize: 13, fontWeight: "900" }} selectable>
+                {isEditing ? "Xem lại" : "Chỉnh sửa"}
               </Text>
-              <Text style={{ color: colors.mutedDark, fontSize: 13, fontWeight: "800", marginTop: 2 }} selectable>
-                {ingredient?.category || "Nguyên liệu trong tủ"}
-              </Text>
-            </View>
+            </Pressable>
           </View>
 
-          <View style={{ borderRadius: 14, backgroundColor: `${toneColor}20`, padding: 14, flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={24} color={toneColor} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+          <View style={{ position: "absolute", left: 22, right: 22, bottom: 24, gap: 8 }}>
+            <View style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: `${toneColor}E6`, paddingHorizontal: 12, paddingVertical: 7, flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={16} color={colors.white} />
+              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "900" }} selectable>
                 {expiryCopy(item.expiredAt)}
               </Text>
-              <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", marginTop: 2 }} selectable>
-                Cập nhật hạn dùng để Z-Pantry ưu tiên gợi ý món phù hợp.
-              </Text>
             </View>
+            <Text numberOfLines={2} style={{ color: colors.white, fontSize: 34, lineHeight: 39, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.26)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }} selectable>
+              {title}
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "800" }} selectable>
+              {category} · {storageText}
+            </Text>
           </View>
         </View>
 
-        {isEditing ? (
-          <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+        <View style={{ paddingHorizontal: 22, marginTop: -22, gap: 18 }}>
+          <View style={{ backgroundColor: colors.white, borderRadius: 18, padding: 16, gap: 15, boxShadow: "0 16px 30px rgba(0,0,0,0.24)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <View style={{ width: 58, height: 58, borderRadius: 18, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name={heroIcon} size={32} color={colors.primaryDark} />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "900" }} selectable>
+                  {`${item.quantity} ${item.unit}`}
+                </Text>
+                <Text style={{ color: colors.mutedDark, fontSize: 13, lineHeight: 18, fontWeight: "800" }} selectable>
+                  Hạn dùng {expiredDateText} · {storageText}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ borderRadius: 14, backgroundColor: `${toneColor}18`, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={24} color={toneColor} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+                  {expiryCopy(item.expiredAt)}
+                </Text>
+                <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", marginTop: 2, lineHeight: 18 }} selectable>
+                  Cập nhật hạn dùng để Z-Pantry ưu tiên gợi ý món phù hợp.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {isEditing ? (
+            <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
             <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
               Cập nhật nguyên liệu
             </Text>
@@ -241,45 +279,46 @@ export default function PantryItemDetailScreen() {
               </View>
             </View>
             <FormInput label="Ghi chú" value={note} onChangeText={setNote} placeholder="Ví dụ: mua ở chợ sáng nay" multiline />
-          </View>
-        ) : (
-          <View style={{ gap: 12 }}>
+            </View>
+          ) : (
+            <View style={{ gap: 12 }}>
             <InfoRow icon="scale-balance" label="Số lượng" value={`${item.quantity} ${item.unit}`} />
-            <InfoRow icon="calendar-clock" label="Hạn dùng" value={new Date(item.expiredAt).toLocaleDateString("vi-VN")} />
-            <InfoRow icon="fridge-outline" label="Nơi cất" value={displayStorageLocation(item.storageLocation)} />
+            <InfoRow icon="calendar-clock" label="Hạn dùng" value={expiredDateText} />
+            <InfoRow icon="fridge-outline" label="Nơi cất" value={storageText} />
             <InfoRow icon="note-text-outline" label="Ghi chú" value={item.note || "Chưa có ghi chú"} />
-          </View>
-        )}
+            </View>
+          )}
 
-        {errorMessage ? (
-          <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
-            {errorMessage}
-          </Text>
-        ) : null}
-
-        <View style={{ gap: 10 }}>
-          {isEditing ? <PrimaryButton title={isSaving ? "Đang lưu..." : "Lưu thay đổi"} icon="content-save" onPress={updateItem} /> : null}
-          <Pressable
-            onPress={openDeleteConfirm}
-            disabled={isSaving}
-            style={({ pressed }) => ({
-              minHeight: 54,
-              borderRadius: 27,
-              backgroundColor: "rgba(255,77,79,0.16)",
-              borderWidth: 1,
-              borderColor: "rgba(255,77,79,0.48)",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 9,
-              opacity: pressed || isSaving ? 0.78 : 1
-            })}
-          >
-            <MaterialCommunityIcons name="trash-can-outline" size={22} color={colors.danger} />
-            <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "900" }} selectable>
-              Xóa khỏi tủ lạnh
+          {errorMessage ? (
+            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
+              {errorMessage}
             </Text>
-          </Pressable>
+          ) : null}
+
+          <View style={{ gap: 10 }}>
+            {isEditing ? <PrimaryButton title={isSaving ? "Đang lưu..." : "Lưu thay đổi"} icon="content-save" onPress={updateItem} /> : null}
+            <Pressable
+              onPress={openDeleteConfirm}
+              disabled={isSaving}
+              style={({ pressed }) => ({
+                minHeight: 54,
+                borderRadius: 27,
+                backgroundColor: "rgba(255,77,79,0.16)",
+                borderWidth: 1,
+                borderColor: "rgba(255,77,79,0.48)",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 9,
+                opacity: pressed || isSaving ? 0.78 : 1
+              })}
+            >
+              <MaterialCommunityIcons name="trash-can-outline" size={22} color={colors.danger} />
+              <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "900" }} selectable>
+                Xóa khỏi tủ lạnh
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
 

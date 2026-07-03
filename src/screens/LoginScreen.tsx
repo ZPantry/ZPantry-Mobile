@@ -5,7 +5,7 @@ import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
 import { colors } from "@/constants/colors";
@@ -36,7 +36,15 @@ export default function LoginScreen() {
   const [authMessage, setAuthMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const redirectUri = Platform.OS === "web" ? "http://localhost:8081" : "zpantry://auth";
+  const redirectUri = useMemo(() => {
+    const configuredUri = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim();
+    if (configuredUri) return configuredUri;
+
+    return AuthSession.makeRedirectUri({
+      scheme: "zpantry",
+      path: "auth"
+    });
+  }, []);
 
   const googleConfig = useMemo(
     () => ({
