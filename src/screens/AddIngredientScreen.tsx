@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
@@ -10,10 +10,9 @@ import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 
-const defaultImageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
 function toInputDate(date: Date) {
@@ -21,21 +20,18 @@ function toInputDate(date: Date) {
 }
 
 function normalizeStorageLocation(label: string) {
-  if (label === "Ngăn đông") return "Ngan dong";
-  if (label === "Kệ bếp") return "Ke bep";
-  return "Ngan mat";
+  if (label === "Kệ bếp") return "pantry";
+  return "fridge";
 }
 
 export default function AddIngredientScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
   const toast = useToast();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [pantryIngredientIds, setPantryIngredientIds] = useState<Set<string>>(new Set());
   const [selectedIngredientId, setSelectedIngredientId] = useState("");
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("Rau củ");
   const [quantity, setQuantity] = useState("1");
-  const [unit, setUnit] = useState("phần");
+  const [unit, setUnit] = useState("piece");
   const [expiredAt, setExpiredAt] = useState(toInputDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)));
   const [storageLocation, setStorageLocation] = useState(storageOptions[0]);
   const [note, setNote] = useState("");
@@ -48,11 +44,13 @@ export default function AddIngredientScreen() {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const page = await ingredientsApi.list(1, 100);
-      setIngredients(page.data);
+      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
+      setIngredients(ingredientPage.data);
+      setPantryIngredientIds(new Set(pantryItems.map((item) => item.ingredientId)));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Chưa tải được danh sách nguyên liệu.");
       setIngredients([]);
+      setPantryIngredientIds(new Set());
     } finally {
       setIsLoading(false);
     }
@@ -62,41 +60,48 @@ export default function AddIngredientScreen() {
     loadIngredients();
   }, [loadIngredients]);
 
+  const availableIngredients = useMemo(() => ingredients.filter((ingredient) => !pantryIngredientIds.has(ingredient.id)), [ingredients, pantryIngredientIds]);
+  const selectedIngredient = ingredients.find((ingredient) => ingredient.id === selectedIngredientId);
   const filteredIngredients = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
-    if (!keyword) return ingredients;
-    return ingredients.filter((ingredient) => ingredient.name.toLowerCase().includes(keyword) || ingredient.category.toLowerCase().includes(keyword));
-  }, [ingredients, searchText]);
+    if (!keyword) return availableIngredients;
+    return availableIngredients.filter((ingredient) => `${ingredient.name} ${ingredient.normalizedName} ${ingredient.category}`.toLowerCase().includes(keyword));
+  }, [availableIngredients, searchText]);
 
-  const selectedIngredient = ingredients.find((ingredient) => ingredient.id === selectedIngredientId);
-
-  const selectIngredient = (ingredient: Ingredient) => {
-    setSelectedIngredientId(ingredient.id);
-    setName(ingredient.name);
-    setCategory(ingredient.category);
-    setUnit(ingredient.unit);
+  const resetSelection = () => {
+    setSelectedIngredientId("");
+    setQuantity("1");
+    setUnit("piece");
+    setExpiredAt(toInputDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)));
+    setStorageLocation(storageOptions[0]);
+    setNote("");
   };
 
-  const saveIngredient = async () => {
-    if (!user?.userId) {
-      setErrorMessage("Bạn cần đăng nhập để thêm thực phẩm vào tủ.");
+  const selectIngredient = (ingredient: Ingredient) => {
+    if (selectedIngredientId === ingredient.id) {
+      resetSelection();
+      setErrorMessage("");
       return;
     }
 
-    const cleanName = name.trim();
-    const cleanUnit = unit.trim();
+    setSelectedIngredientId(ingredient.id);
+    setUnit(ingredient.defaultUnit || ingredient.unit || "piece");
+    setErrorMessage("");
+  };
+
+  const saveIngredient = async () => {
     const amount = Number(quantity.replace(",", "."));
 
-    if (!cleanName) {
-      setErrorMessage("Vui lòng nhập tên nguyên liệu.");
+    if (!selectedIngredient) {
+      setErrorMessage("Vui lòng chọn nguyên liệu có sẵn trong hệ thống.");
       return;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
       setErrorMessage("Số lượng cần lớn hơn 0.");
       return;
     }
-    if (!cleanUnit) {
-      setErrorMessage("Vui lòng nhập đơn vị, ví dụ: quả, gram, hộp.");
+    if (!unit.trim()) {
+      setErrorMessage("Vui lòng nhập đơn vị, ví dụ: g, cái, trái, hộp.");
       return;
     }
     if (Number.isNaN(new Date(expiredAt).getTime())) {
@@ -107,40 +112,19 @@ export default function AddIngredientScreen() {
     setIsSaving(true);
     setErrorMessage("");
     try {
-      const ingredient =
-        selectedIngredient && selectedIngredient.name === cleanName
-          ? selectedIngredient
-          : await ingredientsApi.create({
-              name: cleanName,
-              category: category.trim() || "Khác",
-              unit: cleanUnit,
-              caloriesPerUnit: 0,
-              proteinPerUnit: 0,
-              fatPerUnit: 0,
-              carbPerUnit: 0,
-              imageUrl: defaultImageUrl
-            });
-
-      await pantryApi.saveItem(user.userId, {
-        ingredientId: ingredient.id,
+      await pantryApi.saveItem({
+        ingredientId: selectedIngredient.id,
         quantity: amount,
-        unit: cleanUnit,
-        expiredAt: new Date(expiredAt).toISOString(),
+        unit: unit.trim(),
+        expiredAt,
         storageLocation: normalizeStorageLocation(storageLocation),
         note: note.trim()
       });
 
-      toast.show(`Đã thêm ${ingredient.name} vào tủ lạnh.`);
-      setSelectedIngredientId("");
-      setName("");
-      setCategory("Rau củ");
-      setQuantity("1");
-      setUnit("phần");
-      setExpiredAt(toInputDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)));
-      setNote("");
-      await loadIngredients();
+      toast.show(`Đã lưu ${selectedIngredient.name} vào tủ.`);
+      navigation.goBack();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa thêm được nguyên liệu.");
+      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được nguyên liệu vào tủ.");
     } finally {
       setIsSaving(false);
     }
@@ -154,36 +138,63 @@ export default function AddIngredientScreen() {
         contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
-            Thêm nguyên liệu
-          </Text>
+          <View>
+            <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
+              Thêm vào tủ
+            </Text>
+            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900", marginTop: 3 }} selectable>
+              {filteredIngredients.length} nguyên liệu chưa có trong tủ
+            </Text>
+          </View>
           <PrimaryButton title="" icon="close" variant="soft" onPress={() => navigation.goBack()} style={{ width: 48, minHeight: 48, paddingHorizontal: 0 }} />
         </View>
 
         <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Thêm vào tủ của bạn
+            Chọn nguyên liệu có sẵn
           </Text>
-          <FormInput label="Tên nguyên liệu" value={name} onChangeText={(value) => {
-            setName(value);
-            setSelectedIngredientId("");
-          }} placeholder="Ví dụ: Trứng gà" />
+          <SearchBar placeholder="Tìm nguyên liệu chưa có trong tủ" value={searchText} onChangeText={setSearchText} />
+          {filteredIngredients.length === 0 ? (
+            <EmptyState icon="check-circle-outline" text={availableIngredients.length === 0 ? "Tất cả nguyên liệu hệ thống đã có trong tủ của bạn." : "Không có nguyên liệu phù hợp với từ khóa này."} />
+          ) : (
+            <View style={{ gap: 10 }}>
+              {filteredIngredients.map((item) => (
+                <IngredientRow key={item.id} ingredient={item} selected={item.id === selectedIngredientId} onPress={() => selectIngredient(item)} />
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+            Thông tin lưu trữ
+          </Text>
+
+          {selectedIngredient ? (
+            <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: colors.white, borderRadius: 14, padding: 12 }}>
+              <Image source={{ uri: normalizeRemoteImageUrl(selectedIngredient.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 58, height: 58, borderRadius: 14, backgroundColor: colors.secondary }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "900" }} selectable>
+                  {selectedIngredient.name}
+                </Text>
+                <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800", marginTop: 2 }} selectable>
+                  {selectedIngredient.category || "Nguyên liệu hệ thống"}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
               <FormInput label="Số lượng" value={quantity} onChangeText={setQuantity} placeholder="1" keyboardType="decimal-pad" />
             </View>
             <View style={{ flex: 1 }}>
-              <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="quả" />
+              <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="g" />
             </View>
           </View>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <FormInput label="Nhóm" value={category} onChangeText={setCategory} placeholder="Rau củ" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <FormInput label="Hạn dùng" value={expiredAt} onChangeText={setExpiredAt} placeholder="2026-07-05" />
-            </View>
-          </View>
+
+          <FormInput label="Hạn dùng" value={expiredAt} onChangeText={setExpiredAt} placeholder="2026-07-05" />
+
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
               Nơi cất
@@ -194,62 +205,53 @@ export default function AddIngredientScreen() {
               ))}
             </View>
           </View>
+
           <FormInput label="Ghi chú" value={note} onChangeText={setNote} placeholder="Ví dụ: mua ở chợ sáng nay" multiline />
 
           {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
               {errorMessage}
             </Text>
           ) : null}
 
-          <PrimaryButton title={isSaving ? "Đang lưu..." : "Lưu vào tủ"} icon="content-save" onPress={saveIngredient} />
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Chọn nhanh từ nguyên liệu có sẵn
-          </Text>
-          <SearchBar placeholder="Tìm nguyên liệu" value={searchText} onChangeText={setSearchText} />
-          {filteredIngredients.length === 0 ? (
-            <EmptyState icon="food-apple-outline" text="Chưa có nguyên liệu phù hợp. Bạn có thể nhập mới ở form phía trên." />
-          ) : (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {filteredIngredients.map((item) => (
-                <CategoryChip key={item.id} label={`${item.name} · ${item.unit}`} active={item.id === selectedIngredientId} icon="food-apple-outline" onPress={() => selectIngredient(item)} />
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Dinh dưỡng tham khảo
-          </Text>
-          {ingredients.length === 0 ? (
-            <EmptyState icon="chart-donut" text="Chưa có dữ liệu dinh dưỡng để hiển thị." />
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-              {ingredients.slice(0, 8).map((ingredient) => (
-                <Pressable key={ingredient.id} onPress={() => selectIngredient(ingredient)} style={{ width: 148, backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: ingredient.id === selectedIngredientId ? colors.primary : colors.line, overflow: "hidden" }}>
-                  <Image source={{ uri: ingredient.imageUrl || defaultImageUrl }} style={{ width: "100%", height: 82, backgroundColor: colors.surface }} />
-                  <View style={{ padding: 11, gap: 5 }}>
-                    <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: "900" }}>
-                      {ingredient.name}
-                    </Text>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }} selectable>
-                      {ingredient.caloriesPerUnit} kcal / {ingredient.unit}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }} selectable>
-                      Đạm {ingredient.proteinPerUnit}g · Bột {ingredient.carbPerUnit}g · Béo {ingredient.fatPerUnit}g
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          )}
+          <PrimaryButton title={isSaving ? "Đang lưu..." : "Xác nhận lưu vào tủ"} icon="content-save" onPress={saveIngredient} />
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function IngredientRow({ ingredient, selected, onPress }: { ingredient: Ingredient; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        minHeight: 78,
+        borderRadius: 14,
+        backgroundColor: colors.white,
+        borderWidth: 2,
+        borderColor: selected ? colors.primary : "transparent",
+        padding: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        opacity: pressed ? 0.86 : 1,
+        boxShadow: selected ? "0 10px 22px rgba(244,162,28,0.22)" : "0 8px 18px rgba(0,0,0,0.14)"
+      })}
+    >
+      <Image source={{ uri: normalizeRemoteImageUrl(ingredient.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 58, height: 58, borderRadius: 12, backgroundColor: colors.secondary }} />
+      <View style={{ flex: 1 }}>
+        <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+          {ingredient.name}
+        </Text>
+        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800", marginTop: 4 }} selectable>
+          {ingredient.category || "Nguyên liệu"} · {ingredient.defaultUnit || ingredient.unit || "piece"}
+        </Text>
+      </View>
+      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: selected ? colors.primary : colors.secondary, alignItems: "center", justifyContent: "center" }}>
+        <MaterialCommunityIcons name={selected ? "check" : "plus"} size={19} color={selected ? colors.white : colors.primaryDark} />
+      </View>
+    </Pressable>
   );
 }
 

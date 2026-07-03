@@ -159,13 +159,15 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const { auth = false, headers, ...fetchOptions } = options;
   const token = auth ? await authStorage.getAccessToken() : null;
   const url = `${getApiBaseUrl()}${path}`;
+  const requestBody = fetchOptions.body;
+  const isFormData = typeof FormData !== "undefined" && requestBody instanceof FormData;
 
   let response: Response;
   try {
     response = await fetch(url, {
       ...fetchOptions,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers
       }

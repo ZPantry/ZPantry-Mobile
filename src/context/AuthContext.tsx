@@ -55,8 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       },
       async signOut() {
-        await logoutStoredSession();
         setUser(null);
+        try {
+          await logoutStoredSession();
+        } catch {
+          await authStorage.clearSession();
+        }
       }
     }),
     [isLoading, user]

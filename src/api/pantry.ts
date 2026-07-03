@@ -1,9 +1,9 @@
-import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
+import { apiRequest, type ApiMessageResponse } from "@/api/client";
 
 export type PantryApiItem = {
   id: string;
-  userId: string;
   ingredientId: string;
+  ingredientName?: string;
   quantity: number;
   unit: string;
   expiredAt: string;
@@ -13,29 +13,55 @@ export type PantryApiItem = {
 
 export type PantryItemPayload = Pick<PantryApiItem, "ingredientId" | "quantity" | "unit" | "expiredAt" | "storageLocation" | "note">;
 
+type PantryListResponse = PantryApiItem[] | { data?: PantryApiItem[]; items?: PantryApiItem[] };
+
+function toUtcIsoDate(value: string) {
+  const trimmed = value.trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? new Date(`${trimmed}T00:00:00.000Z`) : new Date(trimmed);
+
+  if (Number.isNaN(date.getTime())) {
+    return trimmed;
+  }
+
+  return date.toISOString();
+}
+
+function normalizePayload(payload: PantryItemPayload): PantryItemPayload {
+  return {
+    ...payload,
+    expiredAt: toUtcIsoDate(payload.expiredAt)
+  };
+}
+
+function normalizePantryItems(response: PantryListResponse) {
+  if (Array.isArray(response)) return response;
+  return response.data || response.items || [];
+}
+
 export const pantryApi = {
-  list(userId: string, pageIndex = 1, pageSize = 50) {
-    return apiRequest<PaginatedResponse<PantryApiItem>>(`/api/users/${userId}/pantry?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+  async list(pageIndex = 1, pageSize = 50) {
+    const response = await apiRequest<PantryListResponse>(`/api/me/pantry?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+    return normalizePantryItems(response);
   },
 
-  saveItem(userId: string, payload: PantryItemPayload) {
-    return apiRequest<PantryApiItem>(`/api/users/${userId}/pantry/items`, {
+  saveItem(payload: PantryItemPayload) {
+    return apiRequest<PantryApiItem>("/api/me/pantry/items", {
       method: "POST",
       auth: true,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(normalizePayload(payload))
     });
   },
 
-  updateItem(userId: string, itemId: string, payload: PantryItemPayload) {
-    return apiRequest<PantryApiItem>(`/api/users/${userId}/pantry/items/${itemId}`, {
+  updateItem(itemId: string, payload: PantryItemPayload) {
+    return apiRequest<PantryApiItem>(`/api/me/pantry/items/${itemId}`, {
       method: "PUT",
       auth: true,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(normalizePayload(payload))
     });
   },
 
-  removeItem(userId: string, itemId: string) {
-    return apiRequest<ApiMessageResponse>(`/api/users/${userId}/pantry/items/${itemId}`, {
+  removeItem(itemId: string) {
+    return apiRequest<ApiMessageResponse>(`/api/me/pantry/items/${itemId}`, {
       method: "DELETE",
       auth: true
     });

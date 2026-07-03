@@ -9,13 +9,10 @@ import { pantryApi } from "@/api/pantry";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { statusColor } from "@/utils/helpers";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function toInputDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
@@ -54,14 +51,9 @@ function pantryTone(expiredAt: string) {
   return "safe";
 }
 
-function isUuid(value?: string) {
-  return Boolean(value && uuidPattern.test(value));
-}
-
 export default function PantryItemDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { user } = useAuth();
   const toast = useToast();
   const initialItem = route.params?.pantryItem as PantryApiItem | undefined;
   const ingredient = route.params?.ingredient as Ingredient | undefined;
@@ -83,9 +75,7 @@ export default function PantryItemDetailScreen() {
 
   const validate = () => {
     const amount = Number(quantity.replace(",", "."));
-    if (!user?.userId) return "Bạn cần đăng nhập để cập nhật tủ lạnh.";
     if (!item?.id || !item.ingredientId) return "Không tìm thấy nguyên liệu cần cập nhật.";
-    if (!isUuid(user.userId) || !isUuid(item.id)) return "userId hoặc itemId không đúng định dạng UUID.";
     if (!Number.isFinite(amount) || amount <= 0) return "Số lượng phải lớn hơn 0.";
     if (!unit.trim()) return "Đơn vị không được để trống.";
     if (Number.isNaN(new Date(expiredAt).getTime())) return "Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.";
@@ -110,7 +100,7 @@ export default function PantryItemDetailScreen() {
         storageLocation: normalizeStorageLocation(storageLocation),
         note: note.trim()
       };
-      const updated = await pantryApi.updateItem(user!.userId, item!.id, payload);
+      const updated = await pantryApi.updateItem(item!.id, payload);
       setItem(updated);
       setIsEditing(false);
       toast.show(`Đã cập nhật ${title}.`);
@@ -122,12 +112,8 @@ export default function PantryItemDetailScreen() {
   };
 
   const openDeleteConfirm = () => {
-    if (!user?.userId || !item?.id) {
-      setErrorMessage("Thiếu userId hoặc itemId nên chưa thể xóa nguyên liệu.");
-      return;
-    }
-    if (!isUuid(user.userId) || !isUuid(item.id)) {
-      setErrorMessage("userId hoặc itemId không đúng định dạng UUID nên API xóa sẽ không chấp nhận.");
+    if (!item?.id) {
+      setErrorMessage("Thiếu itemId nên chưa thể xóa nguyên liệu.");
       return;
     }
 
@@ -136,13 +122,8 @@ export default function PantryItemDetailScreen() {
   };
 
   const confirmDeleteItem = async () => {
-    if (!user?.userId || !item?.id) {
-      setErrorMessage("Thiếu userId hoặc itemId nên chưa thể xóa nguyên liệu.");
-      setIsConfirmingDelete(false);
-      return;
-    }
-    if (!isUuid(user.userId) || !isUuid(item.id)) {
-      setErrorMessage("userId hoặc itemId không đúng định dạng UUID nên API xóa sẽ không chấp nhận.");
+    if (!item?.id) {
+      setErrorMessage("Thiếu itemId nên chưa thể xóa nguyên liệu.");
       setIsConfirmingDelete(false);
       return;
     }
@@ -150,7 +131,7 @@ export default function PantryItemDetailScreen() {
     setIsSaving(true);
     setErrorMessage("");
     try {
-      await pantryApi.removeItem(user.userId, item.id);
+      await pantryApi.removeItem(item.id);
       setIsConfirmingDelete(false);
       toast.show(`Đã xóa ${title} khỏi tủ lạnh.`);
       navigation.goBack();
