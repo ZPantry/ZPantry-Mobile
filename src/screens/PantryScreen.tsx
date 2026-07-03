@@ -14,7 +14,7 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { PantryItem, PantryStatus } from "@/types";
 
-const pantryCategories = ["Ngăn mát", "Ngăn đông", "Kệ bếp", "Thêm thực phẩm"];
+const pantryCategories = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
 type PantryListItem = PantryItem & {
   apiItem: PantryApiItem;
@@ -23,7 +23,7 @@ type PantryListItem = PantryItem & {
 
 function normalizeLocation(location: string): PantryItem["location"] {
   const lower = location.toLowerCase();
-  if (lower.includes("đông") || lower.includes("dong")) return "Ngan dong";
+  if (lower.includes("đông") || lower.includes("dong") || lower.includes("freeze")) return "Ngan dong";
   return "Ngan mat";
 }
 
@@ -60,12 +60,13 @@ function iconForCategory(category?: string) {
 function mapPantryItem(item: PantryApiItem, ingredient?: Ingredient): PantryListItem {
   return {
     id: item.id,
-    name: ingredient?.name || item.note || "Thực phẩm",
+    name: ingredient?.name || item.ingredientName || item.note || "Thực phẩm",
     quantity: `${item.quantity} ${item.unit}`,
     location: normalizeLocation(item.storageLocation),
     expiryLabel: expiryLabel(item.expiredAt),
     status: statusFromDate(item.expiredAt),
     icon: iconForCategory(ingredient?.category),
+    imageUrl: ingredient?.imageUrl,
     progress: progressFromDate(item.expiredAt),
     apiItem: item,
     ingredient
@@ -82,24 +83,19 @@ export default function PantryScreen() {
   const displayName = user?.fullName || "bạn";
 
   const loadPantry = useCallback(async () => {
-    if (!user?.userId) {
-      setItems([]);
-      return;
-    }
-
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [ingredientPage, pantryPage] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list(user.userId, 1, 100)]);
+      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
       const ingredientById = new Map(ingredientPage.data.map((ingredient) => [ingredient.id, ingredient]));
-      setItems(pantryPage.data.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
+      setItems(pantryItems.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Chưa tải được tủ lạnh.");
       setItems([]);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.userId]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -147,15 +143,40 @@ export default function PantryScreen() {
         {errorMessage ? <ExpiryAlertCard title={errorMessage} tone="danger" /> : null}
         {expiringItem ? <ExpiryAlertCard title={`${expiringItem.name} ${expiringItem.expiryLabel.toLowerCase()}. Ưu tiên dùng sớm để tránh lãng phí.`} tone={expiringItem.status === "danger" ? "danger" : "warning"} /> : null}
 
+        <Pressable
+          onPress={() => navigation.navigate("AddIngredient")}
+          style={({ pressed }) => ({
+            minHeight: 76,
+            borderRadius: 22,
+            backgroundColor: colors.primary,
+            borderWidth: 1,
+            borderColor: colors.secondary,
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 10,
+            gap: 14,
+            boxShadow: "0 16px 30px rgba(244,162,28,0.30)",
+            opacity: pressed ? 0.86 : 1,
+            transform: [{ scale: pressed ? 0.99 : 1 }]
+          })}
+        >
+          <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.24)", alignItems: "center", justifyContent: "center" }}>
+            <MaterialCommunityIcons name="plus" size={30} color={colors.white} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.white, fontSize: 20, fontWeight: "900" }} selectable>
+              Thêm thực phẩm
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "800", marginTop: 3 }} selectable>
+              Chọn nguyên liệu chưa có trong tủ
+            </Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={26} color={colors.white} />
+        </Pressable>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
           {pantryCategories.map((category) => (
-            <CategoryChip
-              key={category}
-              label={category}
-              active={active === category}
-              icon={category === "Ngăn đông" ? "snowflake" : category === "Thêm thực phẩm" ? "plus" : "fridge-outline"}
-              onPress={() => (category === "Thêm thực phẩm" ? navigation.navigate("AddIngredient") : setActive(category))}
-            />
+            <CategoryChip key={category} label={category} active={active === category} icon={category === "Ngăn đông" ? "snowflake" : "fridge-outline"} onPress={() => setActive(category)} />
           ))}
         </ScrollView>
 
@@ -195,29 +216,6 @@ export default function PantryScreen() {
             ))
           )}
         </View>
-
-        <Pressable
-          onPress={() => navigation.navigate("AddIngredient")}
-          style={({ pressed }) => ({
-            minHeight: 64,
-            borderRadius: 32,
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: colors.line,
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 6,
-            gap: 16,
-            opacity: pressed ? 0.82 : 1
-          })}
-        >
-          <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="plus" size={30} color={colors.white} />
-          </View>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Thêm thực phẩm
-          </Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

@@ -9,9 +9,11 @@ import { useAuth } from "@/context/AuthContext";
 import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
 import AdminManagementScreen from "@/screens/AdminManagementScreen";
 import AdminRecipeFormScreen from "@/screens/AdminRecipeFormScreen";
+import AdminUserFormScreen from "@/screens/AdminUserFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
@@ -204,10 +206,20 @@ function Tabs() {
 export default function AppNavigator() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
+  const hasBeenAuthenticated = useRef(false);
   const isAdmin = ["admin", "administrator"].includes((user?.role ?? "").toLowerCase());
 
   useEffect(() => {
     if (isLoading) return;
+
+    if (isAuthenticated) {
+      hasBeenAuthenticated.current = true;
+    }
+
+    if (!isAuthenticated && hasBeenAuthenticated.current) {
+      setIntroStage("ready");
+      return;
+    }
 
     const timer = setTimeout(() => {
       setIntroStage(isAuthenticated ? "ready" : "onboarding");
@@ -225,10 +237,11 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
+          <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />
           <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
           <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
         </>
@@ -237,6 +250,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
+          <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
         </>
       ) : (

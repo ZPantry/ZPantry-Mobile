@@ -58,12 +58,12 @@ export default function HomeScreen() {
     try {
       const recipePagePromise = recipesApi.list(1, 10);
       const ingredientPagePromise = ingredientsApi.list(1, 100);
-      const pantryPagePromise = user?.userId ? pantryApi.list(user.userId, 1, 100) : Promise.resolve({ data: [] } as { data: PantryApiItem[] });
-      const [recipePage, ingredientPage, pantryPage] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPagePromise]);
+      const pantryPromise = pantryApi.list();
+      const [recipePage, ingredientPage, pantryItems] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPromise]);
 
       setRecipes(recipePage.data.map(recipeToMeal));
       setIngredients(ingredientPage.data);
-      setPantryItems(pantryPage.data);
+      setPantryItems(pantryItems);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Chưa tải được dữ liệu hôm nay.");
       setRecipes([]);
@@ -72,7 +72,7 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.userId]);
+  }, []);
 
   useEffect(() => {
     loadHome();

@@ -21,6 +21,14 @@
       "expo-status-bar",
       "expo-web-browser",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Z-Pantry cần quyền truy cập thư viện ảnh để tải ảnh công thức và nguyên liệu.",
+          "cameraPermission": "Z-Pantry cần quyền camera để chụp ảnh công thức và nguyên liệu.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "react-native-fbsdk-next",
         {
           "appID": "1506339687638007",

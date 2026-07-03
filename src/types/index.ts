@@ -1,7 +1,9 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
+import type { MealRecommendation } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
+import type { AdminUser } from "@/api/users";
 
 export type PantryStatus = "safe" | "warning" | "danger";
 
@@ -26,6 +28,7 @@ export type PantryItem = {
   expiryLabel: string;
   status: PantryStatus;
   icon: string;
+  imageUrl?: string | null;
   progress: number;
 };
 
@@ -56,11 +59,24 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
-  AdminManagement: { initialTab?: "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
+  AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
+  AdminUserForm: { user: AdminUser };
   AdminRecipeForm: { recipe?: Recipe } | undefined;
   AdminIngredientForm: { ingredient?: Ingredient } | undefined;
   AddIngredient: undefined;
   PantryItemDetail: { pantryItem: PantryApiItem; ingredient?: Ingredient };
+  MealRecommendationResults: {
+    recommendations: MealRecommendation[];
+    pantryItems: Array<{
+      id: string;
+      ingredientId: string;
+      name: string;
+      quantity: number;
+      unit: string;
+      imageUrl?: string | null;
+      source?: "pantry" | "extra";
+    }>;
+  };
   RecipeDetail: { mealId: string };
 };
 

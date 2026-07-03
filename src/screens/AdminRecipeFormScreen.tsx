@@ -5,11 +5,12 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View 
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
-import type { Recipe, RecipeIngredientPayload, RecipePayload } from "@/api/recipes";
+import type { Recipe, RecipeIngredientPayload, RecipePayload, UploadFile } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { pickUploadImage } from "@/utils/pickUploadImage";
 
 type RecipeFormState = {
   id: string;
@@ -20,7 +21,11 @@ type RecipeFormState = {
   servingSize: string;
   instructionText: string;
   imageUrl: string;
+  imageFile: UploadFile | null;
+  localImageUri: string;
   sourceType: string;
+  gradientFrom: string;
+  gradientTo: string;
   ingredients: RecipeIngredientPayload[];
 };
 
@@ -33,7 +38,11 @@ const emptyRecipeForm: RecipeFormState = {
   servingSize: "1",
   instructionText: "",
   imageUrl: "",
+  imageFile: null,
+  localImageUri: "",
   sourceType: "Manual",
+  gradientFrom: "#F4A21C",
+  gradientTo: "#39D98A",
   ingredients: []
 };
 
@@ -57,8 +66,18 @@ function buildRecipeForm(recipe?: Recipe): RecipeFormState {
     servingSize: String(recipe.servingSize || 1),
     instructionText: recipe.instructionText || "",
     imageUrl: recipe.imageUrl || "",
+    imageFile: null,
+    localImageUri: "",
     sourceType: recipe.sourceType || "Manual",
-    ingredients: []
+    gradientFrom: recipe.gradientFrom || "#F4A21C",
+    gradientTo: recipe.gradientTo || "#39D98A",
+    ingredients: (recipe.ingredients || []).map((item) => ({
+      ingredientId: item.ingredientId,
+      quantity: item.quantity,
+      unit: item.unit,
+      isRequired: item.isRequired,
+      note: item.note || ""
+    }))
   };
 }
 
@@ -131,6 +150,16 @@ export default function AdminRecipeFormScreen() {
     }));
   };
 
+  const chooseImage = async () => {
+    try {
+      const picked = await pickUploadImage("recipe");
+      if (!picked) return;
+      setForm((current) => ({ ...current, imageFile: picked.file, localImageUri: picked.uri }));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Chưa chọn được ảnh.");
+    }
+  };
+
   const saveRecipe = async () => {
     const cleanName = form.name.trim();
     if (!cleanName) {
@@ -151,6 +180,9 @@ export default function AdminRecipeFormScreen() {
       instructionText: form.instructionText.trim(),
       imageUrl: form.imageUrl.trim(),
       sourceType: form.sourceType.trim() || "Manual",
+      gradientFrom: form.gradientFrom.trim(),
+      gradientTo: form.gradientTo.trim(),
+      imageFile: form.imageFile,
       ingredients: form.ingredients.map((item) => ({
         ...item,
         quantity: Number(item.quantity) || 0,
@@ -184,7 +216,13 @@ export default function AdminRecipeFormScreen() {
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
 
-        <RemoteImage uri={form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
+        <RemoteImage uri={form.localImageUri || form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
+        <Pressable onPress={chooseImage} style={({ pressed }) => ({ minHeight: 46, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.78 : 1 })}>
+          <MaterialCommunityIcons name="image-plus" size={20} color={colors.primary} />
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable>
+            {form.localImageUri ? "Đổi ảnh upload" : "Chọn ảnh upload"}
+          </Text>
+        </Pressable>
 
         <FormInput label="Tên công thức" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} placeholder="Ví dụ: Đậu hũ sốt cà chua" />
         <FormInput label="Mô tả" value={form.description} onChangeText={(description) => setForm((current) => ({ ...current, description }))} placeholder="Mô tả ngắn" multiline />
@@ -208,6 +246,14 @@ export default function AdminRecipeFormScreen() {
         </View>
 
         <FormInput label="Image URL" value={form.imageUrl} onChangeText={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} placeholder="https://..." />
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <FormInput label="Gradient From" value={form.gradientFrom} onChangeText={(gradientFrom) => setForm((current) => ({ ...current, gradientFrom }))} placeholder="#F4A21C" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
+          </View>
+        </View>
         <FormInput label="Cách nấu" value={form.instructionText} onChangeText={(instructionText) => setForm((current) => ({ ...current, instructionText }))} placeholder="Bước 1..." multiline />
 
         <View style={{ gap: 10 }}>

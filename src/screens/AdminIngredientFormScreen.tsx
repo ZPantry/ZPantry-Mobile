@@ -5,9 +5,11 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View 
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient, IngredientPayload } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
+import type { UploadFile } from "@/api/recipes";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { pickUploadImage } from "@/utils/pickUploadImage";
 
 type IngredientFormState = {
   id: string;
@@ -19,6 +21,10 @@ type IngredientFormState = {
   fatPerUnit: string;
   carbPerUnit: string;
   imageUrl: string;
+  imageFile: UploadFile | null;
+  localImageUri: string;
+  gradientFrom: string;
+  gradientTo: string;
 };
 
 const emptyIngredientForm: IngredientFormState = {
@@ -30,7 +36,11 @@ const emptyIngredientForm: IngredientFormState = {
   proteinPerUnit: "0",
   fatPerUnit: "0",
   carbPerUnit: "0",
-  imageUrl: ""
+  imageUrl: "",
+  imageFile: null,
+  localImageUri: "",
+  gradientFrom: "#F4A21C",
+  gradientTo: "#39D98A"
 };
 
 function toNumber(value: string) {
@@ -49,7 +59,11 @@ function buildIngredientForm(ingredient?: Ingredient): IngredientFormState {
     proteinPerUnit: String(ingredient.proteinPerUnit ?? 0),
     fatPerUnit: String(ingredient.fatPerUnit ?? 0),
     carbPerUnit: String(ingredient.carbPerUnit ?? 0),
-    imageUrl: ingredient.imageUrl || ""
+    imageUrl: ingredient.imageUrl || "",
+    imageFile: null,
+    localImageUri: "",
+    gradientFrom: ingredient.gradientFrom || "#F4A21C",
+    gradientTo: ingredient.gradientTo || "#39D98A"
   };
 }
 
@@ -61,6 +75,16 @@ export default function AdminIngredientFormScreen() {
   const [form, setForm] = useState<IngredientFormState>(() => buildIngredientForm(ingredient));
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const chooseImage = async () => {
+    try {
+      const picked = await pickUploadImage("ingredient");
+      if (!picked) return;
+      setForm((current) => ({ ...current, imageFile: picked.file, localImageUri: picked.uri }));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Chưa chọn được ảnh.");
+    }
+  };
 
   const saveIngredient = async () => {
     const cleanName = form.name.trim();
@@ -82,7 +106,10 @@ export default function AdminIngredientFormScreen() {
       proteinPerUnit: toNumber(form.proteinPerUnit),
       fatPerUnit: toNumber(form.fatPerUnit),
       carbPerUnit: toNumber(form.carbPerUnit),
-      imageUrl: form.imageUrl.trim()
+      imageUrl: form.imageUrl.trim(),
+      gradientFrom: form.gradientFrom.trim(),
+      gradientTo: form.gradientTo.trim(),
+      imageFile: form.imageFile
     };
 
     setIsSaving(true);
@@ -110,7 +137,13 @@ export default function AdminIngredientFormScreen() {
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
 
-        <RemoteImage uri={form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
+        <RemoteImage uri={form.localImageUri || form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
+        <Pressable onPress={chooseImage} style={({ pressed }) => ({ minHeight: 46, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.78 : 1 })}>
+          <MaterialCommunityIcons name="image-plus" size={20} color={colors.primary} />
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable>
+            {form.localImageUri ? "Đổi ảnh upload" : "Chọn ảnh upload"}
+          </Text>
+        </Pressable>
         <FormInput label="Tên nguyên liệu" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} placeholder="Ví dụ: Cà rốt" />
 
         <View style={{ flexDirection: "row", gap: 10 }}>
@@ -141,6 +174,14 @@ export default function AdminIngredientFormScreen() {
         </View>
 
         <FormInput label="Image URL" value={form.imageUrl} onChangeText={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} placeholder="https://..." />
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <FormInput label="Gradient From" value={form.gradientFrom} onChangeText={(gradientFrom) => setForm((current) => ({ ...current, gradientFrom }))} placeholder="#F4A21C" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
+          </View>
+        </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>

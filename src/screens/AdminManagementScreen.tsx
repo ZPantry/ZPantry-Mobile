@@ -1,56 +1,42 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Image, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Ingredient, IngredientPayload } from "@/api/ingredients";
+import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
-import type { Recipe, RecipeIngredientPayload, RecipePayload } from "@/api/recipes";
+import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
+import type { AdminUser } from "@/api/users";
+import { usersApi } from "@/api/users";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 
-type AdminTab = "recipes" | "ingredients";
+type AdminTab = "users" | "recipes" | "ingredients";
 type DeleteTarget = { type: AdminTab; id: string; name: string } | null;
 
-const emptyIngredientForm = {
-  id: "",
-  name: "",
-  category: "Vegetable",
-  unit: "g",
-  caloriesPerUnit: "0",
-  proteinPerUnit: "0",
-  fatPerUnit: "0",
-  carbPerUnit: "0",
-  imageUrl: ""
-};
-
-const emptyRecipeForm = {
-  id: "",
-  name: "",
-  description: "",
-  cookingTimeMinutes: "20",
-  difficulty: "Easy",
-  servingSize: "1",
-  instructionText: "",
-  imageUrl: "",
-  sourceType: "Manual",
-  ingredients: [] as RecipeIngredientPayload[]
-};
-
-function toNumber(value: string) {
-  const number = Number(value.replace(",", "."));
-  return Number.isFinite(number) ? number : 0;
-}
+const adminTabs: Array<{ key: AdminTab; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
+  { key: "users", label: "User", icon: "account-group-outline" },
+  { key: "recipes", label: "Công thức", icon: "notebook-outline" },
+  { key: "ingredients", label: "Nguyên liệu", icon: "food-apple-outline" }
+];
 
 function normalizeText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function imageUri(value?: string | null) {
-  return normalizeRemoteImageUrl(value);
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts.at(0)?.[0] || "U").toUpperCase() + (parts.at(-1)?.[0] || "").toUpperCase();
+}
+
+function formatDate(value?: string) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 export default function AdminManagementScreen() {
@@ -58,43 +44,43 @@ export default function AdminManagementScreen() {
   const route = useRoute<any>();
   const { signOut } = useAuth();
   const toast = useToast();
-  const initialTab: AdminTab = route.params?.initialTab === "ingredients" ? "ingredients" : "recipes";
-  const showBackButton = route.params?.showBackButton ?? true;
+  const initialTab: AdminTab = ["users", "recipes", "ingredients"].includes(route.params?.initialTab) ? route.params.initialTab : "users";
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [recipeForm, setRecipeForm] = useState(emptyRecipeForm);
-  const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
+  const [userSearch, setUserSearch] = useState("");
+  const [recipeSearch, setRecipeSearch] = useState("");
   const [ingredientSearch, setIngredientSearch] = useState("");
-  const [recipeListSearch, setRecipeListSearch] = useState("");
-  const [ingredientListSearch, setIngredientListSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
-  const ingredientById = useMemo(() => new Map(ingredients.map((item) => [item.id, item])), [ingredients]);
-  const filteredIngredients = useMemo(() => {
-    const keyword = ingredientSearch.trim().toLowerCase();
-    if (!keyword) return ingredients.slice(0, 12);
-    return ingredients.filter((item) => `${item.name} ${item.category} ${item.normalizedName}`.toLowerCase().includes(keyword)).slice(0, 12);
-  }, [ingredientSearch, ingredients]);
+  const displayedUsers = useMemo(() => {
+    const keyword = normalizeText(userSearch);
+    if (!keyword) return users;
+    return users.filter((user) => [user.fullName, user.email, user.role].some((value) => normalizeText(value || "").includes(keyword)));
+  }, [userSearch, users]);
+
   const displayedRecipes = useMemo(() => {
-    const keyword = normalizeText(recipeListSearch);
+    const keyword = normalizeText(recipeSearch);
     if (!keyword) return recipes;
     return recipes.filter((recipe) => [recipe.name, recipe.description, recipe.difficulty, recipe.sourceType].some((value) => normalizeText(value || "").includes(keyword)));
-  }, [recipeListSearch, recipes]);
+  }, [recipeSearch, recipes]);
+
   const displayedIngredients = useMemo(() => {
-    const keyword = normalizeText(ingredientListSearch);
+    const keyword = normalizeText(ingredientSearch);
     if (!keyword) return ingredients;
     return ingredients.filter((ingredient) => [ingredient.name, ingredient.normalizedName, ingredient.category, ingredient.unit].some((value) => normalizeText(value || "").includes(keyword)));
-  }, [ingredientListSearch, ingredients]);
+  }, [ingredientSearch, ingredients]);
 
   const loadAdminData = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [recipePage, ingredientPage] = await Promise.all([recipesApi.list(1, 100), ingredientsApi.list(1, 100)]);
+      const [userPage, recipePage, ingredientPage] = await Promise.all([usersApi.list(1, 100), recipesApi.list(1, 100), ingredientsApi.list(1, 100)]);
+      setUsers(userPage.data);
       setRecipes(recipePage.data);
       setIngredients(ingredientPage.data);
     } catch (error) {
@@ -114,145 +100,15 @@ export default function AdminManagementScreen() {
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  const openCreateRecipe = () => navigation.navigate("AdminRecipeForm");
-  const openCreateIngredient = () => navigation.navigate("AdminIngredientForm");
-  const resetRecipeForm = () => setRecipeForm(emptyRecipeForm);
-  const resetIngredientForm = () => setIngredientForm(emptyIngredientForm);
-
-  const editRecipe = (recipe: Recipe) => {
-    navigation.navigate("AdminRecipeForm", { recipe });
-  };
-
-  const editIngredient = (ingredient: Ingredient) => {
-    navigation.navigate("AdminIngredientForm", { ingredient });
-  };
-
-  const addRecipeIngredient = (ingredient: Ingredient) => {
-    if (recipeForm.ingredients.some((item) => item.ingredientId === ingredient.id)) return;
-    setRecipeForm((current) => ({
-      ...current,
-      ingredients: [
-        ...current.ingredients,
-        {
-          ingredientId: ingredient.id,
-          quantity: 1,
-          unit: ingredient.unit || "g",
-          isRequired: true,
-          note: ""
-        }
-      ]
-    }));
-  };
-
-  const updateRecipeIngredient = (index: number, patch: Partial<RecipeIngredientPayload>) => {
-    setRecipeForm((current) => ({
-      ...current,
-      ingredients: current.ingredients.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
-    }));
-  };
-
-  const removeRecipeIngredient = (index: number) => {
-    setRecipeForm((current) => ({
-      ...current,
-      ingredients: current.ingredients.filter((_, itemIndex) => itemIndex !== index)
-    }));
-  };
-
-  const saveIngredient = async () => {
-    const cleanName = ingredientForm.name.trim();
-    const cleanUnit = ingredientForm.unit.trim();
-    if (!cleanName) {
-      setErrorMessage("Vui lòng nhập tên nguyên liệu.");
-      return;
-    }
-    if (!cleanUnit) {
-      setErrorMessage("Vui lòng nhập đơn vị.");
-      return;
-    }
-
-    const payload: IngredientPayload = {
-      name: cleanName,
-      category: ingredientForm.category.trim() || "Other",
-      unit: cleanUnit,
-      caloriesPerUnit: toNumber(ingredientForm.caloriesPerUnit),
-      proteinPerUnit: toNumber(ingredientForm.proteinPerUnit),
-      fatPerUnit: toNumber(ingredientForm.fatPerUnit),
-      carbPerUnit: toNumber(ingredientForm.carbPerUnit),
-      imageUrl: ingredientForm.imageUrl.trim()
-    };
-
-    setIsSaving(true);
-    setErrorMessage("");
-    try {
-      if (ingredientForm.id) {
-        await ingredientsApi.update(ingredientForm.id, payload);
-        toast.show("Đã cập nhật nguyên liệu.");
-      } else {
-        await ingredientsApi.create(payload);
-        toast.show("Đã tạo nguyên liệu mới.");
-      }
-      resetIngredientForm();
-      await loadAdminData();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được nguyên liệu.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const saveRecipe = async () => {
-    const cleanName = recipeForm.name.trim();
-    if (!cleanName) {
-      setErrorMessage("Vui lòng nhập tên công thức.");
-      return;
-    }
-    if (recipeForm.ingredients.length === 0) {
-      setErrorMessage("Vui lòng thêm ít nhất một nguyên liệu vào công thức.");
-      return;
-    }
-
-    const payload: RecipePayload = {
-      name: cleanName,
-      description: recipeForm.description.trim(),
-      cookingTimeMinutes: toNumber(recipeForm.cookingTimeMinutes),
-      difficulty: recipeForm.difficulty.trim() || "Easy",
-      servingSize: toNumber(recipeForm.servingSize),
-      instructionText: recipeForm.instructionText.trim(),
-      imageUrl: recipeForm.imageUrl.trim(),
-      sourceType: recipeForm.sourceType.trim() || "Manual",
-      ingredients: recipeForm.ingredients.map((item) => ({
-        ...item,
-        quantity: Number(item.quantity) || 0,
-        unit: item.unit.trim(),
-        note: item.note.trim()
-      }))
-    };
-
-    setIsSaving(true);
-    setErrorMessage("");
-    try {
-      if (recipeForm.id) {
-        await recipesApi.update(recipeForm.id, payload);
-        toast.show("Đã cập nhật công thức.");
-      } else {
-        await recipesApi.create(payload);
-        toast.show("Đã tạo công thức mới.");
-      }
-      resetRecipeForm();
-      await loadAdminData();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được công thức.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setIsSaving(true);
     setErrorMessage("");
     try {
-      if (deleteTarget.type === "recipes") {
+      if (deleteTarget.type === "users") {
+        await usersApi.remove(deleteTarget.id);
+        toast.show("Đã xóa user.");
+      } else if (deleteTarget.type === "recipes") {
         await recipesApi.remove(deleteTarget.id);
         toast.show("Đã xóa công thức.");
       } else {
@@ -268,165 +124,223 @@ export default function AdminManagementScreen() {
     }
   };
 
+  const activeTitle = activeTab === "users" ? "Quản lý user" : activeTab === "recipes" ? "Quản lý công thức" : "Quản lý nguyên liệu";
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAdminData} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          {showBackButton ? (
-            <Pressable onPress={() => navigation.goBack()} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="chevron-back" size={25} color={colors.primary} />
-            </Pressable>
-          ) : (
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="shield-crown-outline" size={25} color={colors.textDark} />
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAdminData} tintColor={colors.primary} />}
+          contentContainerStyle={{ padding: 18, paddingBottom: 132, gap: 16 }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontSize: 25, fontWeight: "900" }} selectable>
+                {activeTitle}
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 2 }} selectable>
+                Dashboard dữ liệu cho admin Z-Pantry
+              </Text>
             </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.text, fontSize: 25, fontWeight: "900" }} selectable>
-              Quản trị dữ liệu
-            </Text>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 2 }} selectable>
-              Công thức, nguyên liệu và dữ liệu gợi ý món
-            </Text>
-          </View>
-          {showBackButton ? (
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="shield-crown-outline" size={25} color={colors.textDark} />
-            </View>
-          ) : (
             <Pressable onPress={signOut} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
               <MaterialCommunityIcons name="logout" size={24} color={colors.primary} />
             </Pressable>
-          )}
-        </View>
-
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <AdminTabButton label="Công thức" icon="notebook-outline" active={activeTab === "recipes"} onPress={() => setActiveTab("recipes")} />
-          <AdminTabButton label="Nguyên liệu" icon="food-apple-outline" active={activeTab === "ingredients"} onPress={() => setActiveTab("ingredients")} />
-        </View>
-
-        {errorMessage ? (
-          <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
-            <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
-              {errorMessage}
-            </Text>
           </View>
-        ) : null}
 
-        {activeTab === "recipes" ? (
-          <>
-            <MetricStrip leftLabel="Recipe" leftValue={recipes.length} rightLabel="Ingredient" rightValue={ingredients.length} />
-            <SectionTitle title="Danh sách công thức" actionLabel="Tạo mới" onAction={openCreateRecipe} />
-            <SearchBox value={recipeListSearch} onChangeText={setRecipeListSearch} placeholder="Tìm theo tên, mô tả, độ khó..." />
-            <View style={{ gap: 12 }}>
-              {isLoading ? (
-                <LoadingCard />
-              ) : displayedRecipes.length === 0 ? (
-                <EmptyState message="Không tìm thấy công thức phù hợp." />
-              ) : (
-                displayedRecipes.map((recipe) => <RecipeAdminCard key={recipe.id} recipe={recipe} onEdit={() => editRecipe(recipe)} onDelete={() => setDeleteTarget({ type: "recipes", id: recipe.id, name: recipe.name })} />)
-              )}
-            </View>
-          </>
-        ) : (
-          <>
-            <MetricStrip leftLabel="Ingredient" leftValue={ingredients.length} rightLabel="Recipe" rightValue={recipes.length} />
-            <SectionTitle title="Danh sách nguyên liệu" actionLabel="Tạo mới" onAction={openCreateIngredient} />
-            <SearchBox value={ingredientListSearch} onChangeText={setIngredientListSearch} placeholder="Tìm theo tên, nhóm, đơn vị..." />
-            <View style={{ gap: 12 }}>
-              {isLoading ? (
-                <LoadingCard />
-              ) : displayedIngredients.length === 0 ? (
-                <EmptyState message="Không tìm thấy nguyên liệu phù hợp." />
-              ) : (
-                displayedIngredients.map((ingredient) => <IngredientAdminCard key={ingredient.id} ingredient={ingredient} onEdit={() => editIngredient(ingredient)} onDelete={() => setDeleteTarget({ type: "ingredients", id: ingredient.id, name: ingredient.name })} />)
-              )}
-            </View>
-          </>
-        )}
-      </ScrollView>
+          <MetricStrip users={users.length} recipes={recipes.length} ingredients={ingredients.length} />
+
+          {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
+
+          {activeTab === "users" ? (
+            <>
+              <SectionTitle title="Danh sách user" />
+              <SearchBox value={userSearch} onChangeText={setUserSearch} placeholder="Tìm theo tên, email, role..." />
+              <View style={{ gap: 12 }}>
+                {isLoading ? (
+                  <LoadingCard />
+                ) : displayedUsers.length === 0 ? (
+                  <EmptyState message="Không tìm thấy user phù hợp." />
+                ) : (
+                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={() => navigation.navigate("AdminUserForm", { user })} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
+                )}
+              </View>
+            </>
+          ) : null}
+
+          {activeTab === "recipes" ? (
+            <>
+              <SectionTitle title="Danh sách công thức" actionLabel="Tạo mới" onAction={() => navigation.navigate("AdminRecipeForm")} />
+              <SearchBox value={recipeSearch} onChangeText={setRecipeSearch} placeholder="Tìm theo tên, mô tả, độ khó..." />
+              <View style={{ gap: 12 }}>
+                {isLoading ? (
+                  <LoadingCard />
+                ) : displayedRecipes.length === 0 ? (
+                  <EmptyState message="Không tìm thấy công thức phù hợp." />
+                ) : (
+                  displayedRecipes.map((recipe) => <RecipeAdminCard key={recipe.id} recipe={recipe} onEdit={() => navigation.navigate("AdminRecipeForm", { recipe })} onDelete={() => setDeleteTarget({ type: "recipes", id: recipe.id, name: recipe.name })} />)
+                )}
+              </View>
+            </>
+          ) : null}
+
+          {activeTab === "ingredients" ? (
+            <>
+              <SectionTitle title="Danh sách nguyên liệu" actionLabel="Tạo mới" onAction={() => navigation.navigate("AdminIngredientForm")} />
+              <SearchBox value={ingredientSearch} onChangeText={setIngredientSearch} placeholder="Tìm theo tên, nhóm, đơn vị..." />
+              <View style={{ gap: 12 }}>
+                {isLoading ? (
+                  <LoadingCard />
+                ) : displayedIngredients.length === 0 ? (
+                  <EmptyState message="Không tìm thấy nguyên liệu phù hợp." />
+                ) : (
+                  displayedIngredients.map((ingredient) => <IngredientAdminCard key={ingredient.id} ingredient={ingredient} onEdit={() => navigation.navigate("AdminIngredientForm", { ingredient })} onDelete={() => setDeleteTarget({ type: "ingredients", id: ingredient.id, name: ingredient.name })} />)
+                )}
+              </View>
+            </>
+          ) : null}
+        </ScrollView>
+        <AdminBottomBar activeTab={activeTab} onChange={setActiveTab} />
+      </View>
 
       <ConfirmDeleteModal target={deleteTarget} isSaving={isSaving} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
     </SafeAreaView>
   );
 }
 
-function AdminTabButton({ label, icon, active, onPress }: { label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; active: boolean; onPress: () => void }) {
+function AdminBottomBar({ activeTab, onChange }: { activeTab: AdminTab; onChange: (tab: AdminTab) => void }) {
+  const { width } = useWindowDimensions();
+  const progress = useRef(new Animated.Value(adminTabs.findIndex((item) => item.key === activeTab))).current;
+  const barHorizontalPadding = 8;
+  const tabWidth = useMemo(() => (width - 36 - barHorizontalPadding * 2) / adminTabs.length, [width]);
+
+  useEffect(() => {
+    Animated.spring(progress, {
+      toValue: adminTabs.findIndex((item) => item.key === activeTab),
+      useNativeDriver: true,
+      damping: 16,
+      stiffness: 170,
+      mass: 0.8
+    }).start();
+  }, [activeTab, progress]);
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        minHeight: 52,
-        borderRadius: 14,
-        backgroundColor: active ? colors.primary : colors.card,
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: "absolute",
+        left: 18,
+        right: 18,
+        bottom: 34,
+        height: 66,
+        borderRadius: 28,
+        borderCurve: "continuous",
+        backgroundColor: "rgba(255,255,255,0.30)",
         borderWidth: 1,
-        borderColor: active ? colors.primary : colors.line,
+        borderColor: "rgba(255,255,255,0.45)",
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        opacity: pressed ? 0.82 : 1
-      })}
+        paddingHorizontal: barHorizontalPadding,
+        boxShadow: "0 -8px 28px rgba(0,0,0,0.28)",
+        overflow: "visible"
+      }}
     >
-      <MaterialCommunityIcons name={icon} size={21} color={active ? colors.textDark : colors.text} />
-      <Text style={{ color: active ? colors.textDark : colors.text, fontSize: 14, fontWeight: "900" }} selectable>
-        {label}
-      </Text>
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: barHorizontalPadding,
+          top: 4,
+          width: tabWidth,
+          alignItems: "center",
+          transform: [{ translateX: Animated.multiply(progress, tabWidth) }]
+        }}
+      >
+        <View
+          style={{
+            width: 54,
+            height: 54,
+            borderRadius: 27,
+            backgroundColor: "rgba(244,162,28,0.22)",
+            borderWidth: 1,
+            borderColor: "rgba(244,162,28,0.86)",
+            boxShadow: "0 8px 22px rgba(244,162,28,0.34)"
+          }}
+        />
+      </Animated.View>
+      {adminTabs.map((item) => (
+        <AdminBottomTabButton key={item.key} item={item} active={activeTab === item.key} onPress={() => onChange(item.key)} />
+      ))}
+    </View>
+  );
+}
+
+function AdminBottomTabButton({ item, active, onPress }: { item: (typeof adminTabs)[number]; active: boolean; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: active ? 1 : 0,
+      useNativeDriver: true,
+      damping: 13,
+      stiffness: 180,
+      mass: 0.65
+    }).start();
+  }, [active, scale]);
+
+  const iconScale = scale.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  const labelOpacity = scale.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] });
+
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, height: 62, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.82 : 1 })}>
+      <Animated.View style={{ width: 52, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", transform: [{ scale: iconScale }] }}>
+        <MaterialCommunityIcons name={item.icon} size={24} color={active ? colors.primary : colors.text} />
+      </Animated.View>
+      <Animated.Text numberOfLines={1} style={{ marginTop: -3, color: active ? colors.primary : colors.text, fontSize: 10, fontWeight: "900", textAlign: "center", opacity: labelOpacity }}>
+        {item.label}
+      </Animated.Text>
     </Pressable>
   );
 }
 
-function MetricStrip({ leftLabel, leftValue, rightLabel, rightValue }: { leftLabel: string; leftValue: number; rightLabel: string; rightValue: number }) {
+function MetricStrip({ users, recipes, ingredients }: { users: number; recipes: number; ingredients: number }) {
   return (
-    <View style={{ flexDirection: "row", gap: 12 }}>
-      <MetricCard label={leftLabel} value={leftValue} icon="database-outline" />
-      <MetricCard label={rightLabel} value={rightValue} icon="chart-box-outline" alignRight />
+    <View style={{ flexDirection: "row", gap: 10 }}>
+      <MetricCard label="User" value={users} icon="account-group-outline" />
+      <MetricCard label="Recipe" value={recipes} icon="notebook-outline" />
+      <MetricCard label="Ingredient" value={ingredients} icon="food-apple-outline" />
     </View>
   );
 }
 
-function MetricCard({ label, value, icon, alignRight = false }: { label: string; value: number; icon: keyof typeof MaterialCommunityIcons.glyphMap; alignRight?: boolean }) {
+function MetricCard({ label, value, icon }: { label: string; value: number; icon: keyof typeof MaterialCommunityIcons.glyphMap }) {
   return (
-    <View style={{ flex: 1, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 7, alignItems: alignRight ? "flex-end" : "flex-start" }}>
-      <MaterialCommunityIcons name={icon} size={23} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 26, fontWeight: "900", fontVariant: ["tabular-nums"] }} selectable>
+    <View style={{ flex: 1, minWidth: 82, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 6 }}>
+      <MaterialCommunityIcons name={icon} size={21} color={colors.primary} />
+      <Text style={{ color: colors.text, fontSize: 23, fontWeight: "900", fontVariant: ["tabular-nums"] }} selectable>
         {value}
       </Text>
-      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }} selectable>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>
         {label}
       </Text>
     </View>
   );
 }
 
-function SectionTitle({ title, actionLabel, onAction }: { title: string; actionLabel: string; onAction: () => void }) {
+function SectionTitle({ title, actionLabel, onAction }: { title: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
         {title}
       </Text>
-      <Pressable onPress={onAction} style={({ pressed }) => ({ minHeight: 36, borderRadius: 18, backgroundColor: colors.primary, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.82 : 1 })}>
-        <MaterialCommunityIcons name="plus" size={18} color={colors.textDark} />
-        <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "900" }} selectable>
-          {actionLabel}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function LoadingCard() {
-  return (
-    <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 10 }}>
-      <ActivityIndicator color={colors.primary} />
-      <Text style={{ color: colors.text, fontWeight: "800" }} selectable>
-        Đang tải dữ liệu...
-      </Text>
+      {actionLabel && onAction ? (
+        <Pressable onPress={onAction} style={({ pressed }) => ({ minHeight: 36, borderRadius: 18, backgroundColor: colors.primary, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.82 : 1 })}>
+          <MaterialCommunityIcons name="plus" size={18} color={colors.textDark} />
+          <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "900" }} selectable>
+            {actionLabel}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -445,20 +359,40 @@ function SearchBox({ value, onChangeText, placeholder }: { value: string; onChan
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit: () => void; onDelete: () => void }) {
   return (
-    <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 8, padding: 16 }}>
-      <MaterialCommunityIcons name="database-search-outline" size={28} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "900", textAlign: "center" }} selectable>
-        {message}
-      </Text>
+    <View style={{ minHeight: 112, borderRadius: 14, backgroundColor: colors.white, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
+      {user.avatarUrl ? (
+        <Image source={{ uri: normalizeRemoteImageUrl(user.avatarUrl) }} style={{ width: 74, height: 74, borderRadius: 22, backgroundColor: colors.secondary }} />
+      ) : (
+        <View style={{ width: 74, height: 74, borderRadius: 22, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }} selectable>
+            {initials(user.fullName || user.email)}
+          </Text>
+        </View>
+      )}
+      <View style={{ flex: 1, gap: 5 }}>
+        <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+          {user.fullName || "Chưa có tên"}
+        </Text>
+        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800" }}>
+          {user.email}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap" }}>
+          <StatusPill text={user.role} tone={user.role === "admin" ? "admin" : "user"} />
+          <StatusPill text={user.isActive ? "Active" : "Inactive"} tone={user.isActive ? "active" : "inactive"} />
+          <StatusPill text={user.isEmailConfirmed ? "Verified" : "Unverified"} tone={user.isEmailConfirmed ? "active" : "inactive"} />
+        </View>
+        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }} selectable>
+          Tạo: {formatDate(user.createdAt)}
+        </Text>
+      </View>
+      <View style={{ gap: 8 }}>
+        <IconButton icon="pencil-outline" tone="edit" onPress={onEdit} />
+        <IconButton icon="trash-can-outline" tone="delete" onPress={onDelete} />
+      </View>
     </View>
   );
-}
-
-function RemoteImage({ uri, style }: { uri?: string | null; style: object }) {
-  const [failed, setFailed] = useState(false);
-  return <Image source={{ uri: failed ? FALLBACK_FOOD_IMAGE_URL : imageUri(uri) }} onError={() => setFailed(true)} style={style} />;
 }
 
 function RecipeAdminCard({ recipe, onEdit, onDelete }: { recipe: Recipe; onEdit: () => void; onDelete: () => void }) {
@@ -475,11 +409,7 @@ function RecipeAdminCard({ recipe, onEdit, onDelete }: { recipe: Recipe; onEdit:
               {recipe.description || "Chưa có mô tả"}
             </Text>
           </View>
-          <View style={{ borderRadius: 999, backgroundColor: colors.secondary, paddingHorizontal: 9, paddingVertical: 6, alignSelf: "flex-start" }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }} selectable>
-              {recipe.difficulty || "Manual"}
-            </Text>
-          </View>
+          <StatusPill text={recipe.difficulty || "Manual"} tone="user" />
         </View>
         <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
           <MiniInfo icon="timer-outline" text={`${recipe.cookingTimeMinutes || 0} phút`} />
@@ -511,6 +441,18 @@ function IngredientAdminCard({ ingredient, onEdit, onDelete }: { ingredient: Ing
         <IconButton icon="pencil-outline" tone="edit" onPress={onEdit} />
         <IconButton icon="trash-can-outline" tone="delete" onPress={onDelete} />
       </View>
+    </View>
+  );
+}
+
+function StatusPill({ text, tone }: { text: string; tone: "admin" | "user" | "active" | "inactive" }) {
+  const backgroundColor = tone === "inactive" ? "rgba(255,77,79,0.14)" : tone === "admin" ? colors.secondary : "#EEF3EF";
+  const color = tone === "inactive" ? colors.danger : tone === "admin" ? colors.primaryDark : colors.mutedDark;
+  return (
+    <View style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor, paddingHorizontal: 9, paddingVertical: 5 }}>
+      <Text style={{ color, fontSize: 10, fontWeight: "900" }} selectable>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -554,202 +496,45 @@ function IconButton({ icon, tone, onPress }: { icon: keyof typeof MaterialCommun
   );
 }
 
-function IngredientForm({ form, setForm, onSave, onCancel, isSaving }: { form: typeof emptyIngredientForm; setForm: (value: typeof emptyIngredientForm | ((current: typeof emptyIngredientForm) => typeof emptyIngredientForm)) => void; onSave: () => void; onCancel: () => void; isSaving: boolean }) {
+function RemoteImage({ uri, style }: { uri?: string | null; style: object }) {
+  const [failed, setFailed] = useState(false);
+  return <Image source={{ uri: failed ? FALLBACK_FOOD_IMAGE_URL : normalizeRemoteImageUrl(uri) }} onError={() => setFailed(true)} style={style} />;
+}
+
+function LoadingCard() {
   return (
-    <View style={{ borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-        {form.id ? "Cập nhật nguyên liệu" : "Tạo nguyên liệu mới"}
+    <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 10 }}>
+      <ActivityIndicator color={colors.primary} />
+      <Text style={{ color: colors.text, fontWeight: "800" }} selectable>
+        Đang tải dữ liệu...
       </Text>
-      <RemoteImage uri={form.imageUrl} style={{ width: "100%", height: 140, borderRadius: 14, backgroundColor: colors.secondary }} />
-      <FormInput label="Tên nguyên liệu" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} placeholder="Ví dụ: Cà rốt" />
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Nhóm" value={form.category} onChangeText={(category) => setForm((current) => ({ ...current, category }))} placeholder="Vegetable" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Đơn vị" value={form.unit} onChangeText={(unit) => setForm((current) => ({ ...current, unit }))} placeholder="g" />
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Calories" value={form.caloriesPerUnit} onChangeText={(caloriesPerUnit) => setForm((current) => ({ ...current, caloriesPerUnit }))} placeholder="0" keyboardType="decimal-pad" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Protein" value={form.proteinPerUnit} onChangeText={(proteinPerUnit) => setForm((current) => ({ ...current, proteinPerUnit }))} placeholder="0" keyboardType="decimal-pad" />
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Fat" value={form.fatPerUnit} onChangeText={(fatPerUnit) => setForm((current) => ({ ...current, fatPerUnit }))} placeholder="0" keyboardType="decimal-pad" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Carb" value={form.carbPerUnit} onChangeText={(carbPerUnit) => setForm((current) => ({ ...current, carbPerUnit }))} placeholder="0" keyboardType="decimal-pad" />
-        </View>
-      </View>
-      <FormInput label="Image URL" value={form.imageUrl} onChangeText={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} placeholder="https://..." />
-      <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={onSave} onCancel={onCancel} />
     </View>
   );
 }
 
-function RecipeForm({
-  form,
-  setForm,
-  filteredIngredients,
-  ingredientById,
-  ingredientSearch,
-  setIngredientSearch,
-  onAddIngredient,
-  onUpdateIngredient,
-  onRemoveIngredient,
-  onSave,
-  onCancel,
-  isSaving
-}: {
-  form: typeof emptyRecipeForm;
-  setForm: (value: typeof emptyRecipeForm | ((current: typeof emptyRecipeForm) => typeof emptyRecipeForm)) => void;
-  ingredients: Ingredient[];
-  filteredIngredients: Ingredient[];
-  ingredientById: Map<string, Ingredient>;
-  ingredientSearch: string;
-  setIngredientSearch: (value: string) => void;
-  onAddIngredient: (ingredient: Ingredient) => void;
-  onUpdateIngredient: (index: number, patch: Partial<RecipeIngredientPayload>) => void;
-  onRemoveIngredient: (index: number) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  isSaving: boolean;
-}) {
+function EmptyState({ message }: { message: string }) {
   return (
-    <View style={{ borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-        {form.id ? "Cập nhật công thức" : "Tạo công thức mới"}
+    <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 8, padding: 16 }}>
+      <MaterialCommunityIcons name="database-search-outline" size={28} color={colors.primary} />
+      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "900", textAlign: "center" }} selectable>
+        {message}
       </Text>
-      <RemoteImage uri={form.imageUrl} style={{ width: "100%", height: 150, borderRadius: 14, backgroundColor: colors.secondary }} />
-      <FormInput label="Tên công thức" value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} placeholder="Ví dụ: Đậu hũ sốt cà chua" />
-      <FormInput label="Mô tả" value={form.description} onChangeText={(description) => setForm((current) => ({ ...current, description }))} placeholder="Mô tả ngắn" multiline />
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Thời gian" value={form.cookingTimeMinutes} onChangeText={(cookingTimeMinutes) => setForm((current) => ({ ...current, cookingTimeMinutes }))} placeholder="20" keyboardType="decimal-pad" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Khẩu phần" value={form.servingSize} onChangeText={(servingSize) => setForm((current) => ({ ...current, servingSize }))} placeholder="1" keyboardType="decimal-pad" />
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Độ khó" value={form.difficulty} onChangeText={(difficulty) => setForm((current) => ({ ...current, difficulty }))} placeholder="Easy" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FormInput label="Nguồn" value={form.sourceType} onChangeText={(sourceType) => setForm((current) => ({ ...current, sourceType }))} placeholder="Manual" />
-        </View>
-      </View>
-      <FormInput label="Image URL" value={form.imageUrl} onChangeText={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} placeholder="https://..." />
-      <FormInput label="Cách nấu" value={form.instructionText} onChangeText={(instructionText) => setForm((current) => ({ ...current, instructionText }))} placeholder="Bước 1..." multiline />
-
-      <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontSize: 15, fontWeight: "900" }} selectable>
-          Thêm nguyên liệu vào recipe
-        </Text>
-        <FormInput label="Tìm nguyên liệu" value={ingredientSearch} onChangeText={setIngredientSearch} placeholder="Cà, trứng, gạo..." />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-          {filteredIngredients.map((ingredient) => {
-            const selected = form.ingredients.some((item) => item.ingredientId === ingredient.id);
-            return (
-              <Pressable key={ingredient.id} onPress={() => onAddIngredient(ingredient)} style={({ pressed }) => ({ width: 138, borderRadius: 14, backgroundColor: selected ? "rgba(57,217,138,0.22)" : colors.white, borderWidth: 2, borderColor: selected ? colors.success : "transparent", overflow: "hidden", opacity: pressed ? 0.82 : 1 })}>
-                <RemoteImage uri={ingredient.imageUrl} style={{ width: "100%", height: 72, backgroundColor: colors.secondary }} />
-                <View style={{ padding: 9, gap: 4 }}>
-                  <Text numberOfLines={2} style={{ color: colors.textDark, fontSize: 13, fontWeight: "900", lineHeight: 17 }}>
-                    {ingredient.name}
-                  </Text>
-                  <Text style={{ color: colors.primaryDark, fontSize: 10, fontWeight: "900" }} selectable>
-                    {selected ? "Đã thêm" : ingredient.unit}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        {form.ingredients.length === 0 ? (
-          <View style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "rgba(255,255,255,0.12)", padding: 14 }}>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
-              Chưa có nguyên liệu trong công thức.
-            </Text>
-          </View>
-        ) : (
-          form.ingredients.map((item, index) => {
-            const ingredient = ingredientById.get(item.ingredientId);
-            return (
-              <View key={`${item.ingredientId}-${index}`} style={{ borderRadius: 14, backgroundColor: colors.white, padding: 12, gap: 10 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <Text style={{ flex: 1, color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
-                    {ingredient?.name || item.ingredientId}
-                  </Text>
-                  <Pressable onPress={() => onRemoveIngredient(index)}>
-                    <MaterialCommunityIcons name="close-circle" size={24} color={colors.danger} />
-                  </Pressable>
-                </View>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <TextInput value={String(item.quantity)} onChangeText={(value) => onUpdateIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
-                  <TextInput value={item.unit} onChangeText={(unit) => onUpdateIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
-                </View>
-                <TextInput value={item.note} onChangeText={(note) => onUpdateIngredient(index, { note })} placeholder="Ghi chú cho nguyên liệu" placeholderTextColor={colors.mutedDark} style={{ minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "700", paddingHorizontal: 10 }} />
-                <Pressable onPress={() => onUpdateIngredient(index, { isRequired: !item.isRequired })} style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: item.isRequired ? colors.secondary : "#EEF3EF", paddingHorizontal: 10, paddingVertical: 6 }}>
-                  <Text style={{ color: item.isRequired ? colors.primaryDark : colors.mutedDark, fontSize: 11, fontWeight: "900" }} selectable>
-                    {item.isRequired ? "Bắt buộc" : "Tùy chọn"}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          })
-        )}
-      </View>
-      <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu công thức" : "Tạo công thức"} onSave={onSave} onCancel={onCancel} />
     </View>
   );
 }
 
-function FormInput({ label, value, onChangeText, placeholder, keyboardType, multiline = false }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: "default" | "decimal-pad"; multiline?: boolean }) {
+function ErrorBanner({ message }: { message: string }) {
   return (
-    <View style={{ gap: 7 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
-        {label}
+    <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
+      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+        {message}
       </Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.muted}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        style={{ minHeight: multiline ? 84 : 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0, textAlignVertical: multiline ? "top" : "center" }}
-      />
-    </View>
-  );
-}
-
-function FormActions({ isSaving, saveLabel, onSave, onCancel }: { isSaving: boolean; saveLabel: string; onSave: () => void; onCancel: () => void }) {
-  return (
-    <View style={{ flexDirection: "row", gap: 10 }}>
-      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
-        <Text style={{ color: colors.text, fontWeight: "900" }} selectable>
-          Hủy
-        </Text>
-      </Pressable>
-      <Pressable onPress={onSave} disabled={isSaving} style={({ pressed }) => ({ flex: 1.4, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSaving ? 0.76 : 1 })}>
-        {isSaving ? <ActivityIndicator color={colors.textDark} /> : <MaterialCommunityIcons name="content-save" size={20} color={colors.textDark} />}
-        <Text style={{ color: colors.textDark, fontWeight: "900" }} selectable>
-          {isSaving ? "Đang lưu..." : saveLabel}
-        </Text>
-      </Pressable>
     </View>
   );
 }
 
 function ConfirmDeleteModal({ target, isSaving, onCancel, onConfirm }: { target: DeleteTarget; isSaving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const label = target?.type === "users" ? "user" : target?.type === "recipes" ? "công thức" : "nguyên liệu";
   return (
     <Modal transparent visible={Boolean(target)} animationType="fade" onRequestClose={onCancel}>
       <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.58)", padding: 22, justifyContent: "center" }}>
@@ -758,7 +543,7 @@ function ConfirmDeleteModal({ target, isSaving, onCancel, onConfirm }: { target:
             <MaterialCommunityIcons name="trash-can-outline" size={30} color={colors.danger} />
           </View>
           <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "900" }} selectable>
-            Xóa dữ liệu?
+            Xóa {label}?
           </Text>
           <Text style={{ color: colors.mutedDark, fontSize: 14, fontWeight: "700", lineHeight: 21 }} selectable>
             {target?.name} sẽ bị xóa khỏi hệ thống quản trị.
