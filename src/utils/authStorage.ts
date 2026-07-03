@@ -13,6 +13,15 @@ type StoredSession = {
   user?: StoredUser;
 };
 
+type JwtPayload = {
+  userId?: string;
+  fullName?: string;
+  email?: string;
+  role?: string;
+  exp?: number;
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
+};
+
 function readSessionFile(): StoredSession {
   return {};
 }
@@ -23,6 +32,41 @@ function writeSessionFile(session: StoredSession) {
 
 function deleteSessionFile() {
   return;
+}
+
+function decodeJwtPayload(token?: string | null): JwtPayload | null {
+  if (!token || typeof atob === "undefined") return null;
+
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const json = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join("")
+    );
+
+    return JSON.parse(json) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+function userFromToken(token?: string | null): StoredUser | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.userId || !payload.email) return null;
+
+  return {
+    userId: payload.userId,
+    fullName: payload.fullName || payload.email,
+    email: payload.email,
+    role: payload.role || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
+    expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : ""
+  };
 }
 
 async function setStoredValue(key: string, value: string) {
@@ -91,8 +135,17 @@ export const authStorage = {
   },
 
   async getSession() {
-    const [accessToken, refreshToken, user] = await Promise.all([this.getAccessToken(), this.getRefreshToken(), this.getUser()]);
-    if (!accessToken || !refreshToken || !user) return null;
+    const [accessToken, refreshToken, storedUser] = await Promise.all([this.getAccessToken(), this.getRefreshToken(), this.getUser()]);
+    if (!accessToken || !refreshToken) return null;
+
+    const tokenUser = userFromToken(accessToken);
+    const user = tokenUser || storedUser;
+    if (!user) return null;
+
+    if (tokenUser && (!storedUser || tokenUser.userId !== storedUser.userId || tokenUser.email !== storedUser.email)) {
+      await setStoredValue(USER_KEY, JSON.stringify(tokenUser));
+    }
+
     return { accessToken, refreshToken, user };
   },
 

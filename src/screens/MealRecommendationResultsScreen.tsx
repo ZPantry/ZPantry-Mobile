@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { FlatList, Image, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealRecommendation } from "@/api/recommendations";
+import AppBackButton from "@/components/AppBackButton";
 import { colors } from "@/constants/colors";
 import type { RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -30,12 +31,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
         ListHeaderComponent={
           <View style={{ gap: 18 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Pressable onPress={() => navigation.goBack()} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name="chevron-back" size={28} color={colors.primary} />
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }} selectable>
-                  Chỉnh nguyên liệu
-                </Text>
-              </Pressable>
+              <AppBackButton label="Chỉnh nguyên liệu" onPress={() => navigation.goBack()} />
               <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
                 <MaterialCommunityIcons name="silverware-fork-knife" size={24} color={colors.primary} />
               </View>

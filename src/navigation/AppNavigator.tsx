@@ -22,6 +22,7 @@ import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import SplashScreen from "@/screens/SplashScreen";
+import TodayMenuItemDetailScreen from "@/screens/TodayMenuItemDetailScreen";
 import type { RootStackParamList, TabParamList } from "@/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -252,6 +253,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
           <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+          <Stack.Screen name="TodayMenuItemDetail" component={TodayMenuItemDetailScreen} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

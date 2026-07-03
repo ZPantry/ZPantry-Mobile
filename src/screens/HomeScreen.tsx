@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useMemo, useState } from "react";
+import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -15,6 +15,8 @@ import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { Meal } from "@/types";
+import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { translateApiMessage, translateDifficulty } from "@/utils/localize";
 
 const shortcuts = [
   { label: "Thêm nhanh", icon: "plus-circle-outline", target: "AddIngredient" },
@@ -31,15 +33,36 @@ function recipeToMeal(recipe: Recipe): Meal {
     calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
     time: `${recipe.cookingTimeMinutes} phút`,
     matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
-    difficulty: recipe.difficulty,
+    difficulty: translateDifficulty(recipe.difficulty),
     availableIngredients: recipe.description ? [recipe.description] : [],
     missingIngredients: [],
     steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
   };
 }
 
-function daysLeft(expiredAt: string) {
-  return Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+function normalizeSearchText(value?: string | null) {
+  return (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function daysLeft(expiredAt?: string | null) {
+  if (!expiredAt) return Number.POSITIVE_INFINITY;
+  const time = new Date(expiredAt).getTime();
+  if (Number.isNaN(time)) return Number.POSITIVE_INFINITY;
+  return Math.ceil((time - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+function formatQuantity(item: PantryApiItem) {
+  const quantity = Number(item.quantity ?? 0);
+  const quantityText = Number.isFinite(quantity) ? String(quantity) : "0";
+  return `${quantityText} ${item.unit || ""}`.trim();
+}
+
+function getPantryName(item: PantryApiItem, ingredient?: Ingredient) {
+  return ingredient?.name || item.ingredientName || item.note || "Thực phẩm";
 }
 
 export default function HomeScreen() {
@@ -49,6 +72,7 @@ export default function HomeScreen() {
   const [recipes, setRecipes] = useState<Meal[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryApiItem[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -65,7 +89,7 @@ export default function HomeScreen() {
       setIngredients(ingredientPage.data);
       setPantryItems(pantryItems);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được dữ liệu hôm nay.");
+      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được dữ liệu hôm nay.");
       setRecipes([]);
       setIngredients([]);
       setPantryItems([]);
@@ -74,13 +98,36 @@ export default function HomeScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    loadHome();
-  }, [loadHome]);
+  useFocusEffect(
+    useCallback(() => {
+      loadHome();
+    }, [loadHome])
+  );
 
   const ingredientById = useMemo(() => new Map(ingredients.map((ingredient) => [ingredient.id, ingredient])), [ingredients]);
-  const expiringItem = useMemo(() => pantryItems.slice().sort((left, right) => daysLeft(left.expiredAt) - daysLeft(right.expiredAt))[0], [pantryItems]);
+  const pantryWithNames = useMemo(
+    () =>
+      pantryItems.map((item) => ({
+        item,
+        ingredient: ingredientById.get(item.ingredientId),
+        name: getPantryName(item, ingredientById.get(item.ingredientId))
+      })),
+    [ingredientById, pantryItems]
+  );
+  const expiringItem = useMemo(() => pantryItems.slice().filter((item) => Number.isFinite(daysLeft(item.expiredAt))).sort((left, right) => daysLeft(left.expiredAt) - daysLeft(right.expiredAt))[0], [pantryItems]);
   const expiringIngredient = expiringItem ? ingredientById.get(expiringItem.ingredientId) : undefined;
+  const normalizedKeyword = normalizeSearchText(searchText);
+  const filteredPantryItems = useMemo(() => {
+    if (!normalizedKeyword) return pantryWithNames.slice(0, 3);
+    return pantryWithNames
+      .filter(({ item, ingredient, name }) => normalizeSearchText(`${name} ${ingredient?.normalizedName || ""} ${ingredient?.category || ""} ${item.note || ""}`).includes(normalizedKeyword))
+      .slice(0, 5);
+  }, [normalizedKeyword, pantryWithNames]);
+  const filteredRecipes = useMemo(() => {
+    if (!normalizedKeyword) return recipes.slice(0, 5);
+    return recipes.filter((meal) => normalizeSearchText(`${meal.name} ${meal.availableIngredients.join(" ")}`).includes(normalizedKeyword)).slice(0, 5);
+  }, [normalizedKeyword, recipes]);
+  const hasSearch = normalizedKeyword.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
@@ -120,7 +167,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <SearchBar placeholder="Tìm món ăn hoặc nguyên liệu" actionLabel="Tìm" />
+        <SearchBar placeholder="Tìm món ăn hoặc nguyên liệu" actionLabel="Tìm" value={searchText} onChangeText={setSearchText} onSubmit={() => undefined} />
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
           {shortcuts.map((item) => (
@@ -153,9 +200,7 @@ export default function HomeScreen() {
           <StatCard icon="notebook-outline" value={`${recipes.length}`} label="Công thức sẵn sàng" alignRight />
         </View>
 
-        {expiringItem ? (
-          <ExpiryAlertCard title={`${expiringIngredient?.name || "Một thực phẩm"} còn ${Math.max(0, daysLeft(expiringItem.expiredAt))} ngày sử dụng. Ưu tiên dùng sớm nhé.`} tone={daysLeft(expiringItem.expiredAt) <= 1 ? "danger" : "warning"} />
-        ) : (
+        {pantryItems.length === 0 ? (
           <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 16, borderWidth: 1, borderColor: colors.line, gap: 8 }}>
             <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }} selectable>
               Tủ của bạn đang trống
@@ -164,24 +209,52 @@ export default function HomeScreen() {
               Thêm nguyên liệu để app gợi ý món phù hợp hơn.
             </Text>
           </View>
+        ) : expiringItem ? (
+          <ExpiryAlertCard title={`${expiringIngredient?.name || "Một thực phẩm"} còn ${Math.max(0, daysLeft(expiringItem.expiredAt))} ngày sử dụng. Ưu tiên dùng sớm nhé.`} tone={daysLeft(expiringItem.expiredAt) <= 1 ? "danger" : "warning"} />
+        ) : (
+          <ExpiryAlertCard title="Tủ của bạn đã có thực phẩm. Chưa có món nào sắp hết hạn." tone="success" />
         )}
+
+        {(hasSearch || filteredPantryItems.length > 0) ? (
+          <View style={{ gap: 12 }}>
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+              {hasSearch ? "Thực phẩm khớp tìm kiếm" : "Thực phẩm trong tủ"}
+            </Text>
+            {filteredPantryItems.length === 0 ? (
+              <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
+                  Không tìm thấy thực phẩm trong tủ
+                </Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
+                  Thử từ khóa khác hoặc thêm nguyên liệu mới vào tủ.
+                </Text>
+              </View>
+            ) : (
+              <View style={{ gap: 10 }}>
+                {filteredPantryItems.map(({ item, ingredient, name }) => (
+                  <PantrySummaryRow key={item.id} name={name} quantity={formatQuantity(item)} imageUrl={ingredient?.imageUrl} onPress={() => navigation.navigate("Pantry")} />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : null}
 
         <View style={{ gap: 12 }}>
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Gợi ý công thức
+            {hasSearch ? "Công thức khớp tìm kiếm" : "Gợi ý công thức"}
           </Text>
-          {recipes.length === 0 ? (
+          {filteredRecipes.length === 0 ? (
             <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
               <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
-                Chưa có công thức để hiển thị
+                {hasSearch ? "Không tìm thấy công thức phù hợp" : "Chưa có công thức để hiển thị"}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-                Kéo xuống để tải lại khi có công thức mới.
+                {hasSearch ? "Thử tìm bằng tên món hoặc nguyên liệu khác." : "Kéo xuống để tải lại khi có công thức mới."}
               </Text>
             </View>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
-              {recipes.slice(0, 5).map((meal) => (
+              {filteredRecipes.map((meal) => (
                 <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { mealId: meal.id })} />
               ))}
             </ScrollView>
@@ -203,5 +276,35 @@ function StatCard({ icon, value, label, alignRight = false }: { icon: keyof type
         {label}
       </Text>
     </View>
+  );
+}
+
+function PantrySummaryRow({ name, quantity, imageUrl, onPress }: { name: string; quantity: string; imageUrl?: string | null; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        minHeight: 72,
+        borderRadius: 14,
+        backgroundColor: colors.white,
+        padding: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        opacity: pressed ? 0.86 : 1,
+        boxShadow: "0 8px 18px rgba(0,0,0,0.16)"
+      })}
+    >
+      <Image source={{ uri: normalizeRemoteImageUrl(imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: colors.secondary }} />
+      <View style={{ flex: 1 }}>
+        <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+          {name}
+        </Text>
+        <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900", marginTop: 3 }} selectable>
+          {quantity || "Chưa có số lượng"}
+        </Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primaryDark} />
+    </Pressable>
   );
 }

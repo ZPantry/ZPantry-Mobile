@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
+import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -146,7 +147,7 @@ export default function PantryItemDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["top"]}>
-        <PrimaryButton title="" icon="chevron-left" variant="soft" onPress={() => navigation.goBack()} style={{ width: 48, minHeight: 48, paddingHorizontal: 0 }} />
+        <AppBackButton variant="icon" onPress={() => navigation.goBack()} />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10 }}>
           <MaterialCommunityIcons name="fridge-alert-outline" size={42} color={colors.primary} />
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", textAlign: "center" }} selectable>
@@ -164,7 +165,7 @@ export default function PantryItemDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <PrimaryButton title="" icon="chevron-left" variant="soft" onPress={() => navigation.goBack()} style={{ width: 48, minHeight: 48, paddingHorizontal: 0 }} />
+          <AppBackButton variant="icon" onPress={() => navigation.goBack()} />
           <Pressable
             onPress={() => setIsEditing((current) => !current)}
             style={({ pressed }) => ({

@@ -1,11 +1,14 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import type { ComponentProps, ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppBackButton from "@/components/AppBackButton";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
   const { user, signOut } = useAuth();
   const displayName = user?.fullName || "Bạn";
   const displayEmail = user?.email || "Chưa có email";
@@ -14,12 +17,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 22 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }} selectable>
-              Quay lại
-            </Text>
-          </Pressable>
+          <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
           <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
             <View style={{ position: "absolute", top: 3, right: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger }} />
