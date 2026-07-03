@@ -7,6 +7,7 @@ import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
+import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PantryItemCard from "@/components/PantryItemCard";
@@ -119,12 +120,7 @@ export default function PantryScreen() {
         contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Pressable onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }} selectable>
-              Quay lại
-            </Text>
-          </Pressable>
+          <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
           <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
             <View style={{ position: "absolute", top: 3, right: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger }} />

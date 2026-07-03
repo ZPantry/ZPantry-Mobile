@@ -9,6 +9,7 @@ import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
 import { recommendationsApi } from "@/api/recommendations";
+import AppBackButton from "@/components/AppBackButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
@@ -188,12 +189,7 @@ export default function MealSuggestionScreen() {
         contentContainerStyle={{ padding: 22, paddingBottom: 156, gap: 18 }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Pressable onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }} selectable>
-              Quay lại
-            </Text>
-          </Pressable>
+          <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
             <MaterialCommunityIcons name="chef-hat" size={28} color={colors.primary} />
           </View>

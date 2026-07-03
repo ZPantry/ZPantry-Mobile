@@ -1,4 +1,5 @@
 import { apiRequest } from "@/api/client";
+import { translateRecommendationText } from "@/utils/localize";
 
 export type MealRecommendationRequest = {
   topK?: number;
@@ -96,16 +97,18 @@ function normalizeIngredientNames(items: RawIngredientName[] | undefined) {
 function normalizeRecommendation(item: RawMealRecommendation, index: number): MealRecommendation {
   const mealId = item.mealId || item.recipeId || item.id || item.recipe?.id || `recommendation-${index}`;
   const recipeId = item.recipeId || item.recipe?.id || mealId;
+  const description = item.description || item.reason || item.recipe?.description || "Món phù hợp với nguyên liệu bạn đang có.";
+  const reason = item.note || item.reason || "";
 
   return {
     mealId,
     recipeId,
     name: item.name || item.mealName || item.recipeName || item.recipe?.name || "Món được gợi ý",
-    description: item.description || item.reason || item.recipe?.description || "Món phù hợp với nguyên liệu bạn đang có.",
+    description: translateRecommendationText(description),
     imageUrl: item.imageUrl || item.mealImageUrl || item.thumbnailUrl || item.recipe?.imageUrl,
     score: normalizeScore(item.score ?? item.matchScore ?? item.confidence),
     rank: item.rank || index + 1,
-    reason: item.note || item.reason || "",
+    reason: translateRecommendationText(reason),
     missingIngredientCount: Number(item.missingIngredientCount ?? item.missingIngredientNames?.length ?? item.missingIngredients?.length ?? 0),
     matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredientNames || item.matching),
     missingIngredients: normalizeIngredientNames(item.missingIngredients || item.missingIngredientNames || item.missing)

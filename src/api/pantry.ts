@@ -11,9 +11,24 @@ export type PantryApiItem = {
   note: string;
 };
 
-export type PantryItemPayload = Pick<PantryApiItem, "ingredientId" | "quantity" | "unit" | "expiredAt" | "storageLocation" | "note">;
+export type PantryItemPayload = {
+  ingredientId: string;
+  quantity: number;
+  unit: string;
+  expiredAt: string;
+  storageLocation: string;
+  note: string;
+};
 
-type PantryListResponse = PantryApiItem[] | { data?: PantryApiItem[]; items?: PantryApiItem[] };
+type RawPantryApiItem = Omit<PantryApiItem, "quantity" | "unit" | "expiredAt" | "storageLocation" | "note"> & {
+  quantity?: number | null;
+  unit?: string | null;
+  expiredAt?: string | null;
+  storageLocation?: string | null;
+  note?: string | null;
+};
+
+type PantryListResponse = RawPantryApiItem[] | { data?: RawPantryApiItem[]; items?: RawPantryApiItem[]; Data?: RawPantryApiItem[]; Items?: RawPantryApiItem[] };
 
 function toUtcIsoDate(value: string) {
   const trimmed = value.trim();
@@ -33,9 +48,20 @@ function normalizePayload(payload: PantryItemPayload): PantryItemPayload {
   };
 }
 
+function normalizePantryItem(item: RawPantryApiItem): PantryApiItem {
+  return {
+    ...item,
+    quantity: Number(item.quantity ?? 0),
+    unit: item.unit || "",
+    expiredAt: item.expiredAt || new Date().toISOString(),
+    storageLocation: item.storageLocation || "",
+    note: item.note || ""
+  };
+}
+
 function normalizePantryItems(response: PantryListResponse) {
-  if (Array.isArray(response)) return response;
-  return response.data || response.items || [];
+  const items = Array.isArray(response) ? response : response.data || response.items || response.Data || response.Items || [];
+  return items.map(normalizePantryItem);
 }
 
 export const pantryApi = {

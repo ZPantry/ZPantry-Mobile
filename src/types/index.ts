@@ -78,6 +78,7 @@ export type RootStackParamList = {
     }>;
   };
   RecipeDetail: { mealId: string };
+  TodayMenuItemDetail: { itemId: string };
 };
 
 export type TabParamList = {

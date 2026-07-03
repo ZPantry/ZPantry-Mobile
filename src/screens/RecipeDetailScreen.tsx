@@ -8,11 +8,15 @@ import type { MealIngredientCheckResponse } from "@/api/recommendations";
 import { recommendationsApi } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
+import { todayMenuApi } from "@/api/todayMenu";
+import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
+import { useToast } from "@/context/ToastContext";
 import type { Meal, RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getCurrentMealType, translateApiMessage, translateDifficulty, translateRecommendationText } from "@/utils/localize";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetail">;
 
@@ -24,7 +28,7 @@ function recipeToMeal(recipe: Recipe): Meal {
     calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
     time: `${recipe.cookingTimeMinutes} phút`,
     matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
-    difficulty: recipe.difficulty,
+    difficulty: translateDifficulty(recipe.difficulty),
     availableIngredients: recipe.description ? [recipe.description] : [],
     missingIngredients: [],
     steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
@@ -36,10 +40,20 @@ function statusLabel(quantity?: number, unit?: string, mode: "available" | "miss
   return mode === "missing" ? ` - cần ${quantity} ${unit || ""}` : ` - có ${quantity} ${unit || ""}`;
 }
 
+function formatDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function RecipeDetailScreen({ route, navigation }: Props) {
+  const toast = useToast();
   const [meal, setMeal] = useState<Meal | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [ingredientCheck, setIngredientCheck] = useState<MealIngredientCheckResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddingToToday, setIsAddingToToday] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadRecipe = useCallback(async () => {
@@ -52,8 +66,10 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       ]);
 
       if (recipeResult.status === "fulfilled") {
+        setRecipe(recipeResult.value);
         setMeal(recipeToMeal(recipeResult.value));
       } else {
+        setRecipe(null);
         setMeal(null);
       }
 
@@ -67,7 +83,8 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         throw recipeResult.reason;
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được chi tiết món ăn.");
+      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được chi tiết món ăn.");
+      setRecipe(null);
       setMeal(null);
       setIngredientCheck(null);
     } finally {
@@ -82,6 +99,29 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   const title = meal?.name || "Chi tiết món ăn";
   const steps = useMemo(() => meal?.steps || [], [meal?.steps]);
 
+  const addToTodayMenu = useCallback(async () => {
+    if (!recipe) return;
+
+    setIsAddingToToday(true);
+    try {
+      const item = await todayMenuApi.add({
+        recipeId: recipe.id,
+        mealName: recipe.name,
+        mealType: getCurrentMealType(),
+        servingSize: recipe.servingSize || 1,
+        plannedDate: formatDateKey(),
+        note: ""
+      });
+
+      toast.show("Đã thêm món vào thực đơn hôm nay.");
+      navigation.navigate("TodayMenuItemDetail", { itemId: item.id });
+    } catch (error) {
+      toast.show(error instanceof Error ? translateApiMessage(error.message) : "Chưa thêm được món vào thực đơn.", "danger");
+    } finally {
+      setIsAddingToToday(false);
+    }
+  }, [navigation, recipe, toast]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 34 }}>
@@ -93,25 +133,15 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
               <Ionicons name="restaurant-outline" size={54} color={colors.primary} />
             </View>
           )}
-          <Pressable
+          <AppBackButton
+            variant="floating"
             onPress={() => navigation.goBack()}
-            style={({ pressed }) => ({
+            style={{
               position: "absolute",
               top: 18,
-              left: 18,
-              width: 46,
-              height: 46,
-              borderRadius: 17,
-              backgroundColor: colors.card,
-              borderWidth: 1,
-              borderColor: colors.line,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: pressed ? 0.82 : 1
-            })}
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.text} />
-          </Pressable>
+              left: 18
+            }}
+          />
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
@@ -147,7 +177,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
             ) : (
               <Row icon="checkmark-circle" color={colors.success} text="Không thấy nguyên liệu còn thiếu cho món này." />
             )}
-            {ingredientCheck?.note ? <Row icon="sparkles-outline" color={colors.primary} text={ingredientCheck.note} /> : null}
+            {ingredientCheck?.note ? <Row icon="sparkles-outline" color={colors.primary} text={translateRecommendationText(ingredientCheck.note)} /> : null}
           </RecipeSection>
 
           {meal ? (
@@ -175,7 +205,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
                 )}
               </RecipeSection>
 
-              <PrimaryButton title="Thêm vào thực đơn hôm nay" icon="calendar-plus" />
+              <PrimaryButton title={isAddingToToday ? "Đang thêm..." : "Thêm vào thực đơn hôm nay"} icon="calendar-plus" onPress={addToTodayMenu} />
               <PrimaryButton title="Tạo danh sách mua sắm" icon="cart" variant="outline" />
             </>
           ) : null}
