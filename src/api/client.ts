@@ -59,6 +59,10 @@ function getApiBaseUrl() {
     if (!url.protocol.startsWith("http")) {
       throw new Error("Invalid protocol");
     }
+    if (url.protocol === "http:" && url.hostname.endsWith(".onrender.com")) {
+      url.protocol = "https:";
+      return url.toString().replace(/\/+$/, "");
+    }
   } catch {
     throw new ApiError("Nguồn dữ liệu chưa sẵn sàng.", 0);
   }
