@@ -52,10 +52,11 @@ function getApiBaseUrl() {
     throw new ApiError("Chưa kết nối được nguồn dữ liệu.", 0);
   }
 
-  const normalizedUrl = API_BASE_URL.replace(/\/+$/, "");
+  const normalizedUrl = API_BASE_URL.trim().replace(/\/+$/, "");
+  const urlWithScheme = /^https?:\/\//i.test(normalizedUrl) ? normalizedUrl : `http://${normalizedUrl}`;
 
   try {
-    const url = new URL(normalizedUrl);
+    const url = new URL(urlWithScheme);
     if (!url.protocol.startsWith("http")) {
       throw new Error("Invalid protocol");
     }
@@ -68,7 +69,7 @@ function getApiBaseUrl() {
   }
 
   if (Platform.OS === "android") {
-    const url = new URL(normalizedUrl);
+    const url = new URL(urlWithScheme);
     const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
     if (isLocalhost) {
@@ -76,7 +77,7 @@ function getApiBaseUrl() {
     }
   }
 
-  return normalizedUrl;
+  return urlWithScheme;
 }
 
 async function readResponse(response: Response) {

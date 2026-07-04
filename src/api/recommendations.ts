@@ -52,6 +52,7 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
   mealId?: string;
   mealName?: string;
   imageUrl?: string;
+  ImageUrl?: string;
   mealImageUrl?: string;
   thumbnailUrl?: string;
   note?: string;
@@ -60,6 +61,7 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
     name?: string;
     description?: string;
     imageUrl?: string;
+    ImageUrl?: string;
   };
   recipeName?: string;
   matchScore?: number;
@@ -105,7 +107,7 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
     recipeId,
     name: item.name || item.mealName || item.recipeName || item.recipe?.name || "Món được gợi ý",
     description: translateRecommendationText(description),
-    imageUrl: item.imageUrl || item.mealImageUrl || item.thumbnailUrl || item.recipe?.imageUrl,
+    imageUrl: item.imageUrl || item.ImageUrl || item.mealImageUrl || item.thumbnailUrl || item.recipe?.imageUrl || item.recipe?.ImageUrl,
     score: normalizeScore(item.score ?? item.matchScore ?? item.confidence),
     rank: item.rank || index + 1,
     reason: translateRecommendationText(reason),

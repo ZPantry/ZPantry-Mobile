@@ -109,7 +109,13 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
         transform: [{ scale: pressed ? 0.99 : 1 }]
       })}
     >
-      <Image source={{ uri: normalizeRemoteImageUrl(imageUrl) }} style={{ width: "100%", height: 154, borderRadius: 10, backgroundColor: colors.secondary }} />
+      <View style={{ width: "100%", height: 154, borderRadius: 10, overflow: "hidden", backgroundColor: colors.secondary }}>
+        <Image
+          source={{ uri: normalizeRemoteImageUrl(imageUrl) }}
+          resizeMode="cover"
+          style={{ width: "100%", height: "100%" }}
+        />
+      </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
         <View style={{ flex: 1 }}>
           <Text style={{ color: colors.textDark, fontSize: 20, fontWeight: "900", lineHeight: 25 }} selectable>
