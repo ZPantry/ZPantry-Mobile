@@ -13,7 +13,7 @@ import { useToast } from "@/context/ToastContext";
 import type { RootStackParamList } from "@/types";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
-import { translateApiMessage, translatePantryWarning, translateStatus } from "@/utils/localize";
+import { getFriendlyErrorMessage, translatePantryWarning, translateStatus } from "@/utils/localize";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TodayMenuItemDetail">;
 
@@ -47,7 +47,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       setItem(detail);
       setNote(detail.note || "");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được chi tiết món trong thực đơn.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
       setItem(null);
     } finally {
       setIsLoading(false);
@@ -69,7 +69,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
         setPickedImage(image);
       }
     } catch (error) {
-      toast.show(error instanceof Error ? translateApiMessage(error.message) : "Chưa chọn được ảnh món ăn.", "danger");
+      toast.show(getFriendlyErrorMessage(error, "Chưa chọn được ảnh món ăn.", "imageUpload"), "danger");
     }
   }, [toast]);
 
@@ -93,7 +93,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       await loadDetail();
     } catch (error) {
-      toast.show(error instanceof Error ? translateApiMessage(error.message) : "Chưa hoàn thành được món.", "danger");
+      toast.show(getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default"), "danger");
     } finally {
       setIsCompleting(false);
     }

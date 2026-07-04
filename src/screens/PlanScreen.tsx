@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import type { RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
-import { translateApiMessage, translateMealType, translateStatus } from "@/utils/localize";
+import { getFriendlyErrorMessage, translateMealType, translateStatus } from "@/utils/localize";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -60,7 +60,7 @@ export default function PlanScreen() {
       const page = await todayMenuApi.list(todayKey, 1, 20);
       setItems(page.data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được thực đơn hôm nay.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được thực đơn hôm nay."));
       setItems([]);
     } finally {
       setIsLoading(false);
@@ -82,7 +82,7 @@ export default function PlanScreen() {
         toast.show("Đã xóa món khỏi thực đơn hôm nay.");
         setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
       } catch (error) {
-        toast.show(error instanceof Error ? translateApiMessage(error.message) : "Chưa xóa được món.", "danger");
+        toast.show(getFriendlyErrorMessage(error, "Chưa xóa được món."), "danger");
       }
     },
     [toast]

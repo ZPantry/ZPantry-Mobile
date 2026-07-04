@@ -13,6 +13,7 @@ import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { statusColor } from "@/utils/helpers";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 function toInputDate(value: string) {
@@ -122,7 +123,7 @@ export default function PantryItemDetailScreen() {
       setIsEditing(false);
       toast.show(`Đã cập nhật ${title}.`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa cập nhật được nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa cập nhật được nguyên liệu."));
     } finally {
       setIsSaving(false);
     }
@@ -154,7 +155,7 @@ export default function PantryItemDetailScreen() {
       navigation.goBack();
     } catch (error) {
       setIsConfirmingDelete(false);
-      setErrorMessage(error instanceof Error ? error.message : "Chưa xóa được nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa xóa được nguyên liệu."));
     } finally {
       setIsSaving(false);
     }

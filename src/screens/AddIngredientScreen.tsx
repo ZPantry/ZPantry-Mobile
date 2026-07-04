@@ -12,6 +12,7 @@ import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
@@ -48,7 +49,7 @@ export default function AddIngredientScreen() {
       setIngredients(ingredientPage.data);
       setPantryIngredientIds(new Set(pantryItems.map((item) => item.ingredientId)));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được danh sách nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được danh sách nguyên liệu."));
       setIngredients([]);
       setPantryIngredientIds(new Set());
     } finally {
@@ -124,7 +125,7 @@ export default function AddIngredientScreen() {
       toast.show(`Đã lưu ${selectedIngredient.name} vào tủ.`);
       navigation.goBack();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được nguyên liệu vào tủ.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa lưu được nguyên liệu vào tủ."));
     } finally {
       setIsSaving(false);
     }

@@ -16,7 +16,7 @@ import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import type { Meal, RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
-import { getCurrentMealType, translateApiMessage, translateDifficulty, translateRecommendationText } from "@/utils/localize";
+import { getCurrentMealType, getFriendlyErrorMessage, translateDifficulty, translateRecommendationText } from "@/utils/localize";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetail">;
 
@@ -83,7 +83,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         throw recipeResult.reason;
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được chi tiết món ăn.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món ăn."));
       setRecipe(null);
       setMeal(null);
       setIngredientCheck(null);
@@ -116,7 +116,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       toast.show("Đã thêm món vào thực đơn hôm nay.");
       navigation.navigate("TodayMenuItemDetail", { itemId: item.id });
     } catch (error) {
-      toast.show(error instanceof Error ? translateApiMessage(error.message) : "Chưa thêm được món vào thực đơn.", "danger");
+      toast.show(getFriendlyErrorMessage(error, "Chưa thêm được món vào thực đơn."), "danger");
     } finally {
       setIsAddingToToday(false);
     }

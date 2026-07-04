@@ -9,6 +9,7 @@ import type { UploadFile } from "@/api/recipes";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 import { pickUploadImage } from "@/utils/pickUploadImage";
 
 type IngredientFormState = {
@@ -82,7 +83,7 @@ export default function AdminIngredientFormScreen() {
       if (!picked) return;
       setForm((current) => ({ ...current, imageFile: picked.file, localImageUri: picked.uri }));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa chọn được ảnh.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa chọn được ảnh.", "imageUpload"));
     }
   };
 
@@ -124,7 +125,7 @@ export default function AdminIngredientFormScreen() {
       }
       navigation.navigate("AdminManagement", { initialTab: "ingredients", showBackButton: false });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa lưu được nguyên liệu.", form.imageFile ? "imageUpload" : "default"));
     } finally {
       setIsSaving(false);
     }

@@ -16,7 +16,7 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { Meal } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
-import { translateApiMessage, translateDifficulty } from "@/utils/localize";
+import { getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
 
 const shortcuts = [
   { label: "Thêm nhanh", icon: "plus-circle-outline", target: "AddIngredient" },
@@ -89,7 +89,7 @@ export default function HomeScreen() {
       setIngredients(ingredientPage.data);
       setPantryItems(pantryItems);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? translateApiMessage(error.message) : "Chưa tải được dữ liệu hôm nay.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được dữ liệu hôm nay."));
       setRecipes([]);
       setIngredients([]);
       setPantryItems([]);

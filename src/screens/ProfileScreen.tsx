@@ -1,17 +1,31 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { ComponentProps, ReactNode } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppBackButton from "@/components/AppBackButton";
+import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, signOut } = useAuth();
+  const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const displayName = user?.fullName || "Bạn";
   const displayEmail = user?.email || "Chưa có email";
+
+  const confirmSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setIsSigningOut(false);
+      setIsLogoutVisible(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
@@ -72,7 +86,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={signOut}
+            onPress={() => setIsLogoutVisible(true)}
             style={({ pressed }) => ({
               minHeight: 50,
               borderRadius: 10,
@@ -91,6 +105,7 @@ export default function ProfileScreen() {
           </Pressable>
         </Section>
       </ScrollView>
+      <LogoutConfirmModal visible={isLogoutVisible} isSigningOut={isSigningOut} onStay={() => setIsLogoutVisible(false)} onConfirm={confirmSignOut} />
     </SafeAreaView>
   );
 }

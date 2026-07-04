@@ -14,6 +14,7 @@ import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 type PantryDisplayItem = PantryApiItem & {
   ingredient?: Ingredient;
@@ -96,7 +97,7 @@ export default function MealSuggestionScreen() {
     } catch (error) {
       setIngredients([]);
       setPantryItems([]);
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được nguyên liệu."));
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +176,7 @@ export default function MealSuggestionScreen() {
         }))
       });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tạo được gợi ý món. Vui lòng thử lại.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tạo được gợi ý món. Vui lòng thử lại."));
     } finally {
       setIsSuggesting(false);
     }

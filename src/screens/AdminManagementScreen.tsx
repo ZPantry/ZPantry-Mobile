@@ -9,10 +9,12 @@ import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import type { AdminUser } from "@/api/users";
 import { usersApi } from "@/api/users";
+import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 type AdminTab = "users" | "recipes" | "ingredients";
 type DeleteTarget = { type: AdminTab; id: string; name: string } | null;
@@ -54,6 +56,8 @@ export default function AdminManagementScreen() {
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
@@ -84,7 +88,7 @@ export default function AdminManagementScreen() {
       setRecipes(recipePage.data);
       setIngredients(ingredientPage.data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được dữ liệu quản trị.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được dữ liệu quản trị."));
     } finally {
       setIsLoading(false);
     }
@@ -118,9 +122,19 @@ export default function AdminManagementScreen() {
       setDeleteTarget(null);
       await loadAdminData();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa xóa được dữ liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa xóa được dữ liệu."));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const confirmSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setIsSigningOut(false);
+      setIsLogoutVisible(false);
     }
   };
 
@@ -143,7 +157,7 @@ export default function AdminManagementScreen() {
                 Dashboard dữ liệu cho admin Z-Pantry
               </Text>
             </View>
-            <Pressable onPress={signOut} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
+            <Pressable onPress={() => setIsLogoutVisible(true)} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
               <MaterialCommunityIcons name="logout" size={24} color={colors.primary} />
             </Pressable>
           </View>
@@ -204,6 +218,7 @@ export default function AdminManagementScreen() {
       </View>
 
       <ConfirmDeleteModal target={deleteTarget} isSaving={isSaving} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
+      <LogoutConfirmModal visible={isLogoutVisible} isSigningOut={isSigningOut} onStay={() => setIsLogoutVisible(false)} onConfirm={confirmSignOut} />
     </SafeAreaView>
   );
 }

@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
-import { translateApiMessage } from "@/utils/localize";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const fieldGlass = "rgba(255,255,255,0.22)";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -72,26 +72,6 @@ export default function LoginScreen() {
     facebookDiscovery
   );
 
-  useEffect(() => {
-    console.log("Redirect URI:", redirectUri);
-  }, [redirectUri]);
-
-  useEffect(() => {
-    console.log("Google response:", googleResponse);
-  }, [googleResponse]);
-
-  useEffect(() => {
-    console.log("Facebook response:", facebookResponse);
-  }, [facebookResponse]);
-
-  useEffect(() => {
-    if (!facebookRequest) return;
-    facebookRequest
-      .makeAuthUrlAsync(facebookDiscovery)
-      .then((url) => console.log("Facebook auth URL:", url))
-      .catch((error: Error) => console.log("Facebook auth URL error:", error.message));
-  }, [facebookRequest]);
-
   const setModeAndClearMessages = (nextMode: AuthMode) => {
     setMode(nextMode);
     setAuthMessage("");
@@ -129,7 +109,7 @@ export default function LoginScreen() {
 
   const handleApiError = (error: unknown) => {
     setSuccessMessage("");
-    setAuthMessage(error instanceof Error ? translateApiMessage(error.message) : "Đã có lỗi xảy ra. Vui lòng thử lại.");
+    setAuthMessage(getFriendlyErrorMessage(error, "Đã có lỗi xảy ra. Vui lòng thử lại.", "auth"));
   };
 
   const handleEmailLogin = async () => {
@@ -208,8 +188,7 @@ export default function LoginScreen() {
       return;
     }
     setAuthMessage("");
-    const result = await promptGoogleAsync();
-    console.log("Google prompt result:", result);
+    await promptGoogleAsync();
   };
 
   const handleFacebookLogin = async () => {
@@ -218,13 +197,12 @@ export default function LoginScreen() {
       return;
     }
     setAuthMessage("");
-    const result = await promptFacebookAsync({ useProxy: false } as never);
-    console.log("Facebook prompt result:", result);
+    await promptFacebookAsync({ useProxy: false } as never);
   };
 
   useEffect(() => {
     if (googleResponse?.type === "error") {
-      setAuthMessage(googleResponse.error?.message || "Google không thể hoàn tất đăng nhập.");
+      setAuthMessage("Google không thể hoàn tất đăng nhập. Vui lòng thử lại.");
       return;
     }
     const accessToken = googleResponse?.type === "success" ? googleResponse.authentication?.accessToken || googleResponse.params.access_token : undefined;
@@ -244,12 +222,12 @@ export default function LoginScreen() {
         })
       )
       .then(() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }))
-      .catch((error: Error) => setAuthMessage(error.message));
+      .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Google chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
   }, [googleResponse, navigation, signIn]);
 
   useEffect(() => {
     if (facebookResponse?.type === "error") {
-      setAuthMessage(facebookResponse.error?.message || "Facebook không thể hoàn tất đăng nhập.");
+      setAuthMessage("Facebook không thể hoàn tất đăng nhập. Vui lòng thử lại.");
       return;
     }
     const accessToken = facebookResponse?.type === "success" ? facebookResponse.authentication?.accessToken || facebookResponse.params.access_token : undefined;
@@ -269,7 +247,7 @@ export default function LoginScreen() {
         })
       )
       .then(() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }))
-      .catch((error: Error) => setAuthMessage(error.message));
+      .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Facebook chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
   }, [facebookResponse, navigation, signIn]);
 
   const primaryAction = mode === "register" ? handleRegister : mode === "otp" ? handleVerifyOtp : handleEmailLogin;

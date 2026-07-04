@@ -39,6 +39,8 @@ export function translateApiMessage(message: string) {
   if (lower.includes("recipe not found")) return "Không tìm thấy công thức.";
   if (lower.includes("today menu item not found")) return "Không tìm thấy món trong thực đơn hôm nay.";
   if (lower.includes("imagefile is required")) return "Vui lòng chọn ảnh thành phẩm.";
+  if (lower.includes("unsupported media type") || lower.includes("invalid image") || lower.includes("image format") || lower.includes("file type") || lower.includes("not supported")) return "Ảnh của bạn không phù hợp hoặc không đúng định dạng. Vui lòng chọn ảnh JPG, PNG hoặc WEBP rõ nét hơn.";
+  if (lower.includes("file too large") || lower.includes("maximum file size") || lower.includes("request entity too large")) return "Ảnh của bạn quá lớn. Vui lòng chọn ảnh nhẹ hơn rồi thử lại.";
   if (lower.includes("this meal has already been completed")) return "Món này đã được hoàn thành trước đó.";
   if (lower.includes("cooked menu items cannot be deleted")) return "Không thể xóa món đã hoàn thành.";
   if (lower.includes("mealid or recipeid is required")) return "Thiếu mã món ăn hoặc mã công thức.";
@@ -49,9 +51,37 @@ export function translateApiMessage(message: string) {
   if (lower.includes("gmail__password") || lower.includes("gmail__emailaddress")) return "Thiếu cấu hình Gmail gửi mã OTP trên server.";
   if (lower.includes("email already exists")) return "Email này đã được đăng ký.";
   if (lower.includes("request failed")) return "Yêu cầu thất bại. Vui lòng thử lại.";
+  if (lower.includes("internal server error")) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
   if (lower.includes("network error")) return "Không thể kết nối mạng. Vui lòng thử lại.";
 
   return value;
+}
+
+type FriendlyErrorContext = "default" | "imageUpload" | "auth";
+
+export function getFriendlyErrorMessage(error: unknown, fallback: string, context: FriendlyErrorContext = "default") {
+  const rawMessage = error instanceof Error ? error.message : "";
+  const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
+  const lower = rawMessage.toLowerCase();
+
+  if (context === "imageUpload") {
+    if (status >= 400 || lower.includes("image") || lower.includes("file") || lower.includes("upload") || lower.includes("multipart") || lower.includes("unsupported") || lower.includes("invalid")) {
+      return "Ảnh của bạn không phù hợp hoặc không đúng định dạng. Vui lòng kiểm tra và chọn ảnh JPG, PNG hoặc WEBP rõ nét hơn.";
+    }
+  }
+
+  if (!rawMessage) return fallback;
+  if (status >= 500) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
+  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Chưa kết nối được dữ liệu. Vui lòng kiểm tra mạng rồi thử lại.";
+
+  const translated = translateApiMessage(rawMessage);
+  if (translated !== rawMessage) return translated;
+
+  if (lower.includes("exception") || lower.includes("stack") || lower.includes("trace") || lower.includes("localhost") || lower.includes("http://") || lower.includes("https://")) {
+    return fallback;
+  }
+
+  return translated || fallback;
 }
 
 export function translatePantryWarning(message: string) {

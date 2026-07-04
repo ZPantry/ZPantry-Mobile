@@ -8,6 +8,7 @@ import { usersApi } from "@/api/users";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 type UserFormState = {
   fullName: string;
@@ -58,7 +59,7 @@ export default function AdminUserFormScreen() {
       toast.show("Đã cập nhật user.");
       navigation.navigate("AdminManagement", { initialTab: "users", showBackButton: false });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa cập nhật được user.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa cập nhật được user."));
     } finally {
       setIsSaving(false);
     }

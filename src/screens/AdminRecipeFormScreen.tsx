@@ -10,6 +10,7 @@ import { recipesApi } from "@/api/recipes";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 import { pickUploadImage } from "@/utils/pickUploadImage";
 
 type RecipeFormState = {
@@ -109,7 +110,7 @@ export default function AdminRecipeFormScreen() {
       const page = await ingredientsApi.list(1, 150);
       setIngredients(page.data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được danh sách nguyên liệu.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được danh sách nguyên liệu."));
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +157,7 @@ export default function AdminRecipeFormScreen() {
       if (!picked) return;
       setForm((current) => ({ ...current, imageFile: picked.file, localImageUri: picked.uri }));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa chọn được ảnh.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa chọn được ảnh.", "imageUpload"));
     }
   };
 
@@ -203,7 +204,7 @@ export default function AdminRecipeFormScreen() {
       }
       navigation.navigate("AdminManagement", { initialTab: "recipes", showBackButton: false });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa lưu được công thức.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa lưu được công thức.", form.imageFile ? "imageUpload" : "default"));
     } finally {
       setIsSaving(false);
     }

@@ -14,6 +14,7 @@ import PantryItemCard from "@/components/PantryItemCard";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { PantryItem, PantryStatus } from "@/types";
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const pantryCategories = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
@@ -91,7 +92,7 @@ export default function PantryScreen() {
       const ingredientById = new Map(ingredientPage.data.map((ingredient) => [ingredient.id, ingredient]));
       setItems(pantryItems.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Chưa tải được tủ lạnh.");
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được tủ lạnh."));
       setItems([]);
     } finally {
       setIsLoading(false);
