@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { translateApiMessage } from "@/utils/localize";
 
 const fieldGlass = "rgba(255,255,255,0.22)";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,7 +129,7 @@ export default function LoginScreen() {
 
   const handleApiError = (error: unknown) => {
     setSuccessMessage("");
-    setAuthMessage(error instanceof Error ? error.message : "Đã có lỗi xảy ra. Vui lòng thử lại.");
+    setAuthMessage(error instanceof Error ? translateApiMessage(error.message) : "Đã có lỗi xảy ra. Vui lòng thử lại.");
   };
 
   const handleEmailLogin = async () => {

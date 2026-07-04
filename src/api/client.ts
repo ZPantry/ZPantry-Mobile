@@ -158,27 +158,40 @@ function unwrapEnvelope<T>(body: unknown): T {
 
 type ApiRequestOptions = RequestInit & {
   auth?: boolean;
+  timeoutMs?: number;
 };
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const { auth = false, headers, ...fetchOptions } = options;
+  const { auth = false, headers, timeoutMs = 30000, ...fetchOptions } = options;
   const token = auth ? await authStorage.getAccessToken() : null;
   const url = `${getApiBaseUrl()}${path}`;
   const requestBody = fetchOptions.body;
   const isFormData = typeof FormData !== "undefined" && requestBody instanceof FormData;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  if (fetchOptions.signal) {
+    fetchOptions.signal.addEventListener("abort", () => timeoutController.abort(), { once: true });
+  }
 
   let response: Response;
   try {
     response = await fetch(url, {
       ...fetchOptions,
+      signal: timeoutController.signal,
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers
       }
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.", 0);
+    }
     throw new ApiError("Chưa kết nối được dữ liệu. Vui lòng thử lại sau.", 0);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const body = await readResponse(response);
