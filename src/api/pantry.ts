@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse } from "@/api/client";
 
 export type PantryApiItem = {
@@ -66,12 +67,12 @@ function normalizePantryItems(response: PantryListResponse) {
 
 export const pantryApi = {
   async list(pageIndex = 1, pageSize = 50) {
-    const response = await apiRequest<PantryListResponse>(`/api/me/pantry?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+    const response = await apiRequest<PantryListResponse>(`${endpoints.pantry.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
     return normalizePantryItems(response);
   },
 
   saveItem(payload: PantryItemPayload) {
-    return apiRequest<PantryApiItem>("/api/me/pantry/items", {
+    return apiRequest<PantryApiItem>(endpoints.pantry.create, {
       method: "POST",
       auth: true,
       body: JSON.stringify(normalizePayload(payload))
@@ -79,7 +80,7 @@ export const pantryApi = {
   },
 
   updateItem(itemId: string, payload: PantryItemPayload) {
-    return apiRequest<PantryApiItem>(`/api/me/pantry/items/${itemId}`, {
+    return apiRequest<PantryApiItem>(endpoints.pantry.item(itemId), {
       method: "PUT",
       auth: true,
       body: JSON.stringify(normalizePayload(payload))
@@ -87,7 +88,7 @@ export const pantryApi = {
   },
 
   removeItem(itemId: string) {
-    return apiRequest<ApiMessageResponse>(`/api/me/pantry/items/${itemId}`, {
+    return apiRequest<ApiMessageResponse>(endpoints.pantry.item(itemId), {
       method: "DELETE",
       auth: true
     });

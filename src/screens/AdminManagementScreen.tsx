@@ -9,6 +9,7 @@ import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import type { AdminUser } from "@/api/users";
 import { usersApi } from "@/api/users";
+import { canUpdateUser } from "@/utils/userProfile";
 import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
@@ -44,7 +45,7 @@ function formatDate(value?: string) {
 export default function AdminManagementScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { signOut } = useAuth();
+  const { signOut, user: currentUser } = useAuth();
   const toast = useToast();
   const initialTab: AdminTab = ["users", "recipes", "ingredients"].includes(route.params?.initialTab) ? route.params.initialTab : "users";
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
@@ -176,7 +177,7 @@ export default function AdminManagementScreen() {
                 ) : displayedUsers.length === 0 ? (
                   <EmptyState message="Không tìm thấy user phù hợp." />
                 ) : (
-                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={() => navigation.navigate("AdminUserForm", { user })} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
+                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={canUpdateUser(currentUser?.userId, user.id) ? () => navigation.navigate("AdminUserForm", { user }) : undefined} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
                 )}
               </View>
             </>
@@ -374,7 +375,7 @@ function SearchBox({ value, onChangeText, placeholder }: { value: string; onChan
   );
 }
 
-function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit: () => void; onDelete: () => void }) {
+function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit?: () => void; onDelete: () => void }) {
   return (
     <View style={{ minHeight: 112, borderRadius: 14, backgroundColor: colors.white, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
       {user.avatarUrl ? (
@@ -403,7 +404,7 @@ function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit: ()
         </Text>
       </View>
       <View style={{ gap: 8 }}>
-        <IconButton icon="pencil-outline" tone="edit" onPress={onEdit} />
+        {onEdit ? <IconButton icon="pencil-outline" tone="edit" onPress={onEdit} /> : null}
         <IconButton icon="trash-can-outline" tone="delete" onPress={onDelete} />
       </View>
     </View>

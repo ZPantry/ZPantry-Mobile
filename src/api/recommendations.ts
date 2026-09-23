@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest } from "@/api/client";
 import { translateRecommendationText } from "@/utils/localize";
 
@@ -156,7 +157,7 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 
 export const recommendationsApi = {
   async suggestMeals(payload: MealRecommendationRequest = {}) {
-    const response = await apiRequest<RawMealRecommendationResponse>("/api/recommendations/meals", {
+    const response = await apiRequest<RawMealRecommendationResponse>(endpoints.recommendations.meals, {
       method: "POST",
       auth: true,
       body: JSON.stringify(payload)
@@ -166,7 +167,7 @@ export const recommendationsApi = {
   },
 
   async checkMealIngredients(mealId: string) {
-    const response = await apiRequest<unknown>(`/api/recommendations/meals/${mealId}/missing-ingredients`, {
+    const response = await apiRequest<unknown>(endpoints.recommendations.missingIngredients(mealId), {
       auth: true
     });
 

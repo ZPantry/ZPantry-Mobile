@@ -3,7 +3,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { AdminUser, UpdateUserPayload } from "@/api/users";
+import type { AdminUser } from "@/api/users";
+import { useAuth } from "@/context/AuthContext";
+import { buildUserUpdate, canUpdateUser } from "@/utils/userProfile";
 import { usersApi } from "@/api/users";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
@@ -25,7 +27,9 @@ export default function AdminUserFormScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const toast = useToast();
+  const { user: currentUser } = useAuth();
   const user = route.params?.user as AdminUser | undefined;
+  const canEdit = canUpdateUser(currentUser?.userId, user?.id);
   const [form, setForm] = useState<UserFormState>({
     fullName: user?.fullName || "",
     avatarUrl: user?.avatarUrl || "",
@@ -35,22 +39,18 @@ export default function AdminUserFormScreen() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const saveUser = async () => {
+    if (isSaving) return;
     if (!user?.id) {
       setErrorMessage("Không tìm thấy user cần cập nhật.");
       return;
     }
 
-    const cleanName = form.fullName.trim();
-    if (!cleanName) {
-      setErrorMessage("Vui lòng nhập tên người dùng.");
+    if (!canEdit) {
+      setErrorMessage("Bạn chỉ được phép cập nhật thông tin của chính tài khoản mình.");
       return;
     }
 
-    const payload: UpdateUserPayload = {
-      fullName: cleanName,
-      avatarUrl: form.avatarUrl.trim(),
-      ...(form.password.trim() ? { password: form.password.trim() } : {})
-    };
+    const payload = buildUserUpdate(user, form);
 
     setIsSaving(true);
     setErrorMessage("");
@@ -82,6 +82,7 @@ export default function AdminUserFormScreen() {
           </View>
         </View>
 
+        {!canEdit ? <ErrorBanner message="Bạn chỉ được phép cập nhật thông tin của chính tài khoản mình." /> : null}
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
 
         <View style={{ borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 16, alignItems: "center", gap: 12 }}>
@@ -114,7 +115,7 @@ export default function AdminUserFormScreen() {
               Hủy
             </Text>
           </Pressable>
-          <Pressable onPress={saveUser} disabled={isSaving} style={({ pressed }) => ({ flex: 1.4, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSaving ? 0.76 : 1 })}>
+          <Pressable onPress={saveUser} disabled={isSaving || !canEdit} style={({ pressed }) => ({ flex: 1.4, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSaving || !canEdit ? 0.76 : 1 })}>
             {isSaving ? <ActivityIndicator color={colors.textDark} /> : <MaterialCommunityIcons name="content-save" size={20} color={colors.textDark} />}
             <Text style={{ color: colors.textDark, fontWeight: "900" }} selectable>
               {isSaving ? "Đang lưu..." : "Lưu user"}

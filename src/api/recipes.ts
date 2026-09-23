@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 
 export type RecipeIngredientPayload = {
@@ -103,15 +104,15 @@ function createRecipeFormData(payload: RecipePayload) {
 
 export const recipesApi = {
   list(pageIndex = 1, pageSize = 50) {
-    return apiRequest<PaginatedResponse<Recipe>>(`/api/recipes?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+    return apiRequest<PaginatedResponse<Recipe>>(`${endpoints.recipes.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
 
   get(id: string) {
-    return apiRequest<Recipe>(`/api/recipes/${id}`, { auth: true });
+    return apiRequest<Recipe>(endpoints.recipes.item(id), { auth: true });
   },
 
   create(payload: RecipePayload) {
-    return apiRequest<Recipe>("/api/v2/recipes", {
+    return apiRequest<Recipe>(endpoints.recipes.create, {
       method: "POST",
       auth: true,
       body: createRecipeFormData(payload)
@@ -119,7 +120,7 @@ export const recipesApi = {
   },
 
   update(id: string, payload: RecipePayload) {
-    return apiRequest<Recipe>(`/api/v2/recipes/${id}`, {
+    return apiRequest<Recipe>(endpoints.recipes.update(id), {
       method: "PUT",
       auth: true,
       body: createRecipeFormData(payload)
@@ -127,7 +128,7 @@ export const recipesApi = {
   },
 
   remove(id: string) {
-    return apiRequest<ApiMessageResponse>(`/api/recipes/${id}`, {
+    return apiRequest<ApiMessageResponse>(endpoints.recipes.item(id), {
       method: "DELETE",
       auth: true
     });

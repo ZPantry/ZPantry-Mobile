@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse } from "@/api/client";
 
 export type RegisterPayload = {
@@ -32,36 +33,37 @@ export type RefreshTokenResponse = Pick<LoginResponse, "accessToken" | "expiresA
 
 export const authApi = {
   register(payload: RegisterPayload) {
-    return apiRequest<AuthMessageResponse>("/api/Auth/register", {
+    return apiRequest<AuthMessageResponse>(endpoints.auth.register, {
       method: "POST",
       body: JSON.stringify(payload)
     });
   },
 
   verifyOtp(payload: VerifyOtpPayload) {
-    return apiRequest<AuthMessageResponse>("/api/Auth/verify-otp", {
+    return apiRequest<AuthMessageResponse>(endpoints.auth.verifyOtp, {
       method: "POST",
       body: JSON.stringify(payload)
     });
   },
 
   login(payload: LoginPayload) {
-    return apiRequest<LoginResponse>("/api/Auth/login", {
+    return apiRequest<LoginResponse>(endpoints.auth.login, {
       method: "POST",
       body: JSON.stringify(payload)
     });
   },
 
   refreshToken(refreshToken: string) {
-    return apiRequest<RefreshTokenResponse>("/api/Auth/refresh-token", {
+    return apiRequest<RefreshTokenResponse>(endpoints.auth.refreshToken, {
       method: "POST",
       body: JSON.stringify({ refreshToken })
     });
   },
 
   logout(accessToken?: string) {
-    return apiRequest<AuthMessageResponse | null>("/api/Auth/logout", {
+    return apiRequest<AuthMessageResponse | null>(endpoints.auth.logout, {
       method: "POST",
+      auth: true,
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
     });
   }

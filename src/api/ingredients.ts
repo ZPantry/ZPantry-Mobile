@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 import type { UploadFile } from "@/api/recipes";
 
@@ -56,7 +57,7 @@ function createIngredientFormData(payload: IngredientPayload) {
 
 export const ingredientsApi = {
   list(pageIndex = 1, pageSize = 50) {
-    return apiRequest<PaginatedResponse<Ingredient>>(`/api/ingredients?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+    return apiRequest<PaginatedResponse<Ingredient>>(`${endpoints.ingredients.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
 
   search(search: string, pageIndex = 1, pageSize = 10) {
@@ -66,15 +67,15 @@ export const ingredientsApi = {
       pageSize: String(pageSize)
     });
 
-    return apiRequest<PaginatedResponse<Ingredient>>(`/api/ingredients?${params.toString()}`, { auth: true });
+    return apiRequest<PaginatedResponse<Ingredient>>(`${endpoints.ingredients.list}?${params.toString()}`, { auth: true });
   },
 
   get(id: string) {
-    return apiRequest<Ingredient>(`/api/ingredients/${id}`, { auth: true });
+    return apiRequest<Ingredient>(endpoints.ingredients.item(id), { auth: true });
   },
 
   create(payload: IngredientPayload) {
-    return apiRequest<Ingredient>("/api/v2/ingredients", {
+    return apiRequest<Ingredient>(endpoints.ingredients.create, {
       method: "POST",
       auth: true,
       body: createIngredientFormData(payload)
@@ -82,7 +83,7 @@ export const ingredientsApi = {
   },
 
   update(id: string, payload: IngredientPayload) {
-    return apiRequest<Ingredient>(`/api/v2/ingredients/${id}`, {
+    return apiRequest<Ingredient>(endpoints.ingredients.update(id), {
       method: "PUT",
       auth: true,
       body: createIngredientFormData(payload)
@@ -90,7 +91,7 @@ export const ingredientsApi = {
   },
 
   remove(id: string) {
-    return apiRequest<ApiMessageResponse>(`/api/ingredients/${id}`, {
+    return apiRequest<ApiMessageResponse>(endpoints.ingredients.item(id), {
       method: "DELETE",
       auth: true
     });

@@ -1,3 +1,4 @@
+import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 import type { Recipe, RecipeIngredient, UploadFile } from "@/api/recipes";
 
@@ -114,15 +115,15 @@ function createCompleteFormData(payload: CompleteTodayMenuItemPayload) {
 export const todayMenuApi = {
   list(date: string, pageIndex = 1, pageSize = 20) {
     const query = new URLSearchParams({ date, pageIndex: String(pageIndex), pageSize: String(pageSize) });
-    return apiRequest<PaginatedResponse<TodayMenuItem>>(`/api/me/today-menu?${query.toString()}`, { auth: true });
+    return apiRequest<PaginatedResponse<TodayMenuItem>>(`${endpoints.todayMenu.list}?${query.toString()}`, { auth: true });
   },
 
   get(id: string) {
-    return apiRequest<TodayMenuItemDetail>(`/api/me/today-menu/items/${id}`, { auth: true });
+    return apiRequest<TodayMenuItemDetail>(endpoints.todayMenu.item(id), { auth: true });
   },
 
   add(payload: AddTodayMenuItemPayload) {
-    return apiRequest<TodayMenuItem>("/api/me/today-menu/items", {
+    return apiRequest<TodayMenuItem>(endpoints.todayMenu.create, {
       method: "POST",
       auth: true,
       body: JSON.stringify(payload)
@@ -130,14 +131,14 @@ export const todayMenuApi = {
   },
 
   remove(id: string) {
-    return apiRequest<ApiMessageResponse>(`/api/me/today-menu/items/${id}`, {
+    return apiRequest<ApiMessageResponse>(endpoints.todayMenu.item(id), {
       method: "DELETE",
       auth: true
     });
   },
 
   complete(id: string, payload: CompleteTodayMenuItemPayload) {
-    return apiRequest<CompleteTodayMenuItemResponse>(`/api/me/today-menu/items/${id}/complete`, {
+    return apiRequest<CompleteTodayMenuItemResponse>(endpoints.todayMenu.complete(id), {
       method: "POST",
       auth: true,
       body: createCompleteFormData(payload)
@@ -145,6 +146,6 @@ export const todayMenuApi = {
   },
 
   cookingLogs(pageIndex = 1, pageSize = 20) {
-    return apiRequest<PaginatedResponse<CookingLog>>(`/api/me/cooking-logs?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+    return apiRequest<PaginatedResponse<CookingLog>>(`${endpoints.todayMenu.cookingLogs}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   }
 };
