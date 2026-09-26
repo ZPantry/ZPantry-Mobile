@@ -7,6 +7,7 @@ import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { Recipe, RecipeIngredientPayload, RecipePayload, UploadFile } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
+import SelectField from "@/components/SelectField";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -46,6 +47,18 @@ const emptyRecipeForm: RecipeFormState = {
   gradientTo: "#39D98A",
   ingredients: []
 };
+
+const difficultyOptions = [
+  { label: "Dễ", value: "Easy" },
+  { label: "Trung bình", value: "Medium" },
+  { label: "Khó", value: "Hard" }
+] as const;
+
+const sourceTypeOptions = [
+  { label: "Quản trị viên tự tạo", value: "Manual" },
+  { label: "Được tạo bởi AI", value: "AI" },
+  { label: "Nhập từ nguồn khác", value: "Imported" }
+] as const;
 
 function toNumber(value: string) {
   const number = Number(value.replace(",", "."));
@@ -239,10 +252,10 @@ export default function AdminRecipeFormScreen() {
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <FormInput label="Độ khó" value={form.difficulty} onChangeText={(difficulty) => setForm((current) => ({ ...current, difficulty }))} placeholder="Easy" />
+            <SelectField label="Độ khó" value={form.difficulty} options={difficultyOptions} onValueChange={(difficulty) => setForm((current) => ({ ...current, difficulty }))} />
           </View>
           <View style={{ flex: 1 }}>
-            <FormInput label="Nguồn" value={form.sourceType} onChangeText={(sourceType) => setForm((current) => ({ ...current, sourceType }))} placeholder="Manual" />
+            <SelectField label="Nguồn công thức" value={form.sourceType} options={sourceTypeOptions} onValueChange={(sourceType) => setForm((current) => ({ ...current, sourceType }))} hint="Cho biết công thức được tạo thủ công, bởi AI hay nhập từ nguồn khác." />
           </View>
         </View>
 

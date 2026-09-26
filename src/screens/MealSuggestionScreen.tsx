@@ -82,6 +82,7 @@ export default function MealSuggestionScreen() {
   const [extraIngredients, setExtraIngredients] = useState<SearchIngredient[]>([]);
   const [searchText, setSearchText] = useState("");
   const [topK, setTopK] = useState(5);
+  const [showExtraPicker, setShowExtraPicker] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -110,6 +111,7 @@ export default function MealSuggestionScreen() {
   );
 
   const pantryIngredientIds = useMemo(() => new Set(pantryItems.map((item) => item.ingredientId)), [pantryItems]);
+  const pantryByIngredientId = useMemo(() => new Map(pantryItems.map((item) => [item.ingredientId, item])), [pantryItems]);
   const extraIngredientIds = useMemo(() => new Set(extraIngredients.map((item) => item.ingredientId)), [extraIngredients]);
   const pantrySearchIngredients = useMemo(() => pantryItems.map(pantryToSearchIngredient), [pantryItems]);
   const selectedIngredients = useMemo(() => [...pantrySearchIngredients, ...extraIngredients], [extraIngredients, pantrySearchIngredients]);
@@ -119,8 +121,8 @@ export default function MealSuggestionScreen() {
     const pool = keyword
       ? ingredients.filter((ingredient) => normalizeText(`${ingredient.name} ${ingredient.normalizedName} ${ingredient.category}`).includes(keyword))
       : ingredients.slice(0, 24);
-    return pool;
-  }, [ingredients, searchText]);
+    return pool.filter((ingredient) => !pantryIngredientIds.has(ingredient.id)).slice(0, 40);
+  }, [ingredients, pantryIngredientIds, searchText]);
 
   const toggleExtraIngredient = (ingredient: Ingredient) => {
     if (pantryIngredientIds.has(ingredient.id)) {
@@ -205,38 +207,70 @@ export default function MealSuggestionScreen() {
           </Text>
         </View>
 
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <StepCard number="1" label="Kiểm tra tủ" complete={pantrySearchIngredients.length > 0} />
+          <StepCard number="2" label="Chọn thêm" complete={extraIngredients.length > 0} />
+          <StepCard number="3" label="Nhận gợi ý" complete={false} />
+        </View>
+
+        {isLoading && pantryItems.length === 0 && ingredients.length === 0 ? (
+          <View style={{ minHeight: 110, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={{ color: colors.muted, fontWeight: "800" }} selectable>
+              Đang kiểm tra nguyên liệu trong tủ...
+            </Text>
+          </View>
+        ) : null}
+
         <IngredientSection
-          title="Tự động từ tủ lạnh"
+          title="1. Có sẵn trong tủ"
           count={pantrySearchIngredients.length}
           emptyText="Tủ đang trống. Hãy chọn thêm nguyên liệu bên dưới để vẫn có thể gợi ý món."
         >
           {pantrySearchIngredients.map((item) => {
-            const pantryItem = pantryItems.find((pantry) => pantry.ingredientId === item.ingredientId);
+            const pantryItem = pantryByIngredientId.get(item.ingredientId);
             return <SelectedIngredientCard key={item.ingredientId} item={item} meta={pantryItem ? formatStorage(pantryItem.storageLocation) : "Tủ lạnh"} />;
           })}
         </IngredientSection>
 
         <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
-              Chọn thêm ngoài tủ
-            </Text>
-            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900" }} selectable>
-              {extraIngredients.length} đã chọn
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
+                2. Chọn thêm nguyên liệu
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", marginTop: 3 }} selectable>
+                Không bắt buộc · chỉ dùng cho lần gợi ý này
+              </Text>
+            </View>
+            <Pressable onPress={() => setShowExtraPicker((current) => !current)} hitSlop={8} style={{ minHeight: 38, paddingHorizontal: 12, borderRadius: 19, backgroundColor: "rgba(244,162,28,0.18)", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 5 }}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
+                {extraIngredients.length > 0 ? `${extraIngredients.length} đã chọn` : showExtraPicker ? "Thu gọn" : "Mở danh sách"}
+              </Text>
+              <Ionicons name={showExtraPicker ? "chevron-up" : "chevron-down"} size={15} color={colors.primary} />
+            </Pressable>
           </View>
-          <SearchBar placeholder="Tìm nguyên liệu có sẵn" value={searchText} onChangeText={setSearchText} />
-          <View style={{ gap: 10 }}>
-            {filteredIngredients.map((ingredient) => (
-              <IngredientOption
-                key={ingredient.id}
-                ingredient={ingredient}
-                inPantry={pantryIngredientIds.has(ingredient.id)}
-                selected={extraIngredientIds.has(ingredient.id)}
-                onPress={() => toggleExtraIngredient(ingredient)}
-              />
-            ))}
-          </View>
+          {showExtraPicker ? (
+            <>
+              <SearchBar placeholder="Tìm nguyên liệu bên ngoài tủ" value={searchText} onChangeText={setSearchText} />
+              <View style={{ gap: 10 }}>
+                {filteredIngredients.length === 0 && !isLoading ? (
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
+                    Không tìm thấy nguyên liệu phù hợp.
+                  </Text>
+                ) : null}
+                {filteredIngredients.map((ingredient) => (
+                  <IngredientOption
+                    key={ingredient.id}
+                    ingredient={ingredient}
+                    inPantry={false}
+                    selected={extraIngredientIds.has(ingredient.id)}
+                    onPress={() => toggleExtraIngredient(ingredient)}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
         </View>
 
         {extraIngredients.length > 0 ? (
@@ -316,7 +350,7 @@ function IngredientSection({ title, count, emptyText, children }: { title: strin
           {title}
         </Text>
         <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900" }} selectable>
-          {count} món
+          {count} nguyên liệu
         </Text>
       </View>
       {count === 0 ? (
@@ -326,6 +360,19 @@ function IngredientSection({ title, count, emptyText, children }: { title: strin
       ) : (
         <View style={{ gap: 10 }}>{children}</View>
       )}
+    </View>
+  );
+}
+
+function StepCard({ number, label, complete }: { number: string; label: string; complete: boolean }) {
+  return (
+    <View style={{ flex: 1, minHeight: 68, borderRadius: 12, padding: 10, backgroundColor: complete ? "rgba(57,217,138,0.18)" : colors.card, borderWidth: 1, borderColor: complete ? `${colors.success}88` : colors.line, gap: 5 }}>
+      <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: complete ? colors.success : colors.primary }}>
+        <Text style={{ color: colors.textDark, fontSize: 11, fontWeight: "900" }}>{complete ? "✓" : number}</Text>
+      </View>
+      <Text numberOfLines={2} style={{ color: colors.text, fontSize: 11, lineHeight: 14, fontWeight: "900" }}>
+        {label}
+      </Text>
     </View>
   );
 }

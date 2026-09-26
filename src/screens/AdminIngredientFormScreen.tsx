@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient, IngredientPayload } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { UploadFile } from "@/api/recipes";
+import SelectField from "@/components/SelectField";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -43,6 +44,25 @@ const emptyIngredientForm: IngredientFormState = {
   gradientFrom: "#F4A21C",
   gradientTo: "#39D98A"
 };
+
+const categoryOptions = [
+  { label: "Rau củ", value: "Vegetable" },
+  { label: "Trái cây", value: "Fruit" },
+  { label: "Thịt", value: "Meat" },
+  { label: "Hải sản", value: "Seafood" },
+  { label: "Sữa và chế phẩm", value: "Dairy" },
+  { label: "Ngũ cốc", value: "Grain" },
+  { label: "Gia vị", value: "Spice" },
+  { label: "Khác", value: "Other" }
+] as const;
+
+const unitOptions = [
+  { label: "Gam (g)", value: "g" },
+  { label: "Kilôgam (kg)", value: "kg" },
+  { label: "Mililít (ml)", value: "ml" },
+  { label: "Lít (l)", value: "l" },
+  { label: "Cái / phần", value: "piece" }
+] as const;
 
 function toNumber(value: string) {
   const number = Number(value.replace(",", "."));
@@ -149,10 +169,10 @@ export default function AdminIngredientFormScreen() {
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <FormInput label="Nhóm" value={form.category} onChangeText={(category) => setForm((current) => ({ ...current, category }))} placeholder="Vegetable" />
+            <SelectField label="Nhóm" value={form.category} options={categoryOptions} onValueChange={(category) => setForm((current) => ({ ...current, category }))} />
           </View>
           <View style={{ flex: 1 }}>
-            <FormInput label="Đơn vị" value={form.unit} onChangeText={(unit) => setForm((current) => ({ ...current, unit }))} placeholder="g" />
+            <SelectField label="Đơn vị" value={form.unit} options={unitOptions} onValueChange={(unit) => setForm((current) => ({ ...current, unit }))} />
           </View>
         </View>
 

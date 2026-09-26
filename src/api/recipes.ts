@@ -69,34 +69,34 @@ function appendFile(formData: FormData, key: string, file: UploadFile) {
   formData.append(key, file as unknown as Blob);
 }
 
-function createRecipeFormData(payload: RecipePayload) {
+export function createRecipeFormData(payload: RecipePayload) {
   const formData = new FormData();
-  appendText(formData, "Name", payload.name);
-  appendText(formData, "Description", payload.description);
-  appendText(formData, "CookingTimeMinutes", payload.cookingTimeMinutes);
-  appendText(formData, "Difficulty", payload.difficulty);
-  appendText(formData, "ServingSize", payload.servingSize);
-  appendText(formData, "InstructionText", payload.instructionText);
-  appendText(formData, "SourceType", payload.sourceType);
-  appendText(formData, "GradientFrom", payload.gradientFrom || "");
-  appendText(formData, "GradientTo", payload.gradientTo || "");
-  appendText(formData, "ImageUrl", payload.imageUrl);
+  appendText(formData, "name", payload.name);
+  appendText(formData, "description", payload.description);
+  appendText(formData, "cookingTimeMinutes", payload.cookingTimeMinutes);
+  appendText(formData, "difficulty", payload.difficulty);
+  appendText(formData, "servingSize", payload.servingSize);
+  appendText(formData, "instructionText", payload.instructionText);
+  appendText(formData, "sourceType", payload.sourceType);
+  appendText(formData, "gradientFrom", payload.gradientFrom || "");
+  appendText(formData, "gradientTo", payload.gradientTo || "");
+  appendText(formData, "imageUrl", payload.imageUrl);
   appendText(
     formData,
-    "IngredientsJson",
+    "ingredientsJson",
     JSON.stringify(
       (payload.ingredients || []).map((item) => ({
-        IngredientId: item.ingredientId,
-        Quantity: item.quantity,
-        Unit: item.unit,
-        IsRequired: item.isRequired,
-        Note: item.note
+        ingredientId: item.ingredientId,
+        quantity: item.quantity,
+        unit: item.unit,
+        isRequired: item.isRequired,
+        note: item.note
       }))
     )
   );
 
   if (payload.imageFile) {
-    appendFile(formData, "ImageFile", payload.imageFile);
+    appendFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;

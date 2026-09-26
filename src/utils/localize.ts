@@ -50,6 +50,9 @@ export function translateApiMessage(message: string) {
   if (lower.includes("email delivery timed out") || lower.includes("could not send otp email")) return "Chưa gửi được mã OTP. Vui lòng thử lại sau ít phút hoặc kiểm tra cấu hình email.";
   if (lower.includes("gmail__password") || lower.includes("gmail__emailaddress")) return "Thiếu cấu hình Gmail gửi mã OTP trên server.";
   if (lower.includes("email already exists")) return "Email này đã được đăng ký.";
+  if (lower.includes("invalid email or password") || lower.includes("invalid credentials")) return "Email hoặc mật khẩu không đúng.";
+  if (lower.includes("ingredient name is required")) return "Vui lòng nhập tên nguyên liệu.";
+  if (lower.includes("recipe name is required")) return "Vui lòng nhập tên công thức.";
   if (lower.includes("request failed")) return "Yêu cầu thất bại. Vui lòng thử lại.";
   if (lower.includes("internal server error")) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
   if (lower.includes("network error")) return "Không thể kết nối mạng. Vui lòng thử lại.";

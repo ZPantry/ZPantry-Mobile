@@ -11,8 +11,7 @@
     },
     "android": {
       "package": "com.zpantry.app",
-      "versionCode": 1,
-      "usesCleartextTraffic": true
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"
@@ -36,7 +35,15 @@
           "displayName": "Z Pantry"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

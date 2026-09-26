@@ -111,6 +111,34 @@ test('Auth routes retain casing and logout requires authentication', async () =>
   assert.equal(calls[4][1].auth, true);
 });
 
+test('admin multipart forms use the Java API camelCase field names', () => {
+  const formLoad = loader({ '@/api/client': { apiRequest: async () => ({}) } });
+  const { createIngredientFormData } = formLoad('@/api/ingredients');
+  const { createRecipeFormData } = formLoad('@/api/recipes');
+  const ingredient = Object.fromEntries(createIngredientFormData({
+    name: 'Pork', category: 'Meat', unit: 'g', caloriesPerUnit: 2,
+    proteinPerUnit: 1, fatPerUnit: 1, carbPerUnit: 0, imageUrl: '',
+    gradientFrom: '#000000', gradientTo: '#ffffff'
+  }).entries());
+  assert.deepEqual(Object.keys(ingredient), [
+    'name', 'category', 'unit', 'caloriesPerUnit', 'proteinPerUnit',
+    'fatPerUnit', 'carbPerUnit', 'gradientFrom', 'gradientTo', 'imageUrl'
+  ]);
+  assert.equal(ingredient.name, 'Pork');
+  assert.equal(Object.hasOwn(ingredient, 'Name'), false);
+
+  const recipe = Object.fromEntries(createRecipeFormData({
+    name: 'Carrot with pork', description: '', cookingTimeMinutes: 20,
+    difficulty: 'Easy', servingSize: 2, instructionText: '', imageUrl: '',
+    sourceType: 'Manual', ingredients: [{ ingredientId: id, quantity: 100, unit: 'g', isRequired: true, note: '' }]
+  }).entries());
+  assert.equal(recipe.name, 'Carrot with pork');
+  assert.equal(Object.hasOwn(recipe, 'Name'), false);
+  assert.deepEqual(JSON.parse(recipe.ingredientsJson), [
+    { ingredientId: id, quantity: 100, unit: 'g', isRequired: true, note: '' }
+  ]);
+});
+
 test('transport handles empty 401/403 and HTTP 200 logical failures', async () => {
   const previousFetch = global.fetch;
   const previousUrl = process.env.EXPO_PUBLIC_API_BASE_URL;

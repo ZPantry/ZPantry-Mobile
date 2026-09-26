@@ -91,7 +91,15 @@ export default function LoginScreen() {
     return "";
   };
 
-  const validateLogin = () => validateEmail() || validatePassword();
+  const validateLogin = () => {
+    const basicError = validateEmail() || validatePassword();
+    if (basicError) return basicError;
+    const candidate = password.trim().toLowerCase();
+    if (candidate.startsWith("hashed_") || /^\$(2[aby]|argon2|scrypt)\$/.test(candidate)) {
+      return "Đây là giá trị mật khẩu đã băm trong cơ sở dữ liệu, không phải mật khẩu để đăng nhập. Hãy dùng mật khẩu gốc hoặc đặt lại mật khẩu admin trên server.";
+    }
+    return "";
+  };
 
   const validateRegister = () => {
     if (!fullName.trim()) return "Vui lòng nhập họ và tên.";

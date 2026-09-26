@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import { useState } from "react";
 import { Pressable, Text, ViewStyle } from "react-native";
+import Animated, { cubicBezier } from "react-native-reanimated";
 import { colors } from "@/constants/colors";
 
 type Props = {
@@ -13,11 +15,18 @@ type Props = {
 
 export default function PrimaryButton({ title, icon, variant = "solid", onPress, style }: Props) {
   const isSolid = variant === "solid";
+  const [pressed, setPressed] = useState(false);
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        {
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      hitSlop={8}
+      pressRetentionOffset={16}
+    >
+      <Animated.View
+        style={[
+          {
           minHeight: 50,
           borderRadius: 14,
           borderCurve: "continuous",
@@ -29,16 +38,20 @@ export default function PrimaryButton({ title, icon, variant = "solid", onPress,
           backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.card : "transparent",
           borderWidth: variant === "outline" ? 1 : 0,
           borderColor: colors.line,
-          opacity: pressed ? 0.82 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }]
-        },
-        style
-      ]}
-    >
-      {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.text} /> : null}
-      <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "900", fontSize: 15 }} selectable>
-        {title}
-      </Text>
+            opacity: pressed ? 0.88 : 1,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+            transitionProperty: ["transform", "opacity"],
+            transitionDuration: "120ms",
+            transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1)
+          },
+          style
+        ]}
+      >
+        {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.text} /> : null}
+        <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "900", fontSize: 15 }} selectable>
+          {title}
+        </Text>
+      </Animated.View>
     </Pressable>
   );
 }

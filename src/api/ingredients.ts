@@ -35,21 +35,21 @@ function appendFile(formData: FormData, key: string, file: UploadFile) {
   formData.append(key, file as unknown as Blob);
 }
 
-function createIngredientFormData(payload: IngredientPayload) {
+export function createIngredientFormData(payload: IngredientPayload) {
   const formData = new FormData();
-  appendText(formData, "Name", payload.name);
-  appendText(formData, "Category", payload.category);
-  appendText(formData, "Unit", payload.unit);
-  appendText(formData, "CaloriesPerUnit", payload.caloriesPerUnit);
-  appendText(formData, "ProteinPerUnit", payload.proteinPerUnit);
-  appendText(formData, "FatPerUnit", payload.fatPerUnit);
-  appendText(formData, "CarbPerUnit", payload.carbPerUnit);
-  appendText(formData, "GradientFrom", payload.gradientFrom || "");
-  appendText(formData, "GradientTo", payload.gradientTo || "");
-  appendText(formData, "ImageUrl", payload.imageUrl || "");
+  appendText(formData, "name", payload.name);
+  appendText(formData, "category", payload.category);
+  appendText(formData, "unit", payload.unit);
+  appendText(formData, "caloriesPerUnit", payload.caloriesPerUnit);
+  appendText(formData, "proteinPerUnit", payload.proteinPerUnit);
+  appendText(formData, "fatPerUnit", payload.fatPerUnit);
+  appendText(formData, "carbPerUnit", payload.carbPerUnit);
+  appendText(formData, "gradientFrom", payload.gradientFrom || "");
+  appendText(formData, "gradientTo", payload.gradientTo || "");
+  appendText(formData, "imageUrl", payload.imageUrl || "");
 
   if (payload.imageFile) {
-    appendFile(formData, "ImageFile", payload.imageFile);
+    appendFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;
