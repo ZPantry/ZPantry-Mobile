@@ -58,6 +58,8 @@ export type UserProfile = {
 export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
+  ProfileSetup: undefined;
+  InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
   AdminUserForm: { user: AdminUser };

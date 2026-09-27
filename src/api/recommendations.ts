@@ -2,16 +2,26 @@ import { endpoints } from "@/api/endpoints";
 import { apiRequest } from "@/api/client";
 import { translateRecommendationText } from "@/utils/localize";
 
+export type IngredientItem = {
+  ingredientId?: string | null;
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+};
+
+export type CandidateRecipeItem = {
+  recipeId: string;
+  recipeName: string;
+  ingredientNames: string[];
+  instructionText?: string | null;
+};
+
 export type MealRecommendationRequest = {
+  userId: string;
+  inputIngredientText: string;
+  selectedIngredients?: IngredientItem[];
+  candidateRecipes?: CandidateRecipeItem[];
   topK?: number;
-  inputIngredientText?: string;
-  ingredients?: string[];
-  selectedIngredients?: Array<{
-    ingredientId: string;
-    name?: string;
-    quantity: number;
-    unit: string;
-  }>;
 };
 
 export type MealRecommendation = {
@@ -156,7 +166,7 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
-  async suggestMeals(payload: MealRecommendationRequest = {}) {
+  async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<RawMealRecommendationResponse>(endpoints.recommendations.meals, {
       method: "POST",
       auth: true,
@@ -172,5 +182,16 @@ export const recommendationsApi = {
     });
 
     return normalizeMealIngredientCheck(response);
+  },
+
+  async suggestMissingIngredients(payload: any = {}) {
+    // TODO: Define payload types and response for the AI suggest-missing-ingredients endpoint
+    const response = await apiRequest<unknown>(endpoints.ai.suggestMissingIngredients, {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(payload)
+    });
+
+    return response;
   }
 };

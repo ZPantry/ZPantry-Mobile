@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -81,8 +81,20 @@ export default function PantryScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, onboardingStep, completeOnboardingStep } = useAuth();
   const displayName = user?.fullName || "bạn";
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (onboardingStep === "interactive_guide") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, { toValue: -8, duration: 800, useNativeDriver: true }),
+          Animated.timing(floatAnim, { toValue: 0, duration: 800, useNativeDriver: true })
+        ])
+      ).start();
+    }
+  }, [onboardingStep, floatAnim]);
 
   const loadPantry = useCallback(async () => {
     setIsLoading(true);
@@ -118,7 +130,8 @@ export default function PantryScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
+        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
@@ -141,7 +154,12 @@ export default function PantryScreen() {
         {expiringItem ? <ExpiryAlertCard title={`${expiringItem.name} ${expiringItem.expiryLabel.toLowerCase()}. Ưu tiên dùng sớm để tránh lãng phí.`} tone={expiringItem.status === "danger" ? "danger" : "warning"} /> : null}
 
         <Pressable
-          onPress={() => navigation.navigate("AddIngredient")}
+          onPress={() => {
+            if (onboardingStep === "interactive_guide") {
+              completeOnboardingStep("done");
+            }
+            navigation.navigate("AddIngredient");
+          }}
           style={({ pressed }) => ({
             minHeight: 76,
             borderRadius: 22,
@@ -214,6 +232,28 @@ export default function PantryScreen() {
           )}
         </View>
       </ScrollView>
+
+      {onboardingStep === "interactive_guide" && (
+        <Animated.View style={{ 
+          position: "absolute", 
+          top: 250, 
+          alignSelf: "center",
+          width: 260,
+          backgroundColor: "rgba(20, 20, 20, 0.85)", 
+          padding: 16, 
+          borderRadius: 16, 
+          alignItems: "center", 
+          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.15)",
+          transform: [{ translateY: floatAnim }],
+          zIndex: 100
+        }}>
+          <MaterialCommunityIcons name="arrow-up-thick" size={26} color={colors.primary} style={{ marginBottom: 5 }} />
+          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900", textAlign: "center", marginBottom: 6 }}>Thêm thực phẩm 🍎</Text>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700", textAlign: "center" }}>Bấm nút phía trên để cất nguyên liệu vào tủ.</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }

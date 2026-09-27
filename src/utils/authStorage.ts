@@ -34,8 +34,21 @@ function deleteSessionFile() {
   return;
 }
 
+function decodeBase64(input: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  const str = input.replace(/=+$/, '');
+  let output = '';
+  for (let bc = 0, bs = 0, buffer, i = 0;
+    (buffer = str.charAt(i++));
+    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+  ) {
+    buffer = chars.indexOf(buffer);
+  }
+  return output;
+}
+
 function decodeJwtPayload(token?: string | null): JwtPayload | null {
-  if (!token || typeof atob === "undefined") return null;
+  if (!token) return null;
 
   const payload = token.split(".")[1];
   if (!payload) return null;
@@ -43,8 +56,10 @@ function decodeJwtPayload(token?: string | null): JwtPayload | null {
   try {
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const decoded = typeof atob !== "undefined" ? atob(padded) : decodeBase64(padded);
+    
     const json = decodeURIComponent(
-      atob(padded)
+      decoded
         .split("")
         .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
         .join("")
@@ -97,12 +112,13 @@ async function deleteStoredValue(key: string) {
 
 export const authStorage = {
   async saveSession(session: LoginResponse) {
+    const tokenUser = userFromToken(session.accessToken);
     const user: StoredUser = {
-      userId: session.userId,
-      fullName: session.fullName,
-      email: session.email,
-      role: session.role,
-      expiresAt: session.expiresAt
+      userId: session.userId || tokenUser?.userId || "",
+      fullName: session.fullName || tokenUser?.fullName || "",
+      email: session.email || tokenUser?.email || "",
+      role: session.role || tokenUser?.role || "user",
+      expiresAt: session.expiresAt || tokenUser?.expiresAt || ""
     };
 
     await Promise.all([
@@ -178,5 +194,24 @@ export const authStorage = {
       deleteStoredValue(USER_KEY)
     ]);
     deleteSessionFile();
+  },
+
+  async getOnboardingStep(userId: string): Promise<"profile_setup" | "interactive_guide" | "done"> {
+    const val = await getStoredValue(`onboarding_step_${userId}`);
+    if (val === "interactive_guide" || val === "done") return val;
+    return "profile_setup";
+  },
+
+  async setOnboardingStep(userId: string, step: "interactive_guide" | "done") {
+    await setStoredValue(`onboarding_step_${userId}`, step);
+  },
+
+  async getHasSeenAddIngredientTooltip(userId: string): Promise<boolean> {
+    const val = await getStoredValue(`has_seen_add_ingredient_tooltip_${userId}`);
+    return val === "true";
+  },
+
+  async setHasSeenAddIngredientTooltip(userId: string) {
+    await setStoredValue(`has_seen_add_ingredient_tooltip_${userId}`, "true");
   }
 };

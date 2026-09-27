@@ -20,6 +20,7 @@ import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
 import PantryScreen from "@/screens/PantryScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import ProfileSetupScreen from "@/screens/ProfileSetupScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import TodayMenuItemDetailScreen from "@/screens/TodayMenuItemDetailScreen";
@@ -205,7 +206,7 @@ function Tabs() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, onboardingStep } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
   const hasBeenAuthenticated = useRef(false);
   const isAdmin = ["admin", "administrator"].includes((user?.role ?? "").toLowerCase());
@@ -237,8 +238,17 @@ export default function AppNavigator() {
     return <OnboardingScreen onStart={() => setIntroStage("ready")} />;
   }
 
+  let initialRoute: keyof RootStackParamList = "Tabs";
+  if (!isAuthenticated) {
+    initialRoute = "Login";
+  } else if (isAdmin) {
+    initialRoute = "AdminManagement";
+  } else {
+    initialRoute = onboardingStep === "profile_setup" ? "ProfileSetup" : "Tabs";
+  }
+
   return (
-    <Stack.Navigator key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
@@ -248,6 +258,7 @@ export default function AppNavigator() {
         </>
       ) : isAuthenticated ? (
         <>
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />

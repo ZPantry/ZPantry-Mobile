@@ -152,15 +152,16 @@ export default function MealSuggestionScreen() {
     try {
       const ingredientNames = selectedIngredients.map((item) => item.name);
       const response = await recommendationsApi.suggestMeals({
-        topK,
+        userId: user?.userId || "guest",
         inputIngredientText: ingredientNames.join(", "),
-        ingredients: ingredientNames,
         selectedIngredients: selectedIngredients.map((item) => ({
           ingredientId: item.ingredientId,
           name: item.name,
           quantity: item.quantity,
           unit: item.unit
-        }))
+        })),
+        candidateRecipes: [],
+        topK
       });
 
       navigation.navigate("MealRecommendationResults", {
@@ -187,7 +188,8 @@ export default function MealSuggestionScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadData} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 156, gap: 18 }}
+        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />

@@ -147,5 +147,16 @@ export const todayMenuApi = {
 
   cookingLogs(pageIndex = 1, pageSize = 20) {
     return apiRequest<PaginatedResponse<CookingLog>>(`${endpoints.todayMenu.cookingLogs}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+  },
+
+  async checkMenuCompletion(payload: any = {}) {
+    // TODO: Define payload types and response for the AI check-today-menu-completion endpoint
+    const response = await apiRequest<unknown>(endpoints.ai.checkTodayMenuCompletion, {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(payload)
+    });
+
+    return response;
   }
 };
