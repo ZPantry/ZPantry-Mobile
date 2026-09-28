@@ -10,7 +10,7 @@ export const endpoints = {
     refreshToken: "/api/Auth/refresh-token",
     logout: "/api/Auth/logout"
   },
-  users: { list: "/api/users", item: (id: string) => item("/api/users", id) },
+  users: { list: "/api/users", item: (id: string) => item("/api/users", id), profile: (id: string) => `${item("/api/users", id)}/profile` },
   ingredients: {
     list: "/api/ingredients",
     item: (id: string) => item("/api/ingredients", id),
@@ -38,5 +38,10 @@ export const endpoints = {
     item: (id: string) => item("/api/me/today-menu/items", id),
     complete: (id: string) => `${item("/api/me/today-menu/items", id)}/complete`,
     cookingLogs: "/api/me/cooking-logs"
+  },
+  ai: {
+    suggestMissingIngredients: "/ai/suggest-missing-ingredients",
+    checkTodayMenuCompletion: "/ai/check-today-menu-completion",
+    recommendMeals: "/ai/recommend-meals"
   }
 } as const;

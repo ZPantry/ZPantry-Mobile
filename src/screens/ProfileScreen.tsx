@@ -29,7 +29,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 22 }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }} contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 22 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
           <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
@@ -77,6 +77,9 @@ export default function ProfileScreen() {
           <SettingRow title="Riêng tư và an toàn" />
           <SettingRow title="Thông báo bữa ăn" />
           <SettingRow title="Trung tâm hỗ trợ" />
+          <Pressable onPress={() => navigation.navigate("InteractiveGuide", { isReplay: true })}>
+            <SettingRow title="Hướng dẫn sử dụng Z-Pantry" />
+          </Pressable>
           <View style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.line }}>
             <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }} selectable>
               1900 1009 <Text style={{ color: colors.primary }}>HOTLINE</Text>

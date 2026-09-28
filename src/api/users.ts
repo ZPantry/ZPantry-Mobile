@@ -19,6 +19,28 @@ export type UpdateUserPayload = {
   password?: string | null;
 };
 
+export type UserProfileResponse = {
+  id: string;
+  userId: string;
+  age: number;
+  gender: string;
+  height: number;
+  weight: number;
+  goal: string;
+  dietPreference: string;
+  allergies: string;
+};
+
+export type UserProfileUpdateRequest = {
+  age: number;
+  gender: string;
+  height: number;
+  weight: number;
+  goal?: string;
+  dietPreference?: string;
+  allergies?: string;
+};
+
 export const usersApi = {
   list(pageIndex = 1, pageSize = 10) {
     return apiRequest<PaginatedResponse<AdminUser>>(`${endpoints.users.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
@@ -41,6 +63,18 @@ export const usersApi = {
     return apiRequest<ApiMessageResponse>(endpoints.users.item(id), {
       method: "DELETE",
       auth: true
+    });
+  },
+
+  getProfile(id: string) {
+    return apiRequest<UserProfileResponse>(endpoints.users.profile(id), { auth: true });
+  },
+
+  updateProfile(id: string, payload: UserProfileUpdateRequest) {
+    return apiRequest<UserProfileResponse>(endpoints.users.profile(id), {
+      method: "PUT",
+      auth: true,
+      body: JSON.stringify(payload)
     });
   }
 };

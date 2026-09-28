@@ -229,7 +229,6 @@ export default function LoginScreen() {
           expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
         })
       )
-      .then(() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }))
       .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Google chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
   }, [googleResponse, navigation, signIn]);
 
@@ -254,7 +253,6 @@ export default function LoginScreen() {
           expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
         })
       )
-      .then(() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }))
       .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Facebook chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
   }, [facebookResponse, navigation, signIn]);
 
