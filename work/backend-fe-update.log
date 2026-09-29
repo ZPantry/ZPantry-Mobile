@@ -319,3 +319,4 @@ java.lang.IllegalStateException: Media storage is not configured
 
 2026-09-29T20:34:46.051+07:00  WARN 14024 --- [z_pantry_backend] [nio-8080-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalStateException: Image analysis is currently unavailable]
 2026-09-29T20:34:46.070+07:00  WARN 14024 --- [z_pantry_backend] [nio-8080-exec-8] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalStateException: Image analysis is currently unavailable]
+2026-09-29T20:36:38.529+07:00  WARN 14024 --- [z_pantry_backend] [nio-8080-exec-7] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalStateException: Image analysis is currently unavailable]
