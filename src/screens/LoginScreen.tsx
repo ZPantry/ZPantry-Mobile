@@ -1,10 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
+
+
+
+
 import type { ComponentProps } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
@@ -14,17 +14,14 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const fieldGlass = "rgba(255,255,255,0.22)";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const facebookDiscovery = {
-  authorizationEndpoint: "https://www.facebook.com/v6.0/dialog/oauth",
-  tokenEndpoint: "https://graph.facebook.com/v6.0/oauth/access_token"
-};
+
 
 type AuthMode = "login" | "register" | "otp";
 
-WebBrowser.maybeCompleteAuthSession();
+
 
 export default function LoginScreen() {
-  const navigation = useNavigation<any>();
+
   const { signIn } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [fullName, setFullName] = useState("");
@@ -37,41 +34,6 @@ export default function LoginScreen() {
   const [authMessage, setAuthMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const redirectUri = useMemo(() => {
-    const configuredUri = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim();
-    if (configuredUri) return configuredUri;
-
-    return AuthSession.makeRedirectUri({
-      scheme: "zpantry",
-      path: "auth"
-    });
-  }, []);
-
-  const googleConfig = useMemo(
-    () => ({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-web-client-id",
-      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-ios-client-id",
-      androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-android-client-id",
-      redirectUri,
-      selectAccount: true
-    }),
-    [redirectUri]
-  );
-  const facebookClientId = useMemo(() => process.env.EXPO_PUBLIC_FACEBOOK_APP_ID || process.env.EXPO_PUBLIC_FACEBOOK_ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_FACEBOOK_WEB_CLIENT_ID || "missing-facebook-app-id", []);
-  const isGoogleReady = !googleConfig.webClientId.startsWith("missing-");
-  const isFacebookReady = !facebookClientId.startsWith("missing-");
-  const [googleRequest, googleResponse, promptGoogleAsync] = Google.useAuthRequest(googleConfig);
-  const [facebookRequest, facebookResponse, promptFacebookAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: facebookClientId,
-      scopes: ["public_profile"],
-      responseType: AuthSession.ResponseType.Token,
-      redirectUri,
-      extraParams: { display: "popup" }
-    },
-    facebookDiscovery
-  );
-
   const setModeAndClearMessages = (nextMode: AuthMode) => {
     setMode(nextMode);
     setAuthMessage("");
@@ -111,7 +73,7 @@ export default function LoginScreen() {
     const emailError = validateEmail();
     if (emailError) return emailError;
     if (!otpCode.trim()) return "Vui lòng nhập mã OTP.";
-    if (!/^\d{4,8}$/.test(otpCode.trim())) return "Mã OTP phải gồm 4-8 chữ số.";
+    if (!/^\d{6}$/.test(otpCode.trim())) return "Mã OTP phải gồm 6 chữ số.";
     return "";
   };
 
@@ -121,6 +83,7 @@ export default function LoginScreen() {
   };
 
   const handleEmailLogin = async () => {
+    if (isSubmitting) return;
     const validationError = validateLogin();
     if (validationError) {
       setSuccessMessage("");
@@ -138,7 +101,7 @@ export default function LoginScreen() {
     setSuccessMessage("");
     try {
       const session = await authApi.login({ email: email.trim(), password });
-      await signIn(session);
+      await signIn(session, rememberMe);
     } catch (error) {
       handleApiError(error);
     } finally {
@@ -147,6 +110,7 @@ export default function LoginScreen() {
   };
 
   const handleRegister = async () => {
+    if (isSubmitting) return;
     const validationError = validateRegister();
     if (validationError) {
       setSuccessMessage("");
@@ -169,6 +133,7 @@ export default function LoginScreen() {
   };
 
   const handleVerifyOtp = async () => {
+    if (isSubmitting) return;
     const validationError = validateOtp();
     if (validationError) {
       setSuccessMessage("");
@@ -190,72 +155,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!isGoogleReady) {
-      showMissingConfig("Google", "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
-      return;
-    }
-    setAuthMessage("");
-    await promptGoogleAsync();
-  };
-
-  const handleFacebookLogin = async () => {
-    if (!isFacebookReady) {
-      showMissingConfig("Facebook", "EXPO_PUBLIC_FACEBOOK_APP_ID");
-      return;
-    }
-    setAuthMessage("");
-    await promptFacebookAsync({ useProxy: false } as never);
-  };
-
-  useEffect(() => {
-    if (googleResponse?.type === "error") {
-      setAuthMessage("Google không thể hoàn tất đăng nhập. Vui lòng thử lại.");
-      return;
-    }
-    const accessToken = googleResponse?.type === "success" ? googleResponse.authentication?.accessToken || googleResponse.params.access_token : undefined;
-    if (!accessToken) return;
-
-    fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((res) => res.json())
-      .then((profile) =>
-        signIn({
-          fullName: profile.name || "Google User",
-          email: profile.email || "google@zpantry.local",
-          accessToken,
-          refreshToken: "",
-          userId: profile.sub || "google-user",
-          role: "user",
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
-        })
-      )
-      .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Google chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
-  }, [googleResponse, navigation, signIn]);
-
-  useEffect(() => {
-    if (facebookResponse?.type === "error") {
-      setAuthMessage("Facebook không thể hoàn tất đăng nhập. Vui lòng thử lại.");
-      return;
-    }
-    const accessToken = facebookResponse?.type === "success" ? facebookResponse.authentication?.accessToken || facebookResponse.params.access_token : undefined;
-    if (!accessToken) return;
-
-    fetch(`https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${accessToken}`)
-      .then((res) => res.json())
-      .then((profile) =>
-        signIn({
-          fullName: profile.name || "Facebook User",
-          email: `facebook-${profile.id || "user"}@zpantry.local`,
-          accessToken,
-          refreshToken: "",
-          userId: profile.id || "facebook-user",
-          role: "user",
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
-        })
-      )
-      .catch((error: Error) => setAuthMessage(getFriendlyErrorMessage(error, "Facebook chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth")));
-  }, [facebookResponse, navigation, signIn]);
-
   const primaryAction = mode === "register" ? handleRegister : mode === "otp" ? handleVerifyOtp : handleEmailLogin;
   const primaryTitle = isSubmitting ? "Đang xử lý..." : mode === "register" ? "Đăng ký" : mode === "otp" ? "Xác thực OTP" : "Đăng nhập";
 
@@ -270,7 +169,7 @@ export default function LoginScreen() {
               {mode === "register" ? "Tạo tài khoản" : mode === "otp" ? "Xác thực OTP" : "Chào mừng trở lại!"}
             </Text>
             <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 17, fontWeight: "800" }} selectable>
-              {mode === "register" ? "Đăng ký để bắt đầu kế hoạch bữa ăn" : mode === "otp" ? "Nhập mã được gửi tới Gmail của bạn" : "Bắt đầu cảm hứng cho bữa ăn cùng Z-Pantry"}
+              {mode === "register" ? "Đăng ký để bắt đầu kế hoạch bữa ăn" : mode === "otp" ? "Nhập mã xác thực gồm 6 chữ số" : "Bắt đầu cảm hứng cho bữa ăn cùng Z-Pantry"}
             </Text>
           </View>
 
@@ -286,13 +185,7 @@ export default function LoginScreen() {
                   <Text style={{ color: colors.text, fontWeight: "800" }} selectable>
                     Mật khẩu
                   </Text>
-                  {mode === "login" ? (
-                    <Pressable hitSlop={8}>
-                      <Text style={{ color: colors.text, fontSize: 11, fontWeight: "900" }} selectable>
-                        Quên mật khẩu?
-                      </Text>
-                    </Pressable>
-                  ) : null}
+                  
                 </View>
                 <View style={{ minHeight: 48, borderRadius: 8, borderCurve: "continuous", backgroundColor: fieldGlass, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 12 }}>
                   <Ionicons name="lock-closed" size={18} color={colors.white} />
@@ -312,6 +205,7 @@ export default function LoginScreen() {
             ) : null}
 
             {authMessage ? <Message text={authMessage} tone="danger" /> : null}
+            {mode === "login" && <Pressable accessibilityRole="button" onPress={() => setModeAndClearMessages("otp")}><Text style={{color: colors.primary, fontWeight: "800"}}>Đã đăng ký? Nhập mã xác thực</Text></Pressable>}
             {successMessage ? <Message text={successMessage} tone="success" /> : null}
 
             <Pressable
@@ -383,7 +277,7 @@ type AuthInputProps = {
 
 function CheckboxLine({ label, checked, onPress }: { label: string; checked: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+    <Pressable accessibilityRole="checkbox" accessibilityLabel={label} aria-checked={checked} accessibilityState={{ checked }} onPress={onPress} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
       <View style={{ width: 11, height: 11, marginTop: 3, borderRadius: 2, borderWidth: 1.2, borderColor: colors.text, backgroundColor: checked ? colors.primary : "transparent", alignItems: "center", justifyContent: "center" }}>
         {checked ? <Ionicons name="checkmark" size={8} color={colors.white} /> : null}
       </View>

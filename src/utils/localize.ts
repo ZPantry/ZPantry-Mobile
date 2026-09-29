@@ -67,15 +67,21 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
   const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
   const lower = rawMessage.toLowerCase();
 
+  if (status >= 500 && context === "imageUpload") return "Dịch vụ tải ảnh đang gặp sự cố. Vui lòng giữ lại thông tin và thử lại sau.";
   if (context === "imageUpload") {
-    if (status >= 400 || lower.includes("image") || lower.includes("file") || lower.includes("upload") || lower.includes("multipart") || lower.includes("unsupported") || lower.includes("invalid")) {
+    if (status === 413) return "Ảnh của bạn quá lớn. Vui lòng chọn ảnh nhẹ hơn rồi thử lại.";
+    if (status === 415 || (status === 400 && (lower.includes("image") || lower.includes("file") || lower.includes("multipart") || lower.includes("unsupported") || lower.includes("invalid")))) {
       return "Ảnh của bạn không phù hợp hoặc không đúng định dạng. Vui lòng kiểm tra và chọn ảnh JPG, PNG hoặc WEBP rõ nét hơn.";
     }
   }
 
   if (!rawMessage) return fallback;
+  if (status === 503 && lower.includes("image analysis")) return "Tính năng nhận diện ảnh hiện chưa khả dụng. Bạn có thể thử lại hoặc thêm nguyên liệu thủ công.";
+  // Java registration reports these expected failures with HTTP 500.
+  if (context === "auth" && lower === "email already exists.") return "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.";
+  if (context === "auth" && lower === "email delivery is not configured") return "Máy chủ chưa cấu hình gửi mã OTP. Vui lòng liên hệ quản trị viên.";
   if (status >= 500) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
-  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Chưa kết nối được dữ liệu. Vui lòng kiểm tra mạng rồi thử lại.";
+  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Không thể kết nối tới máy chủ. Máy chủ có thể chưa hoạt động hoặc kết nối mạng bị gián đoạn. Vui lòng thử lại sau.";
 
   const translated = translateApiMessage(rawMessage);
   if (translated !== rawMessage) return translated;

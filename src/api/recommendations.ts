@@ -1,5 +1,6 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest } from "@/api/client";
+import { ApiError, unwrapEnvelope } from "@/api/response";
 import { translateRecommendationText } from "@/utils/localize";
 
 export type IngredientItem = {
@@ -17,15 +18,15 @@ export type CandidateRecipeItem = {
 };
 
 export type MealRecommendationRequest = {
-  userId: string;
   inputIngredientText: string;
   selectedIngredients?: IngredientItem[];
-  candidateRecipes?: CandidateRecipeItem[];
+  candidateRecipes?: string[];
   topK?: number;
 };
 
 export type MealRecommendation = {
   mealId: string;
+  persistedMeal?: boolean;
   recipeId: string;
   name: string;
   description: string;
@@ -166,6 +167,17 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
+  async personalized(topK = 5) {
+    const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
+      method: "POST", auth: true, body: JSON.stringify({ topK }), timeoutMs: 60000
+    });
+    // Java wraps the AI service envelope; validate both layers before normalizing.
+    const body = unwrapEnvelope<RawMealRecommendationResponse>(response);
+    if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
+      throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
+    const result = normalizeRecommendationResponse(body);
+    return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
+  },
   async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<RawMealRecommendationResponse>(endpoints.recommendations.meals, {
       method: "POST",
@@ -182,16 +194,5 @@ export const recommendationsApi = {
     });
 
     return normalizeMealIngredientCheck(response);
-  },
-
-  async suggestMissingIngredients(payload: any = {}) {
-    // TODO: Define payload types and response for the AI suggest-missing-ingredients endpoint
-    const response = await apiRequest<unknown>(endpoints.ai.suggestMissingIngredients, {
-      method: "POST",
-      auth: true,
-      body: JSON.stringify(payload)
-    });
-
-    return response;
   }
 };

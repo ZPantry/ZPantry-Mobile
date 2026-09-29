@@ -1,5 +1,8 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
+import type { FoodAllergen } from "@/api/profile";
+import { withUploadedImage } from "@/api/media";
+import { collectPages } from "@/api/pagination";
 
 export type RecipeIngredientPayload = {
   ingredientId: string;
@@ -10,6 +13,7 @@ export type RecipeIngredientPayload = {
 };
 
 export type Recipe = {
+  allergens?: FoodAllergen[];
   id: string;
   name: string;
   description: string;
@@ -42,6 +46,7 @@ export type NativeUploadFile = {
 export type UploadFile = NativeUploadFile | File;
 
 export type RecipePayload = {
+  allergens?: FoodAllergen[];
   name: string;
   description: string;
   cookingTimeMinutes: number;
@@ -103,6 +108,7 @@ export function createRecipeFormData(payload: RecipePayload) {
 }
 
 export const recipesApi = {
+  all() { return collectPages(page => recipesApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 50) {
     return apiRequest<PaginatedResponse<Recipe>>(`${endpoints.recipes.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
@@ -111,19 +117,21 @@ export const recipesApi = {
     return apiRequest<Recipe>(endpoints.recipes.item(id), { auth: true });
   },
 
-  create(payload: RecipePayload) {
-    return apiRequest<Recipe>(endpoints.recipes.create, {
+  async create(payload: RecipePayload) {
+    const body = await withUploadedImage(payload);
+    return apiRequest<Recipe>(endpoints.recipes.list, {
       method: "POST",
       auth: true,
-      body: createRecipeFormData(payload)
+      body: JSON.stringify(body)
     });
   },
 
-  update(id: string, payload: RecipePayload) {
-    return apiRequest<Recipe>(endpoints.recipes.update(id), {
+  async update(id: string, payload: RecipePayload) {
+    const body = await withUploadedImage(payload);
+    return apiRequest<Recipe>(endpoints.recipes.item(id), {
       method: "PUT",
       auth: true,
-      body: createRecipeFormData(payload)
+      body: JSON.stringify(body)
     });
   },
 

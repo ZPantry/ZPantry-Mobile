@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { TodayMenuItem } from "@/api/todayMenu";
@@ -47,23 +47,29 @@ export default function PlanScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const navigation = useNavigation<Navigation>();
-  const today = useMemo(() => new Date(), []);
+  const [today, setToday] = useState(() => new Date());
+  const requestId = useRef(0);
+  const [loaded, setLoaded] = useState(false);
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const [items, setItems] = useState<TodayMenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadTodayMenu = useCallback(async () => {
+    const current = ++requestId.current;
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const page = await todayMenuApi.list(todayKey, 1, 20);
-      setItems(page.data);
+      const data = await todayMenuApi.all(todayKey);
+      if (current !== requestId.current) return;
+      setItems(data);
+      setLoaded(true);
     } catch (error) {
+      if (current !== requestId.current) return;
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được thực đơn hôm nay."));
-      setItems([]);
+
     } finally {
-      setIsLoading(false);
+      if (current === requestId.current) setIsLoading(false);
     }
   }, [todayKey]);
 
@@ -72,6 +78,10 @@ export default function PlanScreen() {
       loadTodayMenu();
     }, [loadTodayMenu])
   );
+
+  const changeDay = (delta: number) => {
+    requestId.current++; setItems([]); setLoaded(false); setToday(date => { const next = new Date(date); next.setDate(next.getDate() + delta); return next; });
+  };
 
   const cookedCount = items.filter((item) => ["cooked", "completed"].includes(item.status.toLowerCase())).length;
 
@@ -99,7 +109,7 @@ export default function PlanScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
-              Thực đơn hôm nay
+              Thực đơn
             </Text>
             <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "900", marginTop: 4 }} selectable>
               {formatDateLabel(today)}
@@ -110,6 +120,8 @@ export default function PlanScreen() {
           </View>
         </View>
 
+        <View style={{flexDirection:"row",gap:8}}><PrimaryButton title="Ngày trước" variant="outline" onPress={()=>changeDay(-1)} style={{flex:1}}/><PrimaryButton title="Ngày sau" variant="outline" onPress={()=>changeDay(1)} style={{flex:1}}/></View>
+        <PrimaryButton title="Lịch sử nấu ăn" variant="soft" onPress={()=>navigation.navigate("CookingHistory")}/>
         <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
           <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }} selectable>
             Xin chào {user?.fullName || "bạn"}
@@ -129,14 +141,14 @@ export default function PlanScreen() {
         ) : null}
 
         <View style={{ gap: 14 }}>
-          {items.length === 0 ? (
+          {!loaded && isLoading ? <Text style={{color:colors.muted}}>Đang tải thực đơn…</Text> : errorMessage && !items.length ? <PrimaryButton title="Thử lại" onPress={loadTodayMenu}/> : items.length === 0 ? (
             <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 18, gap: 12, alignItems: "center" }}>
               <Ionicons name="calendar-outline" size={34} color={colors.primary} />
               <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "center" }} selectable>
-                Chưa có món trong thực đơn hôm nay
+                Chưa có món trong ngày đã chọn
               </Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20, textAlign: "center" }} selectable>
-                Mở một công thức rồi nhấn Thêm vào thực đơn hôm nay để bắt đầu.
+                Mở một công thức và chọn ngày muốn lên thực đơn.
               </Text>
             </View>
           ) : (

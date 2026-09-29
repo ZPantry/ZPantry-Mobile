@@ -18,6 +18,8 @@ import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
 import PantryScreen from "@/screens/PantryScreen";
+import PantryImportScreen from "@/screens/PantryImportScreen";
+import InteractiveGuideScreen from "@/screens/InteractiveGuideScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import ProfileSetupScreen from "@/screens/ProfileSetupScreen";
@@ -25,6 +27,9 @@ import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import TodayMenuItemDetailScreen from "@/screens/TodayMenuItemDetailScreen";
 import type { RootStackParamList, TabParamList } from "@/types";
+import { canManageCatalog, canManageUsers } from "@/utils/roles";
+import CookingHistoryScreen from "@/screens/CookingHistoryScreen";
+import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -209,7 +214,7 @@ export default function AppNavigator() {
   const { isAuthenticated, isLoading, user, onboardingStep } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
   const hasBeenAuthenticated = useRef(false);
-  const isAdmin = ["admin", "administrator"].includes((user?.role ?? "").toLowerCase());
+  const isAdmin = canManageCatalog(user?.role);
 
   useEffect(() => {
     if (isLoading) return;
@@ -252,7 +257,7 @@ export default function AppNavigator() {
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
-          <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />
+          {canManageUsers(user?.role) && <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />}
           <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
           <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
         </>
@@ -261,6 +266,10 @@ export default function AppNavigator() {
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
+          <Stack.Screen name="PantryImport" component={PantryImportScreen} />
+          <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} />
+          <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
+          <Stack.Screen name="InteractiveGuide" component={InteractiveGuideScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
           <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />

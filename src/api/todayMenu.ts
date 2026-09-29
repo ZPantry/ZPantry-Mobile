@@ -1,6 +1,9 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 import type { Recipe, RecipeIngredient, UploadFile } from "@/api/recipes";
+import { recipesApi } from "@/api/recipes";
+import { pantryApi } from "@/api/pantry";
+import { collectPages } from "@/api/pagination";
 
 export type PantryUsageLog = {
   id: string;
@@ -101,25 +104,35 @@ function appendFile(formData: FormData, key: string, file: UploadFile) {
 
 function createCompleteFormData(payload: CompleteTodayMenuItemPayload) {
   const formData = new FormData();
-  appendText(formData, "CookedAt", payload.cookedAt);
-  appendText(formData, "Rating", payload.rating);
-  appendText(formData, "Note", payload.note);
+  appendText(formData, "cookedAt", payload.cookedAt);
+  appendText(formData, "rating", payload.rating);
+  appendText(formData, "note", payload.note);
 
   if (payload.imageFile) {
-    appendFile(formData, "ImageFile", payload.imageFile);
+    appendFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;
 }
 
 export const todayMenuApi = {
+  all(date: string) { return collectPages(page => todayMenuApi.list(date, page, 100)); },
   list(date: string, pageIndex = 1, pageSize = 20) {
     const query = new URLSearchParams({ date, pageIndex: String(pageIndex), pageSize: String(pageSize) });
     return apiRequest<PaginatedResponse<TodayMenuItem>>(`${endpoints.todayMenu.list}?${query.toString()}`, { auth: true });
   },
 
-  get(id: string) {
-    return apiRequest<TodayMenuItemDetail>(endpoints.todayMenu.item(id), { auth: true });
+  async get(id: string): Promise<TodayMenuItemDetail> {
+    const item = await apiRequest<TodayMenuItemDetail>(endpoints.todayMenu.item(id), { auth: true });
+    // Current Java detail returns menu metadata. Compose its documented endpoints.
+    const [recipe, pantry] = await Promise.all([
+      item.recipe ?? (item.recipeId ? recipesApi.get(item.recipeId) : Promise.resolve(null)),
+      item.pantryItems ?? pantryApi.all()
+    ]);
+    const ingredients = recipe?.ingredients ?? [];
+    const ids = new Set(ingredients.map(ingredient => ingredient.ingredientId));
+    return { ...item, recipe, requiredIngredients: item.requiredIngredients ?? ingredients,
+      pantryItems: pantry.filter(row => ids.has(row.ingredientId)).map(row => ({ ...row, ingredientName: row.ingredientName || ingredients.find(i => i.ingredientId === row.ingredientId)?.ingredientName || "Nguyên liệu" })) };
   },
 
   add(payload: AddTodayMenuItemPayload) {
@@ -147,16 +160,5 @@ export const todayMenuApi = {
 
   cookingLogs(pageIndex = 1, pageSize = 20) {
     return apiRequest<PaginatedResponse<CookingLog>>(`${endpoints.todayMenu.cookingLogs}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
-  },
-
-  async checkMenuCompletion(payload: any = {}) {
-    // TODO: Define payload types and response for the AI check-today-menu-completion endpoint
-    const response = await apiRequest<unknown>(endpoints.ai.checkTodayMenuCompletion, {
-      method: "POST",
-      auth: true,
-      body: JSON.stringify(payload)
-    });
-
-    return response;
   }
 };

@@ -30,13 +30,13 @@ function recipeToMeal(recipe: Recipe): Meal {
     id: recipe.id,
     name: recipe.name,
     image: recipe.imageUrl,
-    calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
+    calories: null,
     time: `${recipe.cookingTimeMinutes} phút`,
-    matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
+    matchPercent: null,
     difficulty: translateDifficulty(recipe.difficulty),
     availableIngredients: recipe.description ? [recipe.description] : [],
     missingIngredients: [],
-    steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
+    steps: (recipe.instructionText || "").split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
   };
 }
 
@@ -93,8 +93,8 @@ export default function HomeScreen() {
     setErrorMessage("");
     try {
       const recipePagePromise = recipesApi.list(1, 10);
-      const ingredientPagePromise = ingredientsApi.list(1, 100);
-      const pantryPromise = pantryApi.list();
+      const ingredientPagePromise = ingredientsApi.all().then(data => ({ data }));
+      const pantryPromise = pantryApi.all();
       const [recipePage, ingredientPage, pantryItems] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPromise]);
 
       setRecipes(recipePage.data.map(recipeToMeal));
@@ -268,7 +268,7 @@ export default function HomeScreen() {
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
               {filteredRecipes.map((meal) => (
-                <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { mealId: meal.id })} />
+                <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { recipeId: meal.id })} />
               ))}
             </ScrollView>
           )}

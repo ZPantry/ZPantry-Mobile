@@ -7,6 +7,8 @@ import type { Ingredient, IngredientPayload } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { UploadFile } from "@/api/recipes";
 import SelectField from "@/components/SelectField";
+import AllergenChoices from "@/components/AllergenChoices";
+import type { FoodAllergen } from "@/api/profile";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -96,6 +98,7 @@ export default function AdminIngredientFormScreen() {
   const [form, setForm] = useState<IngredientFormState>(() => buildIngredientForm(ingredient));
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [allergens, setAllergens] = useState<FoodAllergen[]>(ingredient?.allergens ?? []);
 
   const chooseImage = async () => {
     try {
@@ -120,6 +123,7 @@ export default function AdminIngredientFormScreen() {
     }
 
     const payload: IngredientPayload = {
+      allergens,
       name: cleanName,
       category: form.category.trim() || "Other",
       unit: cleanUnit,
@@ -153,7 +157,7 @@ export default function AdminIngredientFormScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa nguyên liệu" : "Tạo nguyên liệu"} subtitle="Quản lý nutrition, unit và ảnh hiển thị" onBack={() => navigation.goBack()} />
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
@@ -202,6 +206,10 @@ export default function AdminIngredientFormScreen() {
           <View style={{ flex: 1 }}>
             <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
           </View>
+        </View>
+        <View style={{ gap: 12 }}>
+          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 18 }}>Chất gây dị ứng đã xác định</Text>
+          <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
         </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
       </ScrollView>

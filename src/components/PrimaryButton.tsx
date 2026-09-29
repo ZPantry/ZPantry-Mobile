@@ -11,13 +11,19 @@ type Props = {
   variant?: "solid" | "soft" | "outline";
   onPress?: () => void;
   style?: ViewStyle;
+  disabled?: boolean;
 };
 
-export default function PrimaryButton({ title, icon, variant = "solid", onPress, style }: Props) {
+export default function PrimaryButton({ title, icon, variant = "solid", onPress, style, disabled = false }: Props) {
   const isSolid = variant === "solid";
   const [pressed, setPressed] = useState(false);
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      style={{ flex: style?.flex }}
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
@@ -38,7 +44,7 @@ export default function PrimaryButton({ title, icon, variant = "solid", onPress,
           backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.card : "transparent",
           borderWidth: variant === "outline" ? 1 : 0,
           borderColor: colors.line,
-            opacity: pressed ? 0.88 : 1,
+            opacity: disabled ? 0.5 : pressed ? 0.88 : 1,
             transform: [{ scale: pressed ? 0.97 : 1 }],
             transitionProperty: ["transform", "opacity"],
             transitionDuration: "120ms",

@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { LoginResponse } from "@/api/auth";
 import { logoutStoredSession } from "@/utils/authSession";
 import { authStorage, type StoredUser } from "@/utils/authStorage";
+import { restoreSession } from "@/api/client";
 
 type AuthContextValue = {
   isLoading: boolean;
@@ -10,7 +11,7 @@ type AuthContextValue = {
   user: StoredUser | null;
   onboardingStep: "profile_setup" | "interactive_guide" | "done";
   completeOnboardingStep: (step: "interactive_guide" | "done") => Promise<void>;
-  signIn: (session: LoginResponse) => Promise<void>;
+  signIn: (session: LoginResponse, remember?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -24,8 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    authStorage
-      .getSession()
+    restoreSession()
       .then(async (session) => {
         if (isMounted) {
           setUser(session?.user ?? null);
@@ -35,14 +35,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       })
+      .catch(() => { if (isMounted) setUser(null); })
       .finally(() => {
         if (isMounted) {
           setIsLoading(false);
         }
       });
 
+    const unsubscribe = authStorage.subscribe(() => {
+      authStorage.getUser().then(async value => {
+        const step = value ? await authStorage.getOnboardingStep(value.userId) : "profile_setup";
+        if (isMounted) { setOnboardingStep(step); setUser(value); }
+      }).catch(() => { if (isMounted) setUser(null); });
+    });
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -52,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(user),
       user,
       onboardingStep,
-      async signIn(session) {
-        await authStorage.saveSession(session);
+      async signIn(session, remember = true) {
+        await authStorage.saveSession(session, remember);
         
         // Retrieve the fully constructed user (which will now have userId extracted from JWT if missing)
         const storedUser = await authStorage.getUser();

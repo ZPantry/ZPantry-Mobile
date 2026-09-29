@@ -30,6 +30,7 @@ function normalizeLocation(location: string): PantryItem["location"] {
 }
 
 function statusFromDate(expiredAt: string): PantryStatus {
+  if (!expiredAt) return "safe";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft <= 1) return "danger";
   if (daysLeft <= 5) return "warning";
@@ -37,6 +38,7 @@ function statusFromDate(expiredAt: string): PantryStatus {
 }
 
 function expiryLabel(expiredAt: string) {
+  if (!expiredAt) return "Chưa có hạn sử dụng";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft < 0) return `Đã hết hạn ${Math.abs(daysLeft)} ngày`;
   if (daysLeft === 0) return "Hết hạn hôm nay";
@@ -45,6 +47,7 @@ function expiryLabel(expiredAt: string) {
 }
 
 function progressFromDate(expiredAt: string) {
+  if (!expiredAt) return 0;
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   return Math.max(8, Math.min(100, daysLeft * 12));
 }
@@ -100,7 +103,7 @@ export default function PantryScreen() {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
+      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.all().then(data => ({ data })), pantryApi.all()]);
       const ingredientById = new Map(ingredientPage.data.map((ingredient) => [ingredient.id, ingredient]));
       setItems(pantryItems.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
     } catch (error) {
@@ -131,7 +134,7 @@ export default function PantryScreen() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
         style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 200, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
@@ -141,6 +144,11 @@ export default function PantryScreen() {
           </View>
         </View>
 
+        <Pressable accessibilityRole="button" onPress={() => navigation.navigate("PantryImport")}
+          style={{ padding: 18, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.primary, gap: 6 }}>
+          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: "900" }}>Nhập nhanh từ ảnh</Text>
+          <Text style={{ color: colors.text, lineHeight: 21 }}>Chọn ảnh thực phẩm hoặc hóa đơn, kiểm tra rồi thêm vào tủ.</Text>
+        </Pressable>
         <View>
           <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
             Tủ lạnh của {displayName}

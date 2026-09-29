@@ -1,259 +1,109 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usersApi } from "@/api/users";
+import { profileApi, goals, diets, type ProfilePayload } from "@/api/profile";
+import AllergenChoices from "@/components/AllergenChoices";
+import SelectField from "@/components/SelectField";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
-
-const GOALS = ["Giảm cân", "Tăng cơ", "Giữ dáng", "Ăn uống lành mạnh", "Khác"];
-const DIETS = ["Ăn chay", "Eat Clean", "Keto", "Low-carb", "Không kiêng", "Khác"];
-const ALLERGIES = ["Hải sản", "Đậu phộng", "Sữa", "Trứng", "Gluten", "Khác"];
+import { getFriendlyErrorMessage } from "@/utils/localize";
 
 export default function ProfileSetupScreen() {
   const navigation = useNavigation<any>();
-  const { user, completeOnboardingStep, signOut } = useAuth();
+  const route = useRoute<any>();
+  const editing = route.params?.editing === true;
+  const { user, completeOnboardingStep } = useAuth();
   const [age, setAge] = useState("");
-  const [gender, setGender] = useState<"Nam" | "Nữ" | "Khác" | "">("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
-  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
-
-  const [customGoal, setCustomGoal] = useState("");
-  const [customDiet, setCustomDiet] = useState("");
-  const [customAllergy, setCustomAllergy] = useState("");
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const toggleSelection = (item: string, list: string[], setList: (v: string[]) => void) => {
-    if (list.includes(item)) {
-      setList(list.filter((i) => i !== item));
-    } else {
-      setList([...list, item]);
-    }
-  };
-
-  const handleComplete = async () => {
-    if (!age || !gender || !height || !weight) return;
-
-    setIsSubmitting(true);
+  const [gender, setGender] = useState("");
+  const [goal, setGoal] = useState<ProfilePayload["goal"]>(null);
+  const [diet, setDiet] = useState<ProfilePayload["dietPreference"]>(null);
+  const [allergies, setAllergies] = useState<ProfilePayload["allergies"]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
     try {
-      const getFinalString = (selected: string[], custom: string) => {
-        const filtered = selected.filter((i) => i !== "Khác");
-        if (selected.includes("Khác") && custom.trim()) {
-          filtered.push(custom.trim());
-        }
-        return filtered.join(", ");
-      };
-
-      await usersApi.updateProfile(user?.userId || "", {
-        age: parseInt(age, 10),
-        gender,
-        height: parseFloat(height),
-        weight: parseFloat(weight),
-        goal: getFinalString(selectedGoals, customGoal),
-        dietPreference: getFinalString(selectedDiets, customDiet),
-        allergies: getFinalString(selectedAllergies, customAllergy)
-      });
+      if (!user?.userId) throw new Error("Không xác định được tài khoản.");
+      const p = await profileApi.get(user.userId);
+      setAge(p.age == null ? "" : String(p.age)); setHeight(p.height == null ? "" : String(p.height));
+      setWeight(p.weight == null ? "" : String(p.weight)); setGender(p.gender ?? "");
+      setGoal(p.goal); setDiet(p.dietPreference); setAllergies(p.allergies ?? []); setLoaded(true);
+    } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tải được hồ sơ.")); }
+    finally { setLoading(false); }
+  }, [user?.userId]);
+  useEffect(() => { void load(); }, [load]);
+  const leave = async () => {
+    if (busy.current) return;
+    if (editing) { navigation.goBack(); return; }
+    try {
       await completeOnboardingStep("interactive_guide");
       navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
-    } catch (error: any) {
-      console.error("Profile Setup Error:", error);
-      Alert.alert("Lỗi", error?.message || "Không thể lưu thông tin. Vui lòng thử lại.");
-    } finally {
-      setIsSubmitting(false);
+    } catch { setError("Chưa thể tiếp tục. Vui lòng thử lại."); }
+  };
+  const save = async () => {
+    if (busy.current || !loaded || !user?.userId) return;
+    const numeric = (s: string) => s.trim() ? Number(s.replace(",", ".")) : null;
+    const a = numeric(age), h = numeric(height), w = numeric(weight);
+    if ((a !== null && (!Number.isInteger(a) || a < 1 || a > 120)) ||
+      (h !== null && (!Number.isFinite(h) || h <= 0 || h > 300)) ||
+      (w !== null && (!Number.isFinite(w) || w <= 0 || w > 700))) {
+      setError("Kiểm tra lại tuổi (1–120), chiều cao và cân nặng. Bạn có thể để trống nếu chưa muốn cung cấp."); return;
     }
+    busy.current = true; setSaving(true); setError("");
+    try {
+      await profileApi.save(user.userId, { age: a, height: h, weight: w, gender: gender || null, goal, dietPreference: diet, allergies });
+      if (editing) navigation.goBack();
+      else { await completeOnboardingStep("interactive_guide"); navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }); }
+    } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được hồ sơ. Các thông tin bạn nhập vẫn được giữ lại.")); }
+    finally { busy.current = false; setSaving(false); }
   };
-
-  const handleSkip = async () => {
-    await completeOnboardingStep("interactive_guide");
-    navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
-  };
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 15 }}>
-        <Text style={{ color: colors.text, fontSize: 22, fontWeight: "900" }}>Thông tin cá nhân</Text>
-        <View style={{ flexDirection: "row", gap: 15, alignItems: "center" }}>
-          <Pressable onPress={signOut} hitSlop={10}>
-            <Text style={{ color: colors.danger, fontSize: 15, fontWeight: "700" }}>Đăng xuất</Text>
-          </Pressable>
-          <Pressable onPress={handleSkip} hitSlop={10}>
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "700" }}>Bỏ qua</Text>
-          </Pressable>
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ padding: 22, paddingBottom: 40, gap: 22, width: "100%", maxWidth: 680, alignSelf: "center" }}>
+      <Pressable disabled={saving} onPress={leave} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+        <Text style={{ color: colors.primary, fontWeight: "800" }}>{editing ? "‹ Quay lại" : "Để sau"}</Text>
+      </Pressable>
+      <View style={{ gap: 8 }}><Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }}>Hồ sơ ăn uống</Text>
+        <Text style={{ color: colors.muted, lineHeight: 22 }}>Lưu sở thích và dị ứng cho những lần tìm món tiếp theo. Bạn có thể thay đổi bất cứ lúc nào.</Text></View>
+      {loading ? <ActivityIndicator size="large" color={colors.primary} /> : null}
+      {error && !loaded ? <View accessibilityRole="alert" style={{ gap: 8 }}><Text selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text>
+        {!loaded && !loading ? <Pressable onPress={load} style={{ padding: 12 }}><Text style={{ color: colors.primary }}>Thử tải lại hồ sơ</Text></Pressable> : null}</View> : null}
+      {loaded ? <View pointerEvents={saving ? "none" : "auto"} style={{ gap: 22, opacity: saving ? 0.65 : 1 }}>
+        <View style={{ backgroundColor: colors.card, padding: 18, borderRadius: 18, gap: 16 }}>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "800" }}>Thông tin cơ bản · tùy chọn</Text>
+          <NumberField label="Tuổi" value={age} onChange={setAge} />
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <NumberField label="Chiều cao (cm)" value={height} onChange={setHeight} />
+            <NumberField label="Cân nặng (kg)" value={weight} onChange={setWeight} />
+          </View>
+          <SelectField label="Giới tính" value={gender} onValueChange={setGender} options={[
+            { value: "", label: "Chưa cung cấp" }, { value: "Male", label: "Nam" }, { value: "Female", label: "Nữ" }, { value: "Other", label: "Khác" }
+          ]} />
         </View>
-      </View>
-
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
-      >
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", marginBottom: 25 }}>
-          Thiết lập thông tin để Z-Pantry có thể gợi ý các công thức và thực đơn phù hợp nhất với bạn.
-        </Text>
-
-        {/* Bắt buộc */}
-        <View style={{ gap: 20, marginBottom: 30 }}>
-          <View style={{ flexDirection: "row", gap: 15 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>Tuổi <Text style={{ color: colors.danger }}>*</Text></Text>
-              <TextInput 
-                value={age} 
-                onChangeText={setAge} 
-                keyboardType="numeric" 
-                placeholder="Ví dụ: 25" 
-                placeholderTextColor={colors.muted}
-                style={{ height: 48, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 15, fontWeight: "700" }} 
-              />
-            </View>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>Giới tính <Text style={{ color: colors.danger }}>*</Text></Text>
-              <View style={{ flexDirection: "row", backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, overflow: "hidden" }}>
-                {(["Nam", "Nữ"] as const).map((g) => {
-                  const isSelected = gender === g;
-                  return (
-                    <Pressable 
-                      key={g} 
-                      onPress={() => setGender(g)}
-                      style={{ flex: 1, height: 46, alignItems: "center", justifyContent: "center", backgroundColor: isSelected ? colors.primary : "transparent" }}
-                    >
-                      <Text style={{ color: isSelected ? colors.white : colors.muted, fontSize: 14, fontWeight: "800" }}>{g}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 15 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>Chiều cao (cm) <Text style={{ color: colors.danger }}>*</Text></Text>
-              <TextInput 
-                value={height} 
-                onChangeText={setHeight} 
-                keyboardType="numeric" 
-                placeholder="Ví dụ: 170" 
-                placeholderTextColor={colors.muted}
-                style={{ height: 48, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 15, fontWeight: "700" }} 
-              />
-            </View>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>Cân nặng (kg) <Text style={{ color: colors.danger }}>*</Text></Text>
-              <TextInput 
-                value={weight} 
-                onChangeText={setWeight} 
-                keyboardType="numeric" 
-                placeholder="Ví dụ: 65" 
-                placeholderTextColor={colors.muted}
-                style={{ height: 48, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 15, fontWeight: "700" }} 
-              />
-            </View>
-          </View>
+        <SelectField label="Mục tiêu · chọn một" value={goal ?? ""} onValueChange={(v) => setGoal((v || null) as ProfilePayload["goal"])} options={[{ value: "", label: "Chưa chọn" }, ...goals]} />
+        <SelectField label="Chế độ ăn · chọn một" value={diet ?? ""} onValueChange={(v) => setDiet((v || null) as ProfilePayload["dietPreference"])} options={[{ value: "", label: "Chưa chọn" }, ...diets]} />
+        <View style={{ gap: 12 }}><Text style={{ color: colors.text, fontSize: 18, fontWeight: "800" }}>Dị ứng thực phẩm</Text>
+          <Text style={{ color: colors.muted, lineHeight: 21 }}>Chọn tất cả mục phù hợp. Không chọn mục nào nếu bạn không khai báo dị ứng.</Text>
+          <AllergenChoices value={allergies} onChange={setAllergies} />
+          <Text style={{ color: colors.muted, lineHeight: 21 }}>Gợi ý loại các món có chất gây dị ứng đã khai báo. Hãy kiểm tra thành phần thực tế; dữ liệu món có thể chưa đầy đủ. Mục tiêu và chế độ ăn hiện chưa được lọc tự động.</Text>
         </View>
-
-        <View style={{ height: 1, backgroundColor: colors.line, marginBottom: 25 }} />
-
-        {/* Không bắt buộc */}
-        <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900", marginBottom: 5 }}>Tuỳ chọn bổ sung</Text>
-        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginBottom: 20 }}>Bạn có thể thiết lập các thông tin này sau.</Text>
-
-        <View style={{ gap: 25 }}>
-          <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>Mục tiêu của bạn</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {GOALS.map((g) => (
-                <Chip key={g} label={g} selected={selectedGoals.includes(g)} onPress={() => toggleSelection(g, selectedGoals, setSelectedGoals)} />
-              ))}
-            </View>
-            {selectedGoals.includes("Khác") && (
-              <TextInput
-                value={customGoal}
-                onChangeText={setCustomGoal}
-                placeholder="Nhập mục tiêu khác..."
-                placeholderTextColor={colors.muted}
-                style={{ height: 44, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 14, fontWeight: "700", marginTop: 4 }}
-              />
-            )}
-          </View>
-
-          <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>Chế độ ăn, khẩu vị</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {DIETS.map((d) => (
-                <Chip key={d} label={d} selected={selectedDiets.includes(d)} onPress={() => toggleSelection(d, selectedDiets, setSelectedDiets)} />
-              ))}
-            </View>
-            {selectedDiets.includes("Khác") && (
-              <TextInput
-                value={customDiet}
-                onChangeText={setCustomDiet}
-                placeholder="Nhập chế độ ăn khác..."
-                placeholderTextColor={colors.muted}
-                style={{ height: 44, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 14, fontWeight: "700", marginTop: 4 }}
-              />
-            )}
-          </View>
-
-          <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>Dị ứng thực phẩm</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {ALLERGIES.map((a) => (
-                <Chip key={a} label={a} selected={selectedAllergies.includes(a)} onPress={() => toggleSelection(a, selectedAllergies, setSelectedAllergies)} />
-              ))}
-            </View>
-            {selectedAllergies.includes("Khác") && (
-              <TextInput
-                value={customAllergy}
-                onChangeText={setCustomAllergy}
-                placeholder="Nhập dị ứng khác..."
-                placeholderTextColor={colors.muted}
-                style={{ height: 44, backgroundColor: colors.card, borderRadius: 10, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 15, color: colors.text, fontSize: 14, fontWeight: "700", marginTop: 4 }}
-              />
-            )}
-          </View>
-        </View>
-      </ScrollView>
-
-      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 20, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.line }}>
-        <Pressable 
-          disabled={isSubmitting || !(age && gender && height && weight)}
-          onPress={handleComplete}
-          style={({ pressed }) => ({
-            height: 56,
-            backgroundColor: (age && gender && height && weight) ? colors.primary : colors.muted,
-            borderRadius: 14,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: isSubmitting ? 0.6 : (pressed ? 0.85 : 1)
-          })}
-        >
-          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900" }}>{isSubmitting ? "Đang lưu..." : "Hoàn thành"}</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
-  );
+      </View> : null}
+      {error && loaded ? <Text accessibilityRole="alert" selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text> : null}
+      <Pressable accessibilityRole="button" disabled={!loaded || saving || loading} onPress={save}
+        style={{ minHeight: 54, padding: 15, borderRadius: 16, backgroundColor: colors.primary, alignItems: "center", opacity: !loaded || saving ? 0.5 : 1 }}>
+        <Text style={{ color: colors.textDark, fontWeight: "900", fontSize: 16 }}>{saving ? "Đang lưu hồ sơ…" : "Lưu hồ sơ"}</Text>
+      </Pressable>
+    </ScrollView>
+  </SafeAreaView>;
 }
-
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        backgroundColor: selected ? colors.primary : colors.card,
-        borderWidth: 1,
-        borderColor: selected ? colors.primary : colors.line,
-      }}
-    >
-      <Text style={{ color: selected ? colors.white : colors.text, fontSize: 13, fontWeight: "700" }}>
-        {label}
-      </Text>
-    </Pressable>
-  );
+function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return <View style={{ flex: 1, gap: 8 }}><Text style={{ color: colors.text, fontWeight: "700" }}>{label}</Text>
+    <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} keyboardType="decimal-pad" placeholder="Chưa cung cấp" placeholderTextColor={colors.muted}
+      style={{ minHeight: 48, padding: 12, color: colors.text, borderWidth: 1, borderColor: colors.line, borderRadius: 12 }} /></View>;
 }

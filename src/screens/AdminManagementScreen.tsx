@@ -1,3 +1,4 @@
+import { canManageUsers } from "@/utils/roles";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -47,7 +48,9 @@ export default function AdminManagementScreen() {
   const route = useRoute<any>();
   const { signOut, user: currentUser } = useAuth();
   const toast = useToast();
-  const initialTab: AdminTab = ["users", "recipes", "ingredients"].includes(route.params?.initialTab) ? route.params.initialTab : "users";
+  const managesUsers = canManageUsers(currentUser?.role);
+  const visibleTabs = adminTabs.filter(tab => tab.key !== "users" || managesUsers);
+  const initialTab: AdminTab = !managesUsers ? "recipes" : ["users", "recipes", "ingredients"].includes(route.params?.initialTab) ? route.params.initialTab : "users";
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -84,7 +87,7 @@ export default function AdminManagementScreen() {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [userPage, recipePage, ingredientPage] = await Promise.all([usersApi.list(1, 100), recipesApi.list(1, 100), ingredientsApi.list(1, 100)]);
+      const [userPage, recipePage, ingredientPage] = await Promise.all([managesUsers ? usersApi.all().then(data => ({data})) : Promise.resolve({data: []}), recipesApi.all().then(data => ({data})), ingredientsApi.all().then(data => ({ data }))]);
       setUsers(userPage.data);
       setRecipes(recipePage.data);
       setIngredients(ingredientPage.data);
@@ -93,7 +96,7 @@ export default function AdminManagementScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [managesUsers]);
 
   useFocusEffect(
     useCallback(() => {
@@ -215,7 +218,7 @@ export default function AdminManagementScreen() {
             </>
           ) : null}
         </ScrollView>
-        <AdminBottomBar activeTab={activeTab} onChange={setActiveTab} />
+        <AdminBottomBar activeTab={activeTab} onChange={setActiveTab} tabs={visibleTabs} />
       </View>
 
       <ConfirmDeleteModal target={deleteTarget} isSaving={isSaving} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
@@ -224,21 +227,21 @@ export default function AdminManagementScreen() {
   );
 }
 
-function AdminBottomBar({ activeTab, onChange }: { activeTab: AdminTab; onChange: (tab: AdminTab) => void }) {
+function AdminBottomBar({ activeTab, onChange, tabs }: { activeTab: AdminTab; onChange: (tab: AdminTab) => void; tabs: typeof adminTabs }) {
   const { width } = useWindowDimensions();
-  const progress = useRef(new Animated.Value(adminTabs.findIndex((item) => item.key === activeTab))).current;
+  const progress = useRef(new Animated.Value(tabs.findIndex((item) => item.key === activeTab))).current;
   const barHorizontalPadding = 8;
-  const tabWidth = useMemo(() => (width - 36 - barHorizontalPadding * 2) / adminTabs.length, [width]);
+  const tabWidth = useMemo(() => (width - 36 - barHorizontalPadding * 2) / tabs.length, [width, tabs.length]);
 
   useEffect(() => {
     Animated.spring(progress, {
-      toValue: adminTabs.findIndex((item) => item.key === activeTab),
+      toValue: tabs.findIndex((item) => item.key === activeTab),
       useNativeDriver: true,
       damping: 16,
       stiffness: 170,
       mass: 0.8
     }).start();
-  }, [activeTab, progress]);
+  }, [activeTab, progress, tabs]);
 
   return (
     <View
@@ -284,7 +287,7 @@ function AdminBottomBar({ activeTab, onChange }: { activeTab: AdminTab; onChange
           }}
         />
       </Animated.View>
-      {adminTabs.map((item) => (
+      {tabs.map((item) => (
         <AdminBottomTabButton key={item.key} item={item} active={activeTab === item.key} onPress={() => onChange(item.key)} />
       ))}
     </View>

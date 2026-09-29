@@ -8,6 +8,8 @@ import { ingredientsApi } from "@/api/ingredients";
 import type { Recipe, RecipeIngredientPayload, RecipePayload, UploadFile } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import SelectField from "@/components/SelectField";
+import AllergenChoices from "@/components/AllergenChoices";
+import type { FoodAllergen } from "@/api/profile";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -106,6 +108,7 @@ export default function AdminRecipeFormScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [allergens, setAllergens] = useState<FoodAllergen[]>(recipe?.allergens ?? []);
 
   const ingredientById = useMemo(() => new Map(ingredients.map((item) => [item.id, item])), [ingredients]);
   const filteredIngredients = useMemo(() => {
@@ -186,6 +189,7 @@ export default function AdminRecipeFormScreen() {
     }
 
     const payload: RecipePayload = {
+      allergens,
       name: cleanName,
       description: form.description.trim(),
       cookingTimeMinutes: toNumber(form.cookingTimeMinutes),
@@ -225,7 +229,7 @@ export default function AdminRecipeFormScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" onBack={() => navigation.goBack()} />
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
@@ -335,6 +339,11 @@ export default function AdminRecipeFormScreen() {
           )}
         </View>
 
+        <View style={{ gap: 12 }}>
+          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 18 }}>Chất gây dị ứng của món</Text>
+          <Text style={{ color: colors.muted, lineHeight: 21 }}>Khai báo đầy đủ theo thành phần thực tế. Bộ lọc gợi ý sử dụng danh sách này.</Text>
+          <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
+        </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu công thức" : "Tạo công thức"} onSave={saveRecipe} onCancel={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>

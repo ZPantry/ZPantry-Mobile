@@ -50,7 +50,7 @@ export default function AddIngredientScreen() {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const ingredientPage = await ingredientsApi.list(1, 100);
+      const ingredientPage = await ingredientsApi.all().then(data => ({ data }));
       setIngredients(ingredientPage.data);
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được danh sách nguyên liệu."));

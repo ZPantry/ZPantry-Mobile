@@ -2,12 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealIngredientCheckResponse } from "@/api/recommendations";
 import { recommendationsApi } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
+import { allergens } from "@/api/profile";
 import { todayMenuApi } from "@/api/todayMenu";
 import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
@@ -25,13 +26,13 @@ function recipeToMeal(recipe: Recipe): Meal {
     id: recipe.id,
     name: recipe.name,
     image: recipe.imageUrl || FALLBACK_FOOD_IMAGE_URL,
-    calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
+    calories: null,
     time: `${recipe.cookingTimeMinutes} phút`,
-    matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
+    matchPercent: null,
     difficulty: translateDifficulty(recipe.difficulty),
     availableIngredients: recipe.description ? [recipe.description] : [],
     missingIngredients: [],
-    steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
+    steps: (recipe.instructionText || "").split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
   };
 }
 
@@ -49,6 +50,7 @@ function formatDateKey(date = new Date()) {
 
 export default function RecipeDetailScreen({ route, navigation }: Props) {
   const toast = useToast();
+  const [plannedDate, setPlannedDate] = useState(formatDateKey());
   const [meal, setMeal] = useState<Meal | null>(null);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [ingredientCheck, setIngredientCheck] = useState<MealIngredientCheckResponse | null>(null);
@@ -61,8 +63,8 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
     setErrorMessage("");
     try {
       const [recipeResult, checkResult] = await Promise.allSettled([
-        recipesApi.get(route.params.mealId),
-        recommendationsApi.checkMealIngredients(route.params.mealId)
+        recipesApi.get(route.params.recipeId),
+        route.params.mealId ? recommendationsApi.checkMealIngredients(route.params.mealId) : Promise.resolve(null)
       ]);
 
       if (recipeResult.status === "fulfilled") {
@@ -79,7 +81,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         setIngredientCheck(null);
       }
 
-      if (recipeResult.status === "rejected" && checkResult.status === "rejected") {
+      if (recipeResult.status === "rejected") {
         throw recipeResult.reason;
       }
     } catch (error) {
@@ -90,7 +92,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [route.params.mealId]);
+  }, [route.params.mealId, route.params.recipeId]);
 
   useEffect(() => {
     loadRecipe();
@@ -100,7 +102,8 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   const steps = useMemo(() => meal?.steps || [], [meal?.steps]);
 
   const addToTodayMenu = useCallback(async () => {
-    if (!recipe) return;
+    if (!recipe || isAddingToToday) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(plannedDate) || Number.isNaN(Date.parse(plannedDate)) || new Date(plannedDate).toISOString().slice(0,10) !== plannedDate) { toast.show("Nhập ngày hợp lệ theo dạng YYYY-MM-DD.", "danger"); return; }
 
     setIsAddingToToday(true);
     try {
@@ -109,18 +112,18 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         mealName: recipe.name,
         mealType: getCurrentMealType(),
         servingSize: recipe.servingSize || 1,
-        plannedDate: formatDateKey(),
+        plannedDate,
         note: ""
       });
 
-      toast.show("Đã thêm món vào thực đơn hôm nay.");
+      toast.show("Đã thêm món vào thực đơn.");
       navigation.navigate("TodayMenuItemDetail", { itemId: item.id });
     } catch (error) {
       toast.show(getFriendlyErrorMessage(error, "Chưa thêm được món vào thực đơn."), "danger");
     } finally {
       setIsAddingToToday(false);
     }
-  }, [navigation, recipe, toast]);
+  }, [navigation, recipe, toast, plannedDate, isAddingToToday]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
@@ -145,6 +148,8 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
+          <Text style={{color:colors.text,fontWeight:"800"}}>Ngày lên thực đơn (YYYY-MM-DD)</Text>
+          <TextInput accessibilityLabel="Ngày lên thực đơn" value={plannedDate} onChangeText={setPlannedDate} placeholder="YYYY-MM-DD" style={{color:colors.text,padding:12,backgroundColor:colors.card,borderRadius:10}}/>
           {errorMessage ? (
             <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
               {errorMessage}
@@ -159,10 +164,17 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               <CategoryChip label={meal.difficulty} icon="chef-hat" active />
               <CategoryChip label={meal.time} icon="clock-outline" />
-              <CategoryChip label={`${meal.calories} kcal`} icon="fire" />
             </View>
           ) : null}
 
+          {recipe?.ingredients?.length ? <RecipeSection title="Thành phần công thức">
+            {recipe.ingredients.map((i) => <Row key={i.ingredientId} icon="nutrition-outline" color={colors.primary} text={`${i.ingredientName} · ${i.quantity} ${i.unit}`} />)}
+          </RecipeSection> : null}
+          <RecipeSection title="Thông tin dị ứng">
+            <Text style={{ color: colors.text, lineHeight: 22 }}>{recipe?.allergens?.length
+              ? recipe.allergens.map((v) => allergens.find((a) => a.value === v)?.label || v).join(", ")
+              : "Chưa có chất gây dị ứng được khai báo. Điều này không bảo đảm món không gây dị ứng."}</Text>
+          </RecipeSection>
           <RecipeSection title="Nguyên liệu đã có">
             {ingredientCheck?.availableIngredients.length ? (
               ingredientCheck.availableIngredients.map((item) => <Row key={`${item.ingredientId || item.name}-available`} icon="checkmark-circle" color={colors.success} text={`${item.name}${statusLabel(item.quantity, item.unit)}`} />)
@@ -175,7 +187,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
             {ingredientCheck?.missingIngredients.length ? (
               ingredientCheck.missingIngredients.map((item) => <Row key={`${item.ingredientId || item.name}-missing`} icon="cart-outline" color={colors.warning} text={`${item.name}${statusLabel(item.requiredQuantity, item.unit, "missing")}`} />)
             ) : (
-              <Row icon="checkmark-circle" color={colors.success} text="Không thấy nguyên liệu còn thiếu cho món này." />
+              <Row icon="information-circle-outline" color={colors.primary} text={ingredientCheck ? "Không thấy nguyên liệu còn thiếu cho món này." : "Chưa có kết quả đối chiếu với tủ. Kiểm tra thành phần công thức trước khi nấu."} />
             )}
             {ingredientCheck?.note ? <Row icon="sparkles-outline" color={colors.primary} text={translateRecommendationText(ingredientCheck.note)} /> : null}
           </RecipeSection>
@@ -205,8 +217,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
                 )}
               </RecipeSection>
 
-              <PrimaryButton title={isAddingToToday ? "Đang thêm..." : "Thêm vào thực đơn hôm nay"} icon="calendar-plus" onPress={addToTodayMenu} />
-              <PrimaryButton title="Tạo danh sách mua sắm" icon="cart" variant="outline" />
+              <PrimaryButton title={isAddingToToday ? "Đang thêm..." : "Thêm vào thực đơn"} icon="calendar-plus" onPress={addToTodayMenu} />
             </>
           ) : null}
         </View>

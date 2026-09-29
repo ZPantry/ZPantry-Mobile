@@ -22,7 +22,7 @@ export type AuthMessageResponse = ApiMessageResponse;
 export type LoginResponse = {
   accessToken: string;
   expiresAt: string;
-  userId: string;
+  userId?: string;
   fullName: string;
   email: string;
   refreshToken: string;

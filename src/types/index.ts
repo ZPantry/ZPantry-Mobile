@@ -11,9 +11,9 @@ export type Meal = {
   id: string;
   name: string;
   image: string;
-  calories: number;
+  calories: number | null;
   time: string;
-  matchPercent: number;
+  matchPercent: number | null;
   difficulty: string;
   availableIngredients: string[];
   missingIngredients: string[];
@@ -58,7 +58,10 @@ export type UserProfile = {
 export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
-  ProfileSetup: undefined;
+  ProfileSetup: { editing?: boolean } | undefined;
+  PantryImport: undefined;
+  CookingHistory: undefined;
+  AccountSettings: undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
@@ -79,7 +82,7 @@ export type RootStackParamList = {
       source?: "pantry" | "extra";
     }>;
   };
-  RecipeDetail: { mealId: string };
+  RecipeDetail: { mealId?: string; recipeId: string };
   TodayMenuItemDetail: { itemId: string };
 };
 

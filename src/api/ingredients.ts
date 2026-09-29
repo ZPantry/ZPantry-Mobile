@@ -1,8 +1,12 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 import type { UploadFile } from "@/api/recipes";
+import type { FoodAllergen } from "@/api/profile";
+import { withUploadedImage } from "@/api/media";
+import { collectPages } from "@/api/pagination";
 
 export type Ingredient = {
+  allergens?: FoodAllergen[];
   id: string;
   name: string;
   normalizedName: string;
@@ -19,6 +23,7 @@ export type Ingredient = {
 };
 
 export type IngredientPayload = Pick<Ingredient, "name" | "category" | "unit" | "caloriesPerUnit" | "proteinPerUnit" | "fatPerUnit" | "carbPerUnit" | "imageUrl" | "gradientFrom" | "gradientTo"> & {
+  allergens?: FoodAllergen[];
   imageFile?: UploadFile | null;
 };
 
@@ -56,6 +61,7 @@ export function createIngredientFormData(payload: IngredientPayload) {
 }
 
 export const ingredientsApi = {
+  all() { return collectPages(page => ingredientsApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 50) {
     return apiRequest<PaginatedResponse<Ingredient>>(`${endpoints.ingredients.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
@@ -70,23 +76,22 @@ export const ingredientsApi = {
     return apiRequest<PaginatedResponse<Ingredient>>(`${endpoints.ingredients.list}?${params.toString()}`, { auth: true });
   },
 
-  get(id: string) {
-    return apiRequest<Ingredient>(endpoints.ingredients.item(id), { auth: true });
-  },
-
-  create(payload: IngredientPayload) {
-    return apiRequest<Ingredient>(endpoints.ingredients.create, {
+  async create(payload: IngredientPayload) {
+    const { proteinPerUnit, ...body } = await withUploadedImage(payload);
+    return apiRequest<Ingredient>(endpoints.ingredients.list, {
       method: "POST",
       auth: true,
-      body: createIngredientFormData(payload)
+      // Java CreateIngredientRequest currently spells this field protenPerUnit.
+      body: JSON.stringify({ ...body, protenPerUnit: proteinPerUnit })
     });
   },
 
-  update(id: string, payload: IngredientPayload) {
-    return apiRequest<Ingredient>(endpoints.ingredients.update(id), {
+  async update(id: string, payload: IngredientPayload) {
+    const body = await withUploadedImage(payload);
+    return apiRequest<Ingredient>(endpoints.ingredients.item(id), {
       method: "PUT",
       auth: true,
-      body: createIngredientFormData(payload)
+      body: JSON.stringify(body)
     });
   },
 

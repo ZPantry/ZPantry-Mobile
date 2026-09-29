@@ -57,8 +57,8 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ flexDirection: "row", gap: 14, justifyContent: "center" }}>
-          <QuickButton icon="cart-outline" label="Danh sách mua" />
-          <QuickButton icon="heart-outline" label="Món yêu thích" />
+          <QuickButton icon="camera-outline" label="Nhập từ ảnh" onPress={() => navigation.navigate("PantryImport")} />
+          <QuickButton icon="silverware-fork-knife" label="Gợi ý món" onPress={() => navigation.navigate("MealSuggestion")} />
         </View>
 
         <Section title="Thông tin cá nhân">
@@ -67,16 +67,14 @@ export default function ProfileScreen() {
         </Section>
 
         <Section title="Thói quen ăn uống">
-          <SettingRow title="Mục tiêu bữa ăn" />
-          <SettingRow title="Khẩu vị yêu thích" />
-          <SettingRow title="Món cần hạn chế" />
+          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })}>
+            <SettingRow title="Chỉnh hồ sơ, chế độ ăn và dị ứng" />
+          </Pressable>
         </Section>
 
         <Section title="Cài đặt">
-          <SettingRow title="Thông tin tài khoản" />
-          <SettingRow title="Riêng tư và an toàn" />
-          <SettingRow title="Thông báo bữa ăn" />
-          <SettingRow title="Trung tâm hỗ trợ" />
+          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("AccountSettings")}><SettingRow title="Thông tin tài khoản" /></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CookingHistory")}><SettingRow title="Lịch sử nấu ăn" /></Pressable>
           <Pressable onPress={() => navigation.navigate("InteractiveGuide", { isReplay: true })}>
             <SettingRow title="Hướng dẫn sử dụng Z-Pantry" />
           </Pressable>
