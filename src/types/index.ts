@@ -60,6 +60,8 @@ export type RootStackParamList = {
   Onboarding: undefined;
   ProfileSetup: { editing?: boolean } | undefined;
   PantryImport: undefined;
+  ManualMealSuggestion: undefined;
+  CreateRecipe: undefined;
   CookingHistory: undefined;
   AccountSettings: undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;

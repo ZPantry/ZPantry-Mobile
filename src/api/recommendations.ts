@@ -19,8 +19,9 @@ export type CandidateRecipeItem = {
 
 export type MealRecommendationRequest = {
   inputIngredientText: string;
+  ingredients?: string[];
   selectedIngredients?: IngredientItem[];
-  candidateRecipes?: string[];
+  candidateRecipes?: CandidateRecipeItem[];
   topK?: number;
 };
 
@@ -179,13 +180,18 @@ export const recommendationsApi = {
     return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
   },
   async suggestMeals(payload: MealRecommendationRequest) {
-    const response = await apiRequest<RawMealRecommendationResponse>(endpoints.recommendations.meals, {
+    const response = await apiRequest<unknown>(endpoints.recommendations.meals, {
       method: "POST",
       auth: true,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      timeoutMs: 60000
     });
-
-    return normalizeRecommendationResponse(response);
+    const body = unwrapEnvelope<RawMealRecommendationResponse>(response);
+    if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
+      throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
+    const result = normalizeRecommendationResponse(body);
+    // V1 persists the request, but does not return persisted meal item IDs.
+    return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
   },
 
   async checkMealIngredients(mealId: string) {

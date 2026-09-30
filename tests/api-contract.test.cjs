@@ -29,6 +29,39 @@ const { resolveApiBaseUrl } = load('@/api/baseUrl');
 const { canUpdateUser, buildUserUpdate } = load('@/utils/userProfile');
 const id = '55f2f378-692a-4268-924e-e8c648190e32';
 
+test('manual recommendations send Java candidate objects, keep text and selections, and unwrap AI results', async () => {
+  const calls = [];
+  const { recommendationsApi } = loader({
+    '@/api/client': { apiRequest: async (...args) => {
+      calls.push(args);
+      return { success: true, data: { items: [{ recipeId: id, recipeName: 'Canh rau', matchScore: 0.8 }] } };
+    } }
+  })('@/api/recommendations');
+  const payload = {
+    inputIngredientText: 'rau, nấm', ingredients: ['Cà rốt', 'rau', 'nấm'],
+    selectedIngredients: [{ ingredientId: id, name: 'Cà rốt', quantity: 200, unit: 'g' }],
+    candidateRecipes: [{ recipeId: id, recipeName: 'Canh rau', ingredientNames: ['Cà rốt'], instructionText: 'Nấu canh' }], topK: 5
+  };
+  const result = await recommendationsApi.suggestMeals(payload);
+  assert.equal(calls[0][0], '/api/recommendations/meals');
+  assert.equal(calls[0][1].auth, true);
+  assert.deepEqual(JSON.parse(calls[0][1].body), payload);
+  assert.equal(result.recommendations[0].recipeId, id);
+  assert.equal(result.recommendations[0].score, 80);
+  assert.equal(result.recommendations[0].persistedMeal, false);
+});
+
+test('manual recommendations reject failed or malformed nested AI responses instead of showing empty success', async () => {
+  let response = { success: false, message: 'AI unavailable', data: null };
+  const { recommendationsApi } = loader({ '@/api/client': { apiRequest: async () => response } })('@/api/recommendations');
+  const payload = { inputIngredientText: 'nấm', selectedIngredients: [], candidateRecipes: [], topK: 5 };
+  await assert.rejects(recommendationsApi.suggestMeals(payload), /AI unavailable/);
+  response = { success: true, data: {} };
+  await assert.rejects(recommendationsApi.suggestMeals(payload), error => error.status === 502);
+  response = { success: true, data: { items: [] } };
+  assert.deepEqual(await recommendationsApi.suggestMeals(payload), { recommendations: [] });
+});
+
 test('pagination loads beyond the first server page', async () => {
   const { collectPages } = loader()('@/api/pagination');
   const calls = [];

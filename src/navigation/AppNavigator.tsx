@@ -15,6 +15,8 @@ import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
 import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
+import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
+import CreateRecipeScreen from "@/screens/CreateRecipeScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
 import PantryScreen from "@/screens/PantryScreen";
@@ -260,12 +262,15 @@ export default function AppNavigator() {
           {canManageUsers(user?.role) && <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />}
           <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
           <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
+          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
         </>
       ) : isAuthenticated ? (
         <>
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
+          <Stack.Screen name="ManualMealSuggestion" component={ManualMealSuggestionScreen} />
+          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
           <Stack.Screen name="PantryImport" component={PantryImportScreen} />
           <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} />
           <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />

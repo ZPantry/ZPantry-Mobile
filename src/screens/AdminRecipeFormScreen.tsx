@@ -231,6 +231,9 @@ export default function AdminRecipeFormScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" onBack={() => navigation.goBack()} />
+        {!form.id ? <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CreateRecipe")} style={{ paddingVertical: 12 }}>
+          <Text style={{ color: colors.primary, fontWeight: "800" }}>Tạo bằng tìm kiếm nguyên liệu ›</Text>
+        </Pressable> : null}
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
 

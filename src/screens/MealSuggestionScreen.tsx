@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { pantryApi, type PantryApiItem } from "@/api/pantry";
 import { recommendationsApi } from "@/api/recommendations";
 import SelectField from "@/components/SelectField";
+import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
@@ -19,7 +20,7 @@ export default function MealSuggestionScreen() {
   const [error, setError] = useState("");
   const load = useCallback(async () => {
     setLoading(true); setError("");
-    try { setPantry(await pantryApi.list(1, 100)); setLoaded(true); }
+    try { setPantry(await pantryApi.all()); setLoaded(true); }
     catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tải được tủ thực phẩm.")); }
     finally { setLoading(false); }
   }, []);
@@ -43,6 +44,8 @@ export default function MealSuggestionScreen() {
       <View style={{ gap: 8 }}><Text style={{ color: colors.primary, fontWeight: "800" }}>NẤU TỪ NHỮNG GÌ BẠN CÓ</Text>
         <Text style={{ color: colors.text, fontSize: 30, fontWeight: "900" }}>Hôm nay ăn gì?</Text>
         <Text style={{ color: colors.muted, lineHeight: 22 }}>Không cần nhập lại nguyên liệu. Gợi ý dùng tủ thực phẩm và dị ứng đã lưu của bạn.</Text></View>
+      <PrimaryButton title="Tự chọn / nhập nguyên liệu" icon="pencil-outline" variant="soft" onPress={() => navigation.navigate("ManualMealSuggestion")} />
+      <PrimaryButton title="Tạo công thức" icon="notebook-edit-outline" variant="outline" onPress={() => navigation.navigate("CreateRecipe")} />
       <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })}
         style={{ borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card, borderRadius: 18, padding: 18, gap: 7 }}>
         <Text style={{ color: colors.primary, fontWeight: "900", fontSize: 17 }}>Hồ sơ ăn uống  ›</Text>
