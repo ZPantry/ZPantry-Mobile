@@ -1,5 +1,5 @@
-// MIG-004/005 retain these routes. MIG-001–003 are examples, not contracts.
-// MIG-006 routes below preserve the existing client pending ENDPOINT_COVERAGE.md.
+// Routes checked against the local Java controllers on 2026-09-28.
+// ingredients.item supports PUT/DELETE; Java has no GET ingredient detail route.
 const item = (base: string, id: string) => `${base}/${encodeURIComponent(id)}`;
 
 export const endpoints = {
@@ -11,6 +11,12 @@ export const endpoints = {
     logout: "/api/Auth/logout"
   },
   users: { list: "/api/users", item: (id: string) => item("/api/users", id) },
+  profile: (id: string) => `${item("/api/users", id)}/profile`,
+  pantryImport: {
+    receipt: "/api/me/pantry-import/receipt/analyze",
+    food: "/api/me/pantry-import/food-image/analyze",
+    confirm: "/api/me/pantry-import/confirm"
+  },
   ingredients: {
     list: "/api/ingredients",
     item: (id: string) => item("/api/ingredients", id),
@@ -29,6 +35,7 @@ export const endpoints = {
     item: (id: string) => item("/api/me/pantry/items", id)
   },
   recommendations: {
+    personalized: "/api/recommendations/v2/meals",
     meals: "/api/recommendations/meals",
     missingIngredients: (id: string) => `${item("/api/recommendations/meals", id)}/missing-ingredients`
   },

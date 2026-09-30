@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -10,7 +10,9 @@ import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { authStorage } from "@/utils/authStorage";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
@@ -28,8 +30,11 @@ function normalizeStorageLocation(label: string) {
 export default function AddIngredientScreen() {
   const navigation = useNavigation<any>();
   const toast = useToast();
+  const { user } = useAuth();
+  const [tutorialStep, setTutorialStep] = useState(0); // 0: inactive, 1: intro, 2: point to list, 3: point to form
+  const slideUpAnim = useRef(new Animated.Value(50)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [pantryIngredientIds, setPantryIngredientIds] = useState<Set<string>>(new Set());
   const [selectedIngredientId, setSelectedIngredientId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("piece");
@@ -45,13 +50,11 @@ export default function AddIngredientScreen() {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
+      const ingredientPage = await ingredientsApi.all().then(data => ({ data }));
       setIngredients(ingredientPage.data);
-      setPantryIngredientIds(new Set(pantryItems.map((item) => item.ingredientId)));
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được danh sách nguyên liệu."));
       setIngredients([]);
-      setPantryIngredientIds(new Set());
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +64,37 @@ export default function AddIngredientScreen() {
     loadIngredients();
   }, [loadIngredients]);
 
-  const availableIngredients = useMemo(() => ingredients.filter((ingredient) => !pantryIngredientIds.has(ingredient.id)), [ingredients, pantryIngredientIds]);
+  useEffect(() => {
+    if (user?.userId) {
+      authStorage.getHasSeenAddIngredientTooltip(user.userId).then((hasSeen) => {
+        if (!hasSeen) {
+          setTutorialStep(1);
+          Animated.parallel([
+            Animated.timing(slideUpAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+            Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver: true })
+          ]).start();
+        }
+      });
+    }
+  }, [user?.userId, slideUpAnim, opacityAnim]);
+
+  const handleNextStep1 = () => {
+    Animated.parallel([
+      Animated.timing(slideUpAnim, { toValue: 50, duration: 300, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+    ]).start(() => {
+      setTutorialStep(2);
+    });
+  };
+
+  const handleCloseTutorial = async () => {
+    if (user?.userId) {
+      await authStorage.setHasSeenAddIngredientTooltip(user.userId);
+    }
+    setTutorialStep(0);
+  };
+
+  const availableIngredients = ingredients;
   const selectedIngredient = ingredients.find((ingredient) => ingredient.id === selectedIngredientId);
   const filteredIngredients = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -122,6 +155,10 @@ export default function AddIngredientScreen() {
         note: note.trim()
       });
 
+      if (user?.userId && tutorialStep > 0) {
+        await authStorage.setHasSeenAddIngredientTooltip(user.userId);
+      }
+
       toast.show(`Đã lưu ${selectedIngredient.name} vào tủ.`);
       navigation.goBack();
     } catch (error) {
@@ -138,35 +175,68 @@ export default function AddIngredientScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadIngredients} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        {tutorialStep > 0 && (
+          <View style={{ position: "absolute", top: 200, left: 100, width: 20, height: 20, backgroundColor: "rgba(0,0,0,0.65)", zIndex: 10, transform: [{ scale: 400 }] }} pointerEvents="none" />
+        )}
+
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", zIndex: 11 }}>
           <View>
             <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
               Thêm vào tủ
-            </Text>
-            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900", marginTop: 3 }} selectable>
-              {filteredIngredients.length} nguyên liệu chưa có trong tủ
             </Text>
           </View>
           <PrimaryButton title="" icon="close" variant="soft" onPress={() => navigation.goBack()} style={{ width: 48, minHeight: 48, paddingHorizontal: 0 }} />
         </View>
 
-        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14, zIndex: tutorialStep === 2 ? 20 : 1 }}>
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Chọn nguyên liệu có sẵn
+            Chọn nguyên liệu
           </Text>
           <SearchBar placeholder="Tìm nguyên liệu chưa có trong tủ" value={searchText} onChangeText={setSearchText} />
           {filteredIngredients.length === 0 ? (
-            <EmptyState icon="check-circle-outline" text={availableIngredients.length === 0 ? "Tất cả nguyên liệu hệ thống đã có trong tủ của bạn." : "Không có nguyên liệu phù hợp với từ khóa này."} />
+            <EmptyState icon="check-circle-outline" text={availableIngredients.length === 0 ? "Hệ thống chưa có nguyên liệu nào." : "Không có nguyên liệu phù hợp với từ khóa này."} />
           ) : (
             <View style={{ gap: 10 }}>
-              {filteredIngredients.map((item) => (
-                <IngredientRow key={item.id} ingredient={item} selected={item.id === selectedIngredientId} onPress={() => selectIngredient(item)} />
-              ))}
+              {filteredIngredients.map((item, index) => {
+                const isHighlighted = tutorialStep === 2 && index === 0;
+                return (
+                  <View key={item.id} style={{ zIndex: isHighlighted ? 30 : 1 }}>
+                    <IngredientRow 
+                      ingredient={item} 
+                      selected={item.id === selectedIngredientId} 
+                      onPress={() => {
+                        selectIngredient(item);
+                        if (tutorialStep === 2) setTutorialStep(3);
+                      }} 
+                    />
+                    {isHighlighted && (
+                      <View style={{ zIndex: 30, flexDirection: "row", alignItems: "flex-start", marginTop: 4 }}>
+                        <MaterialCommunityIcons name="arrow-top-left-thick" size={40} color={colors.primary} style={{ marginLeft: 30, marginTop: -10 }} />
+                        <View style={{ backgroundColor: colors.card, padding: 12, borderRadius: 12, flex: 1, marginLeft: 5, borderWidth: 2, borderColor: colors.primary }}>
+                          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 14 }}>Bấm vào một nguyên liệu bất kỳ để chọn nhé!</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
 
-        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+        {tutorialStep === 3 && (
+          <View style={{ zIndex: 30, alignItems: "center", marginBottom: -10, paddingHorizontal: 10 }}>
+            <View style={{ backgroundColor: colors.card, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: colors.primary, width: "100%", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
+              <Text style={{ color: colors.text, fontWeight: "800", lineHeight: 22, fontSize: 14, marginBottom: 16 }}>
+                Chỗ này là nơi bạn nhập các thông số. Sau khi nhập xong thì bấm vào nút Xác nhận lưu vào tủ để lưu nguyên liệu nha.
+              </Text>
+              <PrimaryButton title="Tôi đã hiểu" onPress={handleCloseTutorial} style={{ minHeight: 44 }} />
+            </View>
+            <MaterialCommunityIcons name="arrow-down-thick" size={40} color={colors.primary} style={{ marginTop: -5, marginBottom: -15 }} />
+          </View>
+        )}
+
+        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: tutorialStep === 3 ? colors.primary : colors.line, padding: 16, gap: 14, zIndex: tutorialStep === 3 ? 20 : 1, boxShadow: tutorialStep === 3 ? "0 0 0 4px rgba(244,162,28,0.3)" : "none" }}>
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
             Thông tin lưu trữ
           </Text>
@@ -218,6 +288,29 @@ export default function AddIngredientScreen() {
           <PrimaryButton title={isSaving ? "Đang lưu..." : "Xác nhận lưu vào tủ"} icon="content-save" onPress={saveIngredient} />
         </View>
       </ScrollView>
+
+      {/* Tooltip Step 1 */}
+      {tutorialStep === 1 && (
+        <Animated.View style={{
+          position: "absolute", bottom: 40, left: 20, right: 20,
+          backgroundColor: colors.card, borderRadius: 16, padding: 20,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.3)", zIndex: 101,
+          borderWidth: 1, borderColor: colors.line,
+          transform: [{ translateY: slideUpAnim }], opacity: opacityAnim
+        }}>
+          <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "900", marginBottom: 8 }}>Chi tiết nguyên liệu</Text>
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700", lineHeight: 20, marginBottom: 20 }}>Tại đây bạn có thể tìm kiếm nguyên liệu và chọn nó để thêm vào tủ của bạn. Hãy điền số lượng và hạn sử dụng tương ứng nhé!</Text>
+          <Pressable 
+            onPress={handleNextStep1}
+            style={({ pressed }) => ({
+              backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10,
+              alignItems: "center", opacity: pressed ? 0.8 : 1
+            })}
+          >
+            <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }}>Đã hiểu</Text>
+          </Pressable>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }

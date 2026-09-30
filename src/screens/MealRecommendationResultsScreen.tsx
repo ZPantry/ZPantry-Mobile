@@ -12,8 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "MealRecommendationResul
 type UsedIngredient = RootStackParamList["MealRecommendationResults"]["pantryItems"][number];
 
 function formatPercent(score: number) {
-  const normalizedScore = score > 1 ? score : score * 100;
-  return Math.max(0, Math.min(100, Math.round(normalizedScore)));
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 export default function MealRecommendationResultsScreen({ route, navigation }: Props) {
@@ -31,7 +30,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
         ListHeaderComponent={
           <View style={{ gap: 18 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <AppBackButton label="Chỉnh nguyên liệu" onPress={() => navigation.goBack()} />
+              <AppBackButton label="Quay lại" onPress={() => navigation.goBack()} />
               <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
                 <MaterialCommunityIcons name="silverware-fork-knife" size={24} color={colors.primary} />
               </View>
@@ -42,7 +41,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
                 Danh sách món gợi ý
               </Text>
               <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", lineHeight: 21, marginTop: 4 }} selectable>
-                Dựa trên {pantryItems.length} nguyên liệu đã chọn.
+                Dựa trên nguyên liệu trong tủ và dị ứng đã lưu trong hồ sơ.
               </Text>
             </View>
 
@@ -64,11 +63,11 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
               Chưa có món phù hợp
             </Text>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-              Quay lại chọn thêm nguyên liệu khác rồi gợi ý lại.
+              Kiểm tra nguyên liệu trong tủ và hồ sơ ăn uống rồi thử lại. Danh mục có thể chưa có món phù hợp.
             </Text>
           </View>
         }
-        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { mealId: item.mealId })} />}
+        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { mealId: item.persistedMeal === false ? undefined : item.mealId, recipeId: item.recipeId })} />}
       />
     </SafeAreaView>
   );

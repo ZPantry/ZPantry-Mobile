@@ -3,12 +3,15 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { LoginResponse } from "@/api/auth";
 import { logoutStoredSession } from "@/utils/authSession";
 import { authStorage, type StoredUser } from "@/utils/authStorage";
+import { restoreSession } from "@/api/client";
 
 type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   user: StoredUser | null;
-  signIn: (session: LoginResponse) => Promise<void>;
+  onboardingStep: "profile_setup" | "interactive_guide" | "done";
+  completeOnboardingStep: (step: "interactive_guide" | "done") => Promise<void>;
+  signIn: (session: LoginResponse, remember?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -17,25 +20,37 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "interactive_guide" | "done">("profile_setup");
 
   useEffect(() => {
     let isMounted = true;
 
-    authStorage
-      .getSession()
-      .then((session) => {
+    restoreSession()
+      .then(async (session) => {
         if (isMounted) {
           setUser(session?.user ?? null);
+          if (session?.user?.userId) {
+            const step = await authStorage.getOnboardingStep(session.user.userId);
+            if (isMounted) setOnboardingStep(step);
+          }
         }
       })
+      .catch(() => { if (isMounted) setUser(null); })
       .finally(() => {
         if (isMounted) {
           setIsLoading(false);
         }
       });
 
+    const unsubscribe = authStorage.subscribe(() => {
+      authStorage.getUser().then(async value => {
+        const step = value ? await authStorage.getOnboardingStep(value.userId) : "profile_setup";
+        if (isMounted) { setOnboardingStep(step); setUser(value); }
+      }).catch(() => { if (isMounted) setUser(null); });
+    });
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -44,18 +59,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: Boolean(user),
       user,
-      async signIn(session) {
-        await authStorage.saveSession(session);
-        setUser({
-          userId: session.userId,
-          fullName: session.fullName,
-          email: session.email,
-          role: session.role,
-          expiresAt: session.expiresAt
-        });
+      onboardingStep,
+      async signIn(session, remember = true) {
+        await authStorage.saveSession(session, remember);
+        
+        // Retrieve the fully constructed user (which will now have userId extracted from JWT if missing)
+        const storedUser = await authStorage.getUser();
+        if (!storedUser) throw new Error("Failed to save session");
+        
+        const step = await authStorage.getOnboardingStep(storedUser.userId);
+        
+        // Update both states together to avoid race condition where
+        // isAuthenticated becomes true but onboardingStep is not yet updated
+        setOnboardingStep(step);
+        setUser(storedUser);
+      },
+      async completeOnboardingStep(step) {
+        if (!user) return;
+        await authStorage.setOnboardingStep(user.userId, step);
+        setOnboardingStep(step);
       },
       async signOut() {
         setUser(null);
+        setOnboardingStep("profile_setup"); // Reset onboarding step for next login
         try {
           await logoutStoredSession();
         } catch {
@@ -63,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }),
-    [isLoading, user]
+    [isLoading, user, onboardingStep]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

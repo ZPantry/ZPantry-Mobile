@@ -17,6 +17,7 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 function toInputDate(value: string) {
+  if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
   return date.toISOString().slice(0, 10);
@@ -40,6 +41,7 @@ function daysLeft(expiredAt: string) {
 }
 
 function expiryCopy(expiredAt: string) {
+  if (!expiredAt) return "Chưa có hạn sử dụng";
   const left = daysLeft(expiredAt);
   if (left < 0) return `Đã hết hạn ${Math.abs(left)} ngày`;
   if (left === 0) return "Hết hạn hôm nay";
@@ -88,7 +90,7 @@ export default function PantryItemDetailScreen() {
   const imageUrl = normalizeRemoteImageUrl(ingredient?.imageUrl || FALLBACK_FOOD_IMAGE_URL);
   const category = ingredient?.category || "Nguyên liệu trong tủ";
   const storageText = item ? displayStorageLocation(item.storageLocation) : "Ngăn mát";
-  const expiredDateText = item ? new Date(item.expiredAt).toLocaleDateString("vi-VN") : "";
+  const expiredDateText = item?.expiredAt ? new Date(item.expiredAt).toLocaleDateString("vi-VN") : "Chưa cung cấp";
   const heroIcon = iconForIngredient(ingredient?.category);
 
   const validate = () => {
@@ -96,7 +98,7 @@ export default function PantryItemDetailScreen() {
     if (!item?.id || !item.ingredientId) return "Không tìm thấy nguyên liệu cần cập nhật.";
     if (!Number.isFinite(amount) || amount <= 0) return "Số lượng phải lớn hơn 0.";
     if (!unit.trim()) return "Đơn vị không được để trống.";
-    if (Number.isNaN(new Date(expiredAt).getTime())) return "Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.";
+    if (expiredAt && Number.isNaN(new Date(expiredAt).getTime())) return "Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.";
     return "";
   };
 
@@ -114,7 +116,7 @@ export default function PantryItemDetailScreen() {
         ingredientId: item!.ingredientId,
         quantity: Number(quantity.replace(",", ".")),
         unit: unit.trim(),
-        expiredAt: new Date(expiredAt).toISOString(),
+          expiredAt: expiredAt ? new Date(expiredAt).toISOString() : null,
         storageLocation: normalizeStorageLocation(storageLocation),
         note: note.trim()
       };

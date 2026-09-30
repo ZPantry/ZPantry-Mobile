@@ -1,21 +1,32 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest } from "@/api/client";
+import { ApiError, unwrapEnvelope } from "@/api/response";
 import { translateRecommendationText } from "@/utils/localize";
 
+export type IngredientItem = {
+  ingredientId?: string | null;
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+};
+
+export type CandidateRecipeItem = {
+  recipeId: string;
+  recipeName: string;
+  ingredientNames: string[];
+  instructionText?: string | null;
+};
+
 export type MealRecommendationRequest = {
+  inputIngredientText: string;
+  selectedIngredients?: IngredientItem[];
+  candidateRecipes?: string[];
   topK?: number;
-  inputIngredientText?: string;
-  ingredients?: string[];
-  selectedIngredients?: Array<{
-    ingredientId: string;
-    name?: string;
-    quantity: number;
-    unit: string;
-  }>;
 };
 
 export type MealRecommendation = {
   mealId: string;
+  persistedMeal?: boolean;
   recipeId: string;
   name: string;
   description: string;
@@ -156,7 +167,18 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
-  async suggestMeals(payload: MealRecommendationRequest = {}) {
+  async personalized(topK = 5) {
+    const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
+      method: "POST", auth: true, body: JSON.stringify({ topK }), timeoutMs: 60000
+    });
+    // Java wraps the AI service envelope; validate both layers before normalizing.
+    const body = unwrapEnvelope<RawMealRecommendationResponse>(response);
+    if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
+      throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
+    const result = normalizeRecommendationResponse(body);
+    return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
+  },
+  async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<RawMealRecommendationResponse>(endpoints.recommendations.meals, {
       method: "POST",
       auth: true,

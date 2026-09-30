@@ -6,6 +6,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient, IngredientPayload } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { UploadFile } from "@/api/recipes";
+import SelectField from "@/components/SelectField";
+import AllergenChoices from "@/components/AllergenChoices";
+import type { FoodAllergen } from "@/api/profile";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -44,6 +47,25 @@ const emptyIngredientForm: IngredientFormState = {
   gradientTo: "#39D98A"
 };
 
+const categoryOptions = [
+  { label: "Rau củ", value: "Vegetable" },
+  { label: "Trái cây", value: "Fruit" },
+  { label: "Thịt", value: "Meat" },
+  { label: "Hải sản", value: "Seafood" },
+  { label: "Sữa và chế phẩm", value: "Dairy" },
+  { label: "Ngũ cốc", value: "Grain" },
+  { label: "Gia vị", value: "Spice" },
+  { label: "Khác", value: "Other" }
+] as const;
+
+const unitOptions = [
+  { label: "Gam (g)", value: "g" },
+  { label: "Kilôgam (kg)", value: "kg" },
+  { label: "Mililít (ml)", value: "ml" },
+  { label: "Lít (l)", value: "l" },
+  { label: "Cái / phần", value: "piece" }
+] as const;
+
 function toNumber(value: string) {
   const number = Number(value.replace(",", "."));
   return Number.isFinite(number) ? number : 0;
@@ -76,6 +98,7 @@ export default function AdminIngredientFormScreen() {
   const [form, setForm] = useState<IngredientFormState>(() => buildIngredientForm(ingredient));
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [allergens, setAllergens] = useState<FoodAllergen[]>(ingredient?.allergens ?? []);
 
   const chooseImage = async () => {
     try {
@@ -100,6 +123,7 @@ export default function AdminIngredientFormScreen() {
     }
 
     const payload: IngredientPayload = {
+      allergens,
       name: cleanName,
       category: form.category.trim() || "Other",
       unit: cleanUnit,
@@ -133,7 +157,7 @@ export default function AdminIngredientFormScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa nguyên liệu" : "Tạo nguyên liệu"} subtitle="Quản lý nutrition, unit và ảnh hiển thị" onBack={() => navigation.goBack()} />
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
@@ -149,10 +173,10 @@ export default function AdminIngredientFormScreen() {
 
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <FormInput label="Nhóm" value={form.category} onChangeText={(category) => setForm((current) => ({ ...current, category }))} placeholder="Vegetable" />
+            <SelectField label="Nhóm" value={form.category} options={categoryOptions} onValueChange={(category) => setForm((current) => ({ ...current, category }))} />
           </View>
           <View style={{ flex: 1 }}>
-            <FormInput label="Đơn vị" value={form.unit} onChangeText={(unit) => setForm((current) => ({ ...current, unit }))} placeholder="g" />
+            <SelectField label="Đơn vị" value={form.unit} options={unitOptions} onValueChange={(unit) => setForm((current) => ({ ...current, unit }))} />
           </View>
         </View>
 
@@ -182,6 +206,10 @@ export default function AdminIngredientFormScreen() {
           <View style={{ flex: 1 }}>
             <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
           </View>
+        </View>
+        <View style={{ gap: 12 }}>
+          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 18 }}>Chất gây dị ứng đã xác định</Text>
+          <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
         </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
       </ScrollView>

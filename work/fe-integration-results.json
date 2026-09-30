@@ -1,0 +1,115 @@
+{
+  "run": 1790688884915,
+  "startedAt": "2026-09-29T13:34:44.915Z",
+  "checks": [
+    {
+      "label": "Register / OTP / manager test fixture",
+      "pass": true
+    },
+    {
+      "label": "Manager creates ingredient through FE JSON adapter",
+      "pass": true
+    },
+    {
+      "label": "Ingredient update and allergen persistence",
+      "pass": true
+    },
+    {
+      "label": "Manager creates recipe with ingredients",
+      "pass": true
+    },
+    {
+      "label": "Manager can load catalogs without users API",
+      "pass": true
+    },
+    {
+      "label": "Register / OTP / user session",
+      "pass": true
+    },
+    {
+      "label": "User catalog writes denied",
+      "pass": true
+    },
+    {
+      "label": "Save and reload nutrition profile",
+      "pass": true
+    },
+    {
+      "label": "Add pantry item",
+      "pass": true
+    },
+    {
+      "label": "Clear expiry through FE and read persisted result",
+      "pass": false,
+      "status": 500,
+      "message": "Type definition error: [simple type, class com.fasterxml.jackson.databind.JsonNode]"
+    },
+    {
+      "label": "Import confirmation and readback",
+      "pass": true
+    },
+    {
+      "label": "Automatic refresh after rejected access token",
+      "pass": true
+    },
+    {
+      "label": "Save own account name",
+      "pass": true
+    },
+    {
+      "label": "Personalized recommendations via actual FE normalizer",
+      "pass": true
+    },
+    {
+      "label": "Add menu on selected date",
+      "pass": true
+    },
+    {
+      "label": "Menu detail contains recipe instructions and pantry",
+      "pass": true
+    },
+    {
+      "label": "Selected-date menu and history listing",
+      "pass": true
+    },
+    {
+      "label": "Complete meal with uploaded image",
+      "pass": false,
+      "status": 500,
+      "message": "Media storage is not configured"
+    },
+    {
+      "label": "Food image analysis",
+      "pass": false,
+      "status": 503,
+      "message": "Image analysis is currently unavailable."
+    },
+    {
+      "label": "Receipt image analysis",
+      "pass": false,
+      "status": 503,
+      "message": "Image analysis is currently unavailable."
+    },
+    {
+      "label": "Delete planned menu",
+      "pass": true
+    },
+    {
+      "label": "Delete pantry item",
+      "pass": true
+    },
+    {
+      "label": "Logout clears storage and revokes token",
+      "pass": true
+    },
+    {
+      "label": "Cleanup recipe",
+      "pass": true
+    },
+    {
+      "label": "Cleanup ingredient",
+      "pass": true
+    }
+  ],
+  "finishedAt": "2026-09-29T13:34:46.565Z"
+}

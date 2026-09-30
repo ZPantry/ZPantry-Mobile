@@ -33,7 +33,7 @@ export default function MealCard({ meal, compact = false, onPress }: Props) {
           </Text>
           <View style={{ borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, backgroundColor: colors.secondary }}>
             <Text style={{ color: colors.primaryDark, fontWeight: "900", fontSize: 11 }} selectable>
-              {meal.matchPercent}%
+              {meal.matchPercent == null ? meal.difficulty : `${meal.matchPercent}%`}
             </Text>
           </View>
         </View>
@@ -47,7 +47,7 @@ export default function MealCard({ meal, compact = false, onPress }: Props) {
           <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
             <MaterialCommunityIcons name="fire" size={15} color={colors.warning} />
             <Text style={{ color: colors.primaryDark, fontWeight: "800", fontSize: 12 }} selectable>
-              {meal.calories} kcal
+              {meal.calories == null ? "Chưa có kcal" : `${meal.calories} kcal`}
             </Text>
           </View>
         </View>

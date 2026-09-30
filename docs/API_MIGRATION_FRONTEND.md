@@ -1,4 +1,47 @@
-# Đối chiếu API frontend — 2026-09-23
+# Đối chiếu API frontend
+
+> Audit tính năng và lỗi mới nhất: [Báo cáo FE–BE 29/09/2026](FEATURE_AUDIT_2026-09-29.md), kiểm tra API local lúc khoảng 18:22. Báo cáo này phân biệt lỗi tái hiện, kiểm tra source và tính năng chưa nghiệm thu.
+
+> Cập nhật hiện hành: [FE và kiểm thử tích hợp 29/09/2026](FRONTEND_UPDATE_2026-09-29.md).
+> Các phần bên dưới ghi nhận lịch sử; tình trạng chưa chạy BE và chưa có CORS ngày 28/09 không còn áp dụng cho phiên kiểm thử mới.
+
+## Kiểm tra source Java local — 2026-09-28
+
+Đối chiếu trực tiếp controller/DTO trong `D:/EXE101/ZPantry-java-BackEnd/src/main/java/com/zpantry`.
+Các ghi chú ngày 23/09 bên dưới là lịch sử kiểm tra theo tài liệu migration.
+
+- `.env` FE dùng `http://localhost:8080`. Không có TCP listener ở cổng 8080 tại thời điểm kiểm tra;
+  `curl http://localhost:8080/api/ingredients` báo connection refused. Đây là nguyên nhân trực tiếp
+  của `POST /api/Auth/register net::ERR_CONNECTION_REFUSED`, chưa phải lỗi route hay validation.
+- Auth: cả 5 route POST trong `endpoints.auth` khớp controller. Register gửi `fullName`, `email`,
+  `password`; verify gửi `email`, `otpCode`; login gửi `email`, `password`; refresh gửi `refreshToken`.
+- User, recipe, pantry, recommendation và today-menu: method/path của các API client khớp controller.
+  Ingredient list/search, POST/PUT multipart v2 và DELETE cũng khớp. Java không có
+  `GET /api/ingredients/{id}`: đã bỏ hàm `ingredientsApi.get` chưa được dùng; giữ route item cho DELETE.
+- Java register gửi email trước khi lưu user, trả 500 khi email đã tồn tại hoặc email delivery chưa cấu hình.
+  FE nay hiển thị hai lỗi đã biết này bằng tiếng Việt thay vì thông báo lỗi máy chủ chung.
+- Chưa kiểm thử end-to-end đăng ký/OTP/login hoặc CORS trên server đang chạy.
+  Không có cấu hình CORS được tìm thấy trong Java source; nếu sau khi khởi động có lỗi preflight,
+  cần xử lý tại cấu hình server/gateway. Không sửa BE trong lần kiểm tra này.
+
+### Chạy lại tại máy local
+
+Theo `ZPantry-java-BackEnd/docs/DATABASE_BOOTSTRAP.md`, với Java 21 và Docker đang chạy:
+
+```powershell
+cd D:\EXE101\ZPantry-java-BackEnd
+.\mvnw.cmd spring-boot:run
+```
+
+Lệnh trên dùng profile local mặc định và có thể khởi tạo DB local qua Docker/Flyway;
+không được chạy profile fresh trên database legacy/shared. Lần kiểm tra này không chạy lệnh đó.
+Đợi backend khởi động thành công ở 8080 trước khi thử lại FE.
+Register cần `ZPANTRY_EMAIL_RESEND_API_KEY` và `ZPANTRY_EMAIL_FROM` trong môi trường BE;
+không đưa các giá trị bí mật này vào biến `EXPO_PUBLIC_*` của FE.
+Nếu BE chạy ở host/cổng khác, cập nhật `EXPO_PUBLIC_API_BASE_URL` của FE và restart Expo.
+Android emulator dùng `EXPO_PUBLIC_ANDROID_API_BASE_URL=http://10.0.2.2:8080`.
+
+## Kiểm tra theo tài liệu migration — 2026-09-23
 
 Nguồn: `API_MIGRATION (1).md` do người dùng cung cấp. Đây là báo cáo thay đổi
 frontend, không phải chứng nhận backend Java đã tương thích hoặc đã triển khai production.

@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -30,6 +30,7 @@ function normalizeLocation(location: string): PantryItem["location"] {
 }
 
 function statusFromDate(expiredAt: string): PantryStatus {
+  if (!expiredAt) return "safe";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft <= 1) return "danger";
   if (daysLeft <= 5) return "warning";
@@ -37,6 +38,7 @@ function statusFromDate(expiredAt: string): PantryStatus {
 }
 
 function expiryLabel(expiredAt: string) {
+  if (!expiredAt) return "Chưa có hạn sử dụng";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft < 0) return `Đã hết hạn ${Math.abs(daysLeft)} ngày`;
   if (daysLeft === 0) return "Hết hạn hôm nay";
@@ -45,6 +47,7 @@ function expiryLabel(expiredAt: string) {
 }
 
 function progressFromDate(expiredAt: string) {
+  if (!expiredAt) return 0;
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   return Math.max(8, Math.min(100, daysLeft * 12));
 }
@@ -81,14 +84,26 @@ export default function PantryScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, onboardingStep, completeOnboardingStep } = useAuth();
   const displayName = user?.fullName || "bạn";
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (onboardingStep === "interactive_guide") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, { toValue: -8, duration: 800, useNativeDriver: true }),
+          Animated.timing(floatAnim, { toValue: 0, duration: 800, useNativeDriver: true })
+        ])
+      ).start();
+    }
+  }, [onboardingStep, floatAnim]);
 
   const loadPantry = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
+      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.all().then(data => ({ data })), pantryApi.all()]);
       const ingredientById = new Map(ingredientPage.data.map((ingredient) => [ingredient.id, ingredient]));
       setItems(pantryItems.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
     } catch (error) {
@@ -118,7 +133,8 @@ export default function PantryScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
+        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 200, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
@@ -128,6 +144,11 @@ export default function PantryScreen() {
           </View>
         </View>
 
+        <Pressable accessibilityRole="button" onPress={() => navigation.navigate("PantryImport")}
+          style={{ padding: 18, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.primary, gap: 6 }}>
+          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: "900" }}>Nhập nhanh từ ảnh</Text>
+          <Text style={{ color: colors.text, lineHeight: 21 }}>Chọn ảnh thực phẩm hoặc hóa đơn, kiểm tra rồi thêm vào tủ.</Text>
+        </Pressable>
         <View>
           <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
             Tủ lạnh của {displayName}
@@ -141,7 +162,12 @@ export default function PantryScreen() {
         {expiringItem ? <ExpiryAlertCard title={`${expiringItem.name} ${expiringItem.expiryLabel.toLowerCase()}. Ưu tiên dùng sớm để tránh lãng phí.`} tone={expiringItem.status === "danger" ? "danger" : "warning"} /> : null}
 
         <Pressable
-          onPress={() => navigation.navigate("AddIngredient")}
+          onPress={() => {
+            if (onboardingStep === "interactive_guide") {
+              completeOnboardingStep("done");
+            }
+            navigation.navigate("AddIngredient");
+          }}
           style={({ pressed }) => ({
             minHeight: 76,
             borderRadius: 22,
@@ -214,6 +240,28 @@ export default function PantryScreen() {
           )}
         </View>
       </ScrollView>
+
+      {onboardingStep === "interactive_guide" && (
+        <Animated.View style={{ 
+          position: "absolute", 
+          top: 250, 
+          alignSelf: "center",
+          width: 260,
+          backgroundColor: "rgba(20, 20, 20, 0.85)", 
+          padding: 16, 
+          borderRadius: 16, 
+          alignItems: "center", 
+          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.15)",
+          transform: [{ translateY: floatAnim }],
+          zIndex: 100
+        }}>
+          <MaterialCommunityIcons name="arrow-up-thick" size={26} color={colors.primary} style={{ marginBottom: 5 }} />
+          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900", textAlign: "center", marginBottom: 6 }}>Thêm thực phẩm 🍎</Text>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700", textAlign: "center" }}>Bấm nút phía trên để cất nguyên liệu vào tủ.</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }

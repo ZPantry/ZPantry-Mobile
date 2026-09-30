@@ -1,4 +1,5 @@
 import { endpoints } from "@/api/endpoints";
+import { collectPages } from "@/api/pagination";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 
 export type AdminUser = {
@@ -20,6 +21,7 @@ export type UpdateUserPayload = {
 };
 
 export const usersApi = {
+  all() { return collectPages(page => usersApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 10) {
     return apiRequest<PaginatedResponse<AdminUser>>(`${endpoints.users.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },

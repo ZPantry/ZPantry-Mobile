@@ -1,5 +1,8 @@
 import { endpoints } from "@/api/endpoints";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
+import type { FoodAllergen } from "@/api/profile";
+import { withUploadedImage } from "@/api/media";
+import { collectPages } from "@/api/pagination";
 
 export type RecipeIngredientPayload = {
   ingredientId: string;
@@ -10,6 +13,7 @@ export type RecipeIngredientPayload = {
 };
 
 export type Recipe = {
+  allergens?: FoodAllergen[];
   id: string;
   name: string;
   description: string;
@@ -42,6 +46,7 @@ export type NativeUploadFile = {
 export type UploadFile = NativeUploadFile | File;
 
 export type RecipePayload = {
+  allergens?: FoodAllergen[];
   name: string;
   description: string;
   cookingTimeMinutes: number;
@@ -69,40 +74,41 @@ function appendFile(formData: FormData, key: string, file: UploadFile) {
   formData.append(key, file as unknown as Blob);
 }
 
-function createRecipeFormData(payload: RecipePayload) {
+export function createRecipeFormData(payload: RecipePayload) {
   const formData = new FormData();
-  appendText(formData, "Name", payload.name);
-  appendText(formData, "Description", payload.description);
-  appendText(formData, "CookingTimeMinutes", payload.cookingTimeMinutes);
-  appendText(formData, "Difficulty", payload.difficulty);
-  appendText(formData, "ServingSize", payload.servingSize);
-  appendText(formData, "InstructionText", payload.instructionText);
-  appendText(formData, "SourceType", payload.sourceType);
-  appendText(formData, "GradientFrom", payload.gradientFrom || "");
-  appendText(formData, "GradientTo", payload.gradientTo || "");
-  appendText(formData, "ImageUrl", payload.imageUrl);
+  appendText(formData, "name", payload.name);
+  appendText(formData, "description", payload.description);
+  appendText(formData, "cookingTimeMinutes", payload.cookingTimeMinutes);
+  appendText(formData, "difficulty", payload.difficulty);
+  appendText(formData, "servingSize", payload.servingSize);
+  appendText(formData, "instructionText", payload.instructionText);
+  appendText(formData, "sourceType", payload.sourceType);
+  appendText(formData, "gradientFrom", payload.gradientFrom || "");
+  appendText(formData, "gradientTo", payload.gradientTo || "");
+  appendText(formData, "imageUrl", payload.imageUrl);
   appendText(
     formData,
-    "IngredientsJson",
+    "ingredientsJson",
     JSON.stringify(
       (payload.ingredients || []).map((item) => ({
-        IngredientId: item.ingredientId,
-        Quantity: item.quantity,
-        Unit: item.unit,
-        IsRequired: item.isRequired,
-        Note: item.note
+        ingredientId: item.ingredientId,
+        quantity: item.quantity,
+        unit: item.unit,
+        isRequired: item.isRequired,
+        note: item.note
       }))
     )
   );
 
   if (payload.imageFile) {
-    appendFile(formData, "ImageFile", payload.imageFile);
+    appendFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;
 }
 
 export const recipesApi = {
+  all() { return collectPages(page => recipesApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 50) {
     return apiRequest<PaginatedResponse<Recipe>>(`${endpoints.recipes.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
@@ -111,19 +117,21 @@ export const recipesApi = {
     return apiRequest<Recipe>(endpoints.recipes.item(id), { auth: true });
   },
 
-  create(payload: RecipePayload) {
-    return apiRequest<Recipe>(endpoints.recipes.create, {
+  async create(payload: RecipePayload) {
+    const body = await withUploadedImage(payload);
+    return apiRequest<Recipe>(endpoints.recipes.list, {
       method: "POST",
       auth: true,
-      body: createRecipeFormData(payload)
+      body: JSON.stringify(body)
     });
   },
 
-  update(id: string, payload: RecipePayload) {
-    return apiRequest<Recipe>(endpoints.recipes.update(id), {
+  async update(id: string, payload: RecipePayload) {
+    const body = await withUploadedImage(payload);
+    return apiRequest<Recipe>(endpoints.recipes.item(id), {
       method: "PUT",
       auth: true,
-      body: createRecipeFormData(payload)
+      body: JSON.stringify(body)
     });
   },
 

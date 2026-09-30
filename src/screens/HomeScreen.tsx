@@ -1,8 +1,3 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
@@ -17,6 +12,11 @@ import { useAuth } from "@/context/AuthContext";
 import type { Meal } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const shortcuts = [
   { label: "Thêm nhanh", icon: "plus-circle-outline", target: "AddIngredient" },
@@ -30,13 +30,13 @@ function recipeToMeal(recipe: Recipe): Meal {
     id: recipe.id,
     name: recipe.name,
     image: recipe.imageUrl,
-    calories: recipe.servingSize ? recipe.servingSize * 160 : 320,
+    calories: null,
     time: `${recipe.cookingTimeMinutes} phút`,
-    matchPercent: recipe.difficulty === "Easy" ? 90 : recipe.difficulty === "Medium" ? 75 : 62,
+    matchPercent: null,
     difficulty: translateDifficulty(recipe.difficulty),
     availableIngredients: recipe.description ? [recipe.description] : [],
     missingIngredients: [],
-    steps: recipe.instructionText.split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
+    steps: (recipe.instructionText || "").split(/\d+\.\s*/).map((step) => step.trim()).filter(Boolean)
   };
 }
 
@@ -67,7 +67,7 @@ function getPantryName(item: PantryApiItem, ingredient?: Ingredient) {
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, onboardingStep, completeOnboardingStep } = useAuth();
   const displayName = user?.fullName || "bạn";
   const [recipes, setRecipes] = useState<Meal[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryApiItem[]>([]);
@@ -75,14 +75,26 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (onboardingStep === "interactive_guide") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, { toValue: -8, duration: 800, useNativeDriver: true }),
+          Animated.timing(floatAnim, { toValue: 0, duration: 800, useNativeDriver: true })
+        ])
+      ).start();
+    }
+  }, [onboardingStep, floatAnim]);
 
   const loadHome = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
       const recipePagePromise = recipesApi.list(1, 10);
-      const ingredientPagePromise = ingredientsApi.list(1, 100);
-      const pantryPromise = pantryApi.list();
+      const ingredientPagePromise = ingredientsApi.all().then(data => ({ data }));
+      const pantryPromise = pantryApi.all();
       const [recipePage, ingredientPage, pantryItems] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPromise]);
 
       setRecipes(recipePage.data.map(recipeToMeal));
@@ -134,7 +146,8 @@ export default function HomeScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
+        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
@@ -255,12 +268,38 @@ export default function HomeScreen() {
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
               {filteredRecipes.map((meal) => (
-                <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { mealId: meal.id })} />
+                <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { recipeId: meal.id })} />
               ))}
             </ScrollView>
           )}
         </View>
       </ScrollView>
+
+      {onboardingStep === "interactive_guide" && (
+        <Animated.View style={{
+          position: "absolute",
+          bottom: 110,
+          left: "30.5%",
+          marginLeft: -120,
+          width: 240,
+          backgroundColor: "rgba(20, 20, 20, 0.85)",
+          padding: 16,
+          borderRadius: 16,
+          alignItems: "center",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.15)",
+          transform: [{ translateY: floatAnim }],
+          zIndex: 100
+        }} pointerEvents="box-none">
+          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900", textAlign: "center", marginBottom: 6 }}>Chào bạn mới! 🎉</Text>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 10 }}>Bấm vào tab "Tủ" bên dưới để quản lý nhé.</Text>
+          <MaterialCommunityIcons name="arrow-down-thick" size={26} color={colors.primary} />
+          <Pressable onPress={() => completeOnboardingStep("done")} style={{ position: "absolute", top: 10, right: 10, padding: 5 }}>
+            <MaterialCommunityIcons name="close" size={16} color={colors.white} />
+          </Pressable>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
