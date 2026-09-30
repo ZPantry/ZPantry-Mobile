@@ -1,8 +1,9 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { pantryImportApi, type ImportSource, type ImportPreviewItem } from "@/api/pantryImport";
+import { pantryImportApi, type ImportSource, type ImportMethod, type ImportPreview, type ImportPreviewItem } from "@/api/pantryImport";
+import { todayMenuApi, type TodayMenuItem } from "@/api/todayMenu";
 import { ingredientsApi, type Ingredient } from "@/api/ingredients";
 import SelectField from "@/components/SelectField";
 import { colors } from "@/constants/colors";
@@ -13,8 +14,21 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string };
 export default function PantryImportScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const method: ImportMethod = route.params?.method || "FOOD_IMAGE";
+  const imageMethod = method === "FOOD_IMAGE" || method === "RECEIPT";
   const toast = useToast();
-  const [source, setSource] = useState<ImportSource>("FOOD_IMAGE");
+  const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE");
+  const [text, setText] = useState("");
+  const [menuDate, setMenuDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
+  const [meals, setMeals] = useState<TodayMenuItem[]>([]);
+  const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [menuError, setMenuError] = useState("");
+  const [menuRetry, setMenuRetry] = useState(0);
   const [image, setImage] = useState<PickedUploadImage | null>(null);
   const [rows, setRows] = useState<Draft[] | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -27,6 +41,33 @@ export default function PantryImportScreen() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searchRetry, setSearchRetry] = useState(0);
+  useEffect(() => {
+    if (method !== "MENU") return;
+    let active = true;
+    setMeals([]); setSelectedMeals([]); setMenuError("");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(menuDate) || Number.isNaN(Date.parse(menuDate)) || new Date(menuDate).toISOString().slice(0, 10) !== menuDate) {
+      setMenuLoading(false); setMenuError("Nhập ngày hợp lệ theo dạng YYYY-MM-DD."); return;
+    }
+    setMenuLoading(true);
+    void todayMenuApi.all(menuDate).then(items => {
+      if (active) setMeals(items.filter(item => !["cancelled", "canceled"].includes(item.status.toLowerCase())));
+    }).catch(e => { if (active) setMenuError(getFriendlyErrorMessage(e, "Chưa tải được thực đơn.")); })
+      .finally(() => { if (active) setMenuLoading(false); });
+    return () => { active = false; };
+  }, [method, menuDate, menuRetry]);
+  const showPreview = (result: ImportPreview) => {
+    if (!Array.isArray(result.items)) throw new Error("Kết quả không hợp lệ. Vui lòng thử lại.");
+    setRows(result.items.map((r, key) => ({ ...r, key, quantityText: r.quantity == null ? "" : String(r.quantity), unitText: r.unit || "" })));
+    setWarnings(result.warnings || []);
+  };
+  const prepare = async () => {
+    if (lock.current) return;
+    lock.current = true; setBusy(true); setError(""); setEditing(null);
+    try {
+      showPreview(method === "TEXT" ? await pantryImportApi.parseText(text) : await pantryImportApi.fromMenu(meals.filter(meal => selectedMeals.includes(meal.id))));
+    } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tạo được danh sách nguyên liệu. Vui lòng thử lại.")); }
+    finally { lock.current = false; setBusy(false); }
+  };
   useEffect(() => {
     if (editing === null) return;
     let active = true;
@@ -59,9 +100,7 @@ export default function PantryImportScreen() {
     lock.current = true; setBusy(true); setError(""); setEditing(null);
     try {
       const result = await pantryImportApi.analyze(source, image.file);
-      if (!Array.isArray(result.items)) throw new Error("Kết quả nhận diện không hợp lệ. Hãy thử ảnh khác.");
-      setRows(result.items.map((r, key) => ({ ...r, key, quantityText: r.quantity == null ? "" : String(r.quantity), unitText: r.unit || "" })));
-      setWarnings(result.warnings || []);
+      showPreview(result);
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa phân tích được ảnh. Vui lòng thử lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
@@ -75,7 +114,7 @@ export default function PantryImportScreen() {
     try {
       await pantryImportApi.confirm(rows.map((r) => ({ ingredientId: r.ingredientId || "", quantity: Number(r.quantityText.replace(",", ".")), unit: r.unitText.trim() })));
       setRows(null); toast.show("Đã cập nhật nguyên liệu trong tủ.");
-      navigation.navigate("Tabs", { screen: "Pantry" });
+      navigation.popTo("Tabs", { screen: "Pantry" });
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được. Bản chỉnh sửa vẫn được giữ lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
@@ -83,8 +122,24 @@ export default function PantryImportScreen() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 22, paddingBottom: 48, gap: 18, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <Pressable disabled={busy} onPress={() => navigation.goBack()} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primary, fontWeight: "800" }}>‹ Quay lại</Text></Pressable>
-      <Text style={{ color: colors.text, fontWeight: "900", fontSize: 28 }}>Thêm nguyên liệu từ ảnh</Text>
-      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. Chọn ảnh  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
+      <Text style={{ color: colors.text, fontWeight: "900", fontSize: 26 }}>{method === "TEXT" ? "Thêm bằng văn bản" : method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
+      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "TEXT" ? "Nhập thực phẩm" : method === "MENU" ? "Chọn món" : "Chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
+      {method === "TEXT" ? <>
+        <TextInput accessibilityLabel="Danh sách thực phẩm" multiline value={text} onChangeText={setText} editable={!busy && rows === null} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={[inputStyle, { minHeight: 100, textAlignVertical: "top" }]} />
+        {rows === null ? <Action label={busy ? "Đang phân tích…" : "Phân tích văn bản"} disabled={busy || !text.trim()} onPress={prepare} /> : null}
+      </> : null}
+      {method === "MENU" ? <>
+        <Text style={{ color: colors.text }}>Ngày thực đơn</Text>
+        <TextInput accessibilityLabel="Ngày thực đơn" value={menuDate} onChangeText={setMenuDate} editable={!busy && rows === null} placeholder="YYYY-MM-DD" placeholderTextColor={colors.muted} style={inputStyle} />
+        {menuLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {menuError ? <><Text accessibilityRole="alert" style={{ color: "#FFE6E6" }}>{menuError}</Text><Action label="Tải lại thực đơn" disabled={menuLoading || busy} soft onPress={() => setMenuRetry(v => v + 1)} /></> : null}
+        {!menuLoading && !menuError && !meals.length ? <><Text style={{ color: colors.muted }}>Ngày này chưa có món. Thêm món vào thực đơn rồi quay lại đây.</Text><Action label="Mở thực đơn" soft onPress={() => navigation.popTo("Tabs", { screen: "Plan" })} /></> : null}
+        {meals.map(meal => <Pressable key={meal.id} accessibilityRole="checkbox" accessibilityLabel={meal.mealName} accessibilityState={{ checked: selectedMeals.includes(meal.id) }} aria-checked={selectedMeals.includes(meal.id)} disabled={busy || rows !== null || !meal.recipeId} onPress={() => setSelectedMeals(current => current.includes(meal.id) ? current.filter(id => id !== meal.id) : [...current, meal.id])} style={{ padding: 12, minHeight: 48, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: selectedMeals.includes(meal.id) ? colors.primary : colors.line }}>
+          <Text style={{ color: colors.text, fontWeight: "800" }}>{selectedMeals.includes(meal.id) ? "✓ " : ""}{meal.mealName}</Text><Text style={{ color: colors.muted }}>{meal.servingSize} khẩu phần{meal.recipeId ? "" : " · Chưa có công thức"}</Text>
+        </Pressable>)}
+        {rows === null ? <Action label="Xem nguyên liệu cần thêm" onPress={prepare} disabled={busy || menuLoading || !selectedMeals.length} /> : null}
+      </> : null}
+      {imageMethod ? <>
       <View pointerEvents={busy || rows !== null ? "none" : "auto"}>
         <SelectField label="Bạn muốn nhận diện gì?" value={source} onValueChange={(v) => setSource(v as ImportSource)} options={[
           { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
@@ -97,6 +152,7 @@ export default function PantryImportScreen() {
         </View>}
       <Action label={image ? "Chọn ảnh khác" : "Chọn ảnh từ thư viện"} onPress={choose} disabled={busy} soft />
       {image && rows === null ? <Action label={busy ? "Đang nhận diện…" : "Phân tích ảnh"} onPress={analyze} disabled={busy} /> : null}
+      </> : null}
       {busy ? <ActivityIndicator color={colors.primary} /> : null}
       {error ? <Text accessibilityRole="alert" selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text> : null}
       {warnings.map((w, index) => <Text key={index} selectable style={{ color: colors.primary }}>{w === "No food ingredients were detected." ? "Chưa nhận diện được nguyên liệu. Hãy thử ảnh rõ hơn hoặc thêm thủ công." : w}</Text>)}
@@ -127,6 +183,7 @@ export default function PantryImportScreen() {
         </View>)}
         <Text style={{ color: colors.primary, lineHeight: 22 }}>Nếu nguyên liệu đã có trong tủ, số lượng sẽ được thay bằng số bạn xác nhận, không cộng thêm. Bạn có thể đặt hạn sử dụng trong chi tiết tủ sau khi lưu.</Text>
         <Action label={busy ? "Đang lưu…" : `Xác nhận lưu ${rows.length} nguyên liệu`} onPress={confirm} disabled={busy || !rows.length} />
+        <Action label="Chỉnh lại nguồn nhập" soft disabled={busy} onPress={() => { setRows(null); setEditing(null); setError(""); setWarnings([]); }} />
       </> : null}
       <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} />
     </ScrollView>
@@ -134,7 +191,7 @@ export default function PantryImportScreen() {
 }
 const inputStyle = { minHeight: 48, padding: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 12, color: colors.text };
 function Action({ label, onPress, disabled, soft }: { label: string; onPress: () => void; disabled?: boolean; soft?: boolean }) {
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={{ minHeight: 48, padding: 14, borderRadius: 14, alignItems: "center", backgroundColor: soft ? colors.card : colors.primary, borderWidth: 1, borderColor: colors.line, opacity: disabled ? 0.5 : 1 }}>
+  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={{ minHeight: 44, padding: 12, borderRadius: 12, alignItems: "center", backgroundColor: soft ? colors.card : colors.primary, borderWidth: 1, borderColor: colors.line, opacity: disabled ? 0.5 : 1 }}>
     <Text style={{ color: soft ? colors.text : colors.textDark, fontWeight: "800" }}>{label}</Text>
   </Pressable>;
 }

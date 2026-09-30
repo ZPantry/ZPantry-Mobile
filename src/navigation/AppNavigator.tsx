@@ -32,6 +32,8 @@ import type { RootStackParamList, TabParamList } from "@/types";
 import { canManageCatalog, canManageUsers } from "@/utils/roles";
 import CookingHistoryScreen from "@/screens/CookingHistoryScreen";
 import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
+import QuickAddScreen from "@/screens/QuickAddScreen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -113,6 +115,8 @@ function AnimatedTabButton({
 }
 
 function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const bottomSpace = Math.max(insets.bottom, 12);
   const { width } = useWindowDimensions();
   const indicator = useRef(new Animated.Value(state.index)).current;
   const tabWidth = useMemo(() => (width - 36 - 16) / state.routes.length, [state.routes.length, width]);
@@ -129,14 +133,15 @@ function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   }, [indicator, state.index]);
 
   return (
+    <View testID="bottom-tab-bar" style={{ height: 72 + bottomSpace, backgroundColor: colors.background }}>
     <View
       pointerEvents="box-none"
       style={{
         position: "absolute",
         left: 18,
         right: 18,
-        bottom: 34,
-        height: 66,
+        bottom: bottomSpace,
+        height: 60,
         borderRadius: 28,
         borderCurve: "continuous",
         backgroundColor: "rgba(255,255,255,0.30)",
@@ -196,6 +201,7 @@ function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           />
         );
       })}
+    </View>
     </View>
   );
 }
@@ -269,6 +275,7 @@ export default function AppNavigator() {
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
+          <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
           <Stack.Screen name="ManualMealSuggestion" component={ManualMealSuggestionScreen} />
           <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
           <Stack.Screen name="PantryImport" component={PantryImportScreen} />

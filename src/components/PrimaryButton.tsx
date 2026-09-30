@@ -33,14 +33,14 @@ export default function PrimaryButton({ title, icon, variant = "solid", onPress,
       <Animated.View
         style={[
           {
-          minHeight: 50,
-          borderRadius: 14,
+          minHeight: 44,
+          borderRadius: 12,
           borderCurve: "continuous",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "row",
           gap: 8,
-          paddingHorizontal: 18,
+          paddingHorizontal: 14,
           backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.card : "transparent",
           borderWidth: variant === "outline" ? 1 : 0,
           borderColor: colors.line,
@@ -53,8 +53,8 @@ export default function PrimaryButton({ title, icon, variant = "solid", onPress,
           style
         ]}
       >
-        {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.text} /> : null}
-        <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "900", fontSize: 15 }} selectable>
+        {icon ? <MaterialCommunityIcons name={icon} size={18} color={isSolid ? colors.white : colors.text} /> : null}
+        <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "800", fontSize: 14 }} selectable>
           {title}
         </Text>
       </Animated.View>

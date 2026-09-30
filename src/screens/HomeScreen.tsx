@@ -5,6 +5,7 @@ import { pantryApi } from "@/api/pantry";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import ExpiryAlertCard from "@/components/ExpiryAlertCard";
+import PrimaryButton from "@/components/PrimaryButton";
 import MealCard from "@/components/MealCard";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
@@ -14,12 +15,12 @@ import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image"
 import { getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const shortcuts = [
-  { label: "Thêm nhanh", icon: "plus-circle-outline", target: "AddIngredient" },
+  { label: "Thêm nhanh", icon: "plus-circle-outline", target: "QuickAdd" },
   { label: "Gợi ý món", icon: "chef-hat", target: "MealSuggestion" },
   { label: "Lập kế hoạch", icon: "calendar-check", target: "Plan" },
   { label: "Tủ lạnh", icon: "fridge-outline", target: "Pantry" }
@@ -75,19 +76,6 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const floatAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (onboardingStep === "interactive_guide") {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatAnim, { toValue: -8, duration: 800, useNativeDriver: true }),
-          Animated.timing(floatAnim, { toValue: 0, duration: 800, useNativeDriver: true })
-        ])
-      ).start();
-    }
-  }, [onboardingStep, floatAnim]);
-
   const loadHome = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -146,7 +134,7 @@ export default function HomeScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
-        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
@@ -222,11 +210,7 @@ export default function HomeScreen() {
               Thêm nguyên liệu để app gợi ý món phù hợp hơn.
             </Text>
           </View>
-        ) : expiringItem ? (
-          <ExpiryAlertCard title={`${expiringIngredient?.name || "Một thực phẩm"} còn ${Math.max(0, daysLeft(expiringItem.expiredAt))} ngày sử dụng. Ưu tiên dùng sớm nhé.`} tone={daysLeft(expiringItem.expiredAt) <= 1 ? "danger" : "warning"} />
-        ) : (
-          <ExpiryAlertCard title="Tủ của bạn đã có thực phẩm. Chưa có món nào sắp hết hạn." tone="success" />
-        )}
+        ) : null}
 
         {(hasSearch || filteredPantryItems.length > 0) ? (
           <View style={{ gap: 12 }}>
@@ -275,31 +259,13 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {onboardingStep === "interactive_guide" && (
-        <Animated.View style={{
-          position: "absolute",
-          bottom: 110,
-          left: "30.5%",
-          marginLeft: -120,
-          width: 240,
-          backgroundColor: "rgba(20, 20, 20, 0.85)",
-          padding: 16,
-          borderRadius: 16,
-          alignItems: "center",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-          borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.15)",
-          transform: [{ translateY: floatAnim }],
-          zIndex: 100
-        }} pointerEvents="box-none">
-          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900", textAlign: "center", marginBottom: 6 }}>Chào bạn mới! 🎉</Text>
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 10 }}>Bấm vào tab "Tủ" bên dưới để quản lý nhé.</Text>
-          <MaterialCommunityIcons name="arrow-down-thick" size={26} color={colors.primary} />
-          <Pressable onPress={() => completeOnboardingStep("done")} style={{ position: "absolute", top: 10, right: 10, padding: 5 }}>
-            <MaterialCommunityIcons name="close" size={16} color={colors.white} />
-          </Pressable>
-        </Animated.View>
-      )}
+      {onboardingStep === "interactive_guide" ? <View style={{ padding: 12, gap: 8, backgroundColor: colors.surface }}>
+        <Text style={{ color: colors.text }}>Khám phá cách thêm thực phẩm và lên thực đơn.</Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <PrimaryButton title="Xem hướng dẫn" variant="soft" style={{ flex: 1 }} onPress={() => navigation.navigate("InteractiveGuide")} />
+          <PrimaryButton title="Bỏ qua" variant="outline" style={{ flex: 1 }} onPress={() => { void completeOnboardingStep("done"); }} />
+        </View>
+      </View> : null}
     </SafeAreaView>
   );
 }

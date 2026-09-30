@@ -26,12 +26,12 @@ export default function LogoutConfirmModal({ visible, isSigningOut = false, onSt
             </Text>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable disabled={isSigningOut} onPress={onStay} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 15, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSigningOut ? 0.76 : 1 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Ở lại" disabled={isSigningOut} onPress={onStay} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSigningOut ? 0.76 : 1 })}>
               <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
                 Ở lại
               </Text>
             </Pressable>
-            <Pressable disabled={isSigningOut} onPress={onConfirm} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 15, backgroundColor: colors.danger, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSigningOut ? 0.76 : 1 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Xác nhận đăng xuất" disabled={isSigningOut} onPress={onConfirm} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.danger, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSigningOut ? 0.76 : 1 })}>
               {isSigningOut ? <ActivityIndicator color={colors.white} /> : <MaterialCommunityIcons name="logout" size={19} color={colors.white} />}
               <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
                 {isSigningOut ? "Đang thoát..." : "Đăng xuất"}

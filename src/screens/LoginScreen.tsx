@@ -12,7 +12,7 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
-const fieldGlass = "rgba(255,255,255,0.22)";
+const fieldGlass = colors.surface;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
@@ -160,9 +160,9 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 31, paddingTop: 34, paddingBottom: 28 }}>
-        <View style={{ flex: 1, minHeight: 650 }}>
-          <Image source={require("../../assets/images/z-pantry-logo.png")} resizeMode="contain" style={{ width: 224, height: 86, alignSelf: "flex-start" }} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 22, paddingTop: 24, paddingBottom: 28 }}>
+        <View style={{ flex: 1, width: "100%", maxWidth: 480, alignSelf: "center" }}>
+          <Image source={require("../../assets/images/z-pantry-logo.png")} resizeMode="contain" style={{ width: 184, height: 72, alignSelf: "flex-start" }} />
 
           <View style={{ gap: 3, marginTop: mode === "login" ? 0 : 8 }}>
             <Text style={{ color: colors.text, fontSize: 25, lineHeight: 31, fontWeight: "900" }} selectable>
@@ -189,7 +189,7 @@ export default function LoginScreen() {
                 </View>
                 <View style={{ minHeight: 48, borderRadius: 8, borderCurve: "continuous", backgroundColor: fieldGlass, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 12 }}>
                   <Ionicons name="lock-closed" size={18} color={colors.white} />
-                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} placeholder="Nhập mật khẩu" placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0 }} />
+                  <TextInput accessibilityLabel="Mật khẩu" editable={!isSubmitting} autoComplete={mode === "register" ? "new-password" : "current-password"} autoCapitalize="none" autoCorrect={false} value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} placeholder="Nhập mật khẩu" placeholderTextColor={colors.muted} style={{ flex: 1, minWidth: 0, borderWidth: 0, backgroundColor: "transparent", color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 10 }} />
                   <Pressable onPress={() => setIsPasswordVisible((value) => !value)} hitSlop={8}>
                     <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={19} color={colors.white} />
                   </Pressable>
@@ -209,10 +209,12 @@ export default function LoginScreen() {
             {successMessage ? <Message text={successMessage} tone="success" /> : null}
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={primaryTitle}
               disabled={isSubmitting}
               onPress={primaryAction}
               style={({ pressed }) => ({
-                minHeight: 54,
+                minHeight: 44,
                 borderRadius: 9,
                 borderCurve: "continuous",
                 backgroundColor: colors.primary,
@@ -230,7 +232,7 @@ export default function LoginScreen() {
 
         
 
-          <View style={{ flex: 1 }} />
+          <View style={{ height: 20 }} />
 
           {mode === "login" ? (
             <Pressable onPress={() => setModeAndClearMessages("register")} hitSlop={8} style={{ alignItems: "center", marginTop: 10 }}>
@@ -259,7 +261,7 @@ function AuthInput({ label, icon, value, placeholder, onChangeText, keyboardType
       </Text>
       <View style={{ minHeight: 48, borderRadius: 8, borderCurve: "continuous", backgroundColor: fieldGlass, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 12 }}>
         <Ionicons name={icon} size={18} color={colors.white} />
-        <TextInput value={value} onChangeText={onChangeText} keyboardType={keyboardType} autoCapitalize={autoCapitalize} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0 }} />
+        <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} keyboardType={keyboardType} autoCapitalize={autoCapitalize} autoCorrect={false} autoComplete={icon === "mail" ? "email" : icon === "keypad" ? "one-time-code" : "name"} maxLength={icon === "keypad" ? 6 : undefined} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 10 }} />
       </View>
     </View>
   );

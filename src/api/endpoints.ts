@@ -13,6 +13,7 @@ export const endpoints = {
   users: { list: "/api/users", item: (id: string) => item("/api/users", id) },
   profile: (id: string) => `${item("/api/users", id)}/profile`,
   pantryImport: {
+    text: "/api/me/pantry/parse",
     receipt: "/api/me/pantry-import/receipt/analyze",
     food: "/api/me/pantry-import/food-image/analyze",
     confirm: "/api/me/pantry-import/confirm"
