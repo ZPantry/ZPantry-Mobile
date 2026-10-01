@@ -24,15 +24,15 @@ function toInputDate(value: string) {
 }
 
 function normalizeStorageLocation(label: string) {
-  if (label === "Ngăn đông") return "Ngan dong";
-  if (label === "Kệ bếp") return "Ke bep";
-  return "Ngan mat";
+  if (label === "Ngăn đông") return "freezer";
+  if (label === "Kệ bếp") return "pantry";
+  return "fridge";
 }
 
 function displayStorageLocation(value: string) {
   const lower = value.toLowerCase();
-  if (lower.includes("dong") || lower.includes("đông")) return "Ngăn đông";
-  if (lower.includes("bep") || lower.includes("bếp")) return "Kệ bếp";
+  if (lower.includes("dong") || lower.includes("đông") || lower.includes("freez")) return "Ngăn đông";
+  if (lower.includes("bep") || lower.includes("bếp") || lower === "pantry") return "Kệ bếp";
   return "Ngăn mát";
 }
 

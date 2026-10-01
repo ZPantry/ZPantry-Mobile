@@ -29,6 +29,81 @@ const { resolveApiBaseUrl } = load('@/api/baseUrl');
 const { canUpdateUser, buildUserUpdate } = load('@/utils/userProfile');
 const id = '55f2f378-692a-4268-924e-e8c648190e32';
 
+test('text pantry parsing sends only JSON text and requires explicit confirmation', async () => {
+  const calls = [];
+  const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => {
+    calls.push(args);
+    return [{ name: 'Cà rốt', quantity: 2, unit: 'piece', ingredientId: id, ingredientName: 'Cà rốt', matched: true },
+      { name: 'rau lạ', quantity: null, unit: null, ingredientId: null, ingredientName: null, matched: false }];
+  } } })('@/api/pantryImport');
+  await assert.rejects(pantryImportApi.parseText('  '));
+  assert.equal(calls.length, 0);
+  const result = await pantryImportApi.parseText('  2 củ cà rốt, rau lạ  ');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], '/api/me/pantry/parse');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { text: '2 củ cà rốt, rau lạ' });
+  assert.equal(calls[0][1].auth, true);
+  assert.equal(result.items[0].resolverStatus, 'RESOLVED');
+  assert.equal(result.items[1].ingredientId, null);
+  assert.equal(result.items[1].quantity, null);
+});
+
+test('menu pantry preview scales portions and merges ingredients without mixing units or guessing quantities', () => {
+  const { buildMenuPreview } = loader({ '@/api/client': { ApiError }, '@/api/recipes': { recipesApi: {} } })('@/api/pantryImport');
+  const recipe = { name: 'Canh rau', servingSize: 2, ingredients: [{ ingredientId: id, ingredientName: 'Cà rốt', quantity: 100, unit: 'g' }] };
+  const result = buildMenuPreview([{ recipe, servingSize: 4 }, { recipe, servingSize: 1 }]);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].quantity, 250);
+  assert.equal(result.items[0].unit, 'g');
+  assert.throws(() => buildMenuPreview([{ recipe, servingSize: 0 }]), /khẩu phần/);
+  assert.throws(() => buildMenuPreview([{ recipe: { ...recipe, ingredients: [] }, servingSize: 2 }]), /chưa có nguyên liệu/);
+  assert.throws(() => buildMenuPreview([{ recipe, servingSize: 2 }, { recipe: { ...recipe, ingredients: [{ ...recipe.ingredients[0], unit: 'kg' }] }, servingSize: 2 }]), /đơn vị khác nhau/);
+});
+
+test('menu preview reads each recipe once and never writes pantry before confirmation', async () => {
+  const readIds = [], writes = [];
+  const { pantryImportApi } = loader({
+    '@/api/client': { ApiError, apiRequest: async (...args) => writes.push(args) },
+    '@/api/recipes': { recipesApi: { get: async recipeId => { readIds.push(recipeId); return { name: 'Canh', servingSize: 1, ingredients: [{ ingredientId: id, ingredientName: 'Rau', quantity: 50, unit: 'g' }] }; } } }
+  })('@/api/pantryImport');
+  const preview = await pantryImportApi.fromMenu([{ recipeId: 'r', servingSize: 2 }, { recipeId: 'r', servingSize: 3 }]);
+  assert.deepEqual(readIds, ['r']); assert.equal(preview.items[0].quantity, 250); assert.deepEqual(writes, []);
+  await assert.rejects(pantryImportApi.fromMenu([{ recipeId: null, servingSize: 1 }]), /chưa liên kết/);
+});
+
+test('manual recommendations send Java candidate objects, keep text and selections, and unwrap AI results', async () => {
+  const calls = [];
+  const { recommendationsApi } = loader({
+    '@/api/client': { apiRequest: async (...args) => {
+      calls.push(args);
+      return { success: true, data: { items: [{ recipeId: id, recipeName: 'Canh rau', matchScore: 0.8 }] } };
+    } }
+  })('@/api/recommendations');
+  const payload = {
+    inputIngredientText: 'rau, nấm', ingredients: ['Cà rốt', 'rau', 'nấm'],
+    selectedIngredients: [{ ingredientId: id, name: 'Cà rốt', quantity: 200, unit: 'g' }],
+    candidateRecipes: [{ recipeId: id, recipeName: 'Canh rau', ingredientNames: ['Cà rốt'], instructionText: 'Nấu canh' }], topK: 5
+  };
+  const result = await recommendationsApi.suggestMeals(payload);
+  assert.equal(calls[0][0], '/api/recommendations/meals');
+  assert.equal(calls[0][1].auth, true);
+  assert.deepEqual(JSON.parse(calls[0][1].body), payload);
+  assert.equal(result.recommendations[0].recipeId, id);
+  assert.equal(result.recommendations[0].score, 80);
+  assert.equal(result.recommendations[0].persistedMeal, false);
+});
+
+test('manual recommendations reject failed or malformed nested AI responses instead of showing empty success', async () => {
+  let response = { success: false, message: 'AI unavailable', data: null };
+  const { recommendationsApi } = loader({ '@/api/client': { apiRequest: async () => response } })('@/api/recommendations');
+  const payload = { inputIngredientText: 'nấm', selectedIngredients: [], candidateRecipes: [], topK: 5 };
+  await assert.rejects(recommendationsApi.suggestMeals(payload), /AI unavailable/);
+  response = { success: true, data: {} };
+  await assert.rejects(recommendationsApi.suggestMeals(payload), error => error.status === 502);
+  response = { success: true, data: { items: [] } };
+  assert.deepEqual(await recommendationsApi.suggestMeals(payload), { recommendations: [] });
+});
+
 test('pagination loads beyond the first server page', async () => {
   const { collectPages } = loader()('@/api/pagination');
   const calls = [];

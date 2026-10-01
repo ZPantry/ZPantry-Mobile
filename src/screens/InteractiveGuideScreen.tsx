@@ -1,225 +1,66 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useRoute } from "@react-navigation/native";
-import { useEffect, useRef, useState } from "react";
-import { Animated, Image, Pressable, Text, TextInput, View } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useRef, useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 
-// Step 0: Welcome
-// Step 1: Nhập món
-// Step 2: AI Analyzing
-// Step 3: Show Ingredients
-// Step 4: Guide to Add
-// Step 5: Done
+const steps = [
+  { title: "Chào mừng đến Z-Pantry", description: "Bạn có thể xem từng bước, chọn một bước bất kỳ hoặc kết thúc hướng dẫn bất cứ lúc nào." },
+  { title: "Thêm nguyên liệu", description: "Mở Thêm nhanh để chọn nhập thủ công, bằng văn bản, bằng thực đơn hoặc từ ảnh. Bạn không cần nhập thử để xem bước kế tiếp." },
+  { title: "Kiểm tra trước khi lưu", description: "Với văn bản và ảnh, hãy kiểm tra nguyên liệu nhận diện được. Bạn có thể sửa số lượng, đơn vị, chọn lại nguyên liệu hoặc bỏ dòng chưa phù hợp." },
+  { title: "Thêm bằng thực đơn", description: "Chọn ngày và các món trong thực đơn. Ứng dụng tổng hợp nguyên liệu theo khẩu phần để bạn kiểm tra trước khi lưu vào tủ." },
+  { title: "Lưu vào tủ", description: "Chọn nguyên liệu, nhập số lượng và nơi cất. Hạn dùng có thể để trống. Chỉ khi bấm xác nhận thì dữ liệu mới được lưu." },
+  { title: "Theo dõi hạn dùng", description: "Biểu tượng chuông trong Kho thực phẩm mở danh sách nguyên liệu cần chú ý. Bạn có thể đóng thông báo để tiếp tục sử dụng." },
+  { title: "Sẵn sàng sử dụng", description: "Từ tủ nguyên liệu, bạn có thể tìm món, lên thực đơn và xem lịch sử nấu. Hướng dẫn luôn có trong trang Cá nhân để xem lại." }
+];
 
 export default function InteractiveGuideScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const isReplay = route.params?.isReplay ?? false;
   const { completeOnboardingStep } = useAuth();
   const [step, setStep] = useState(0);
-  const [searchText, setSearchText] = useState("");
-  
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const slideUpAnim = useRef(new Animated.Value(50)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (step === 2) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true })
-        ])
-      ).start();
-
-      const timer = setTimeout(() => {
-        setStep(3);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-
-    if (step === 3 || step === 4 || step === 5 || step === 6 || step === 0 || step === 1) {
-      Animated.parallel([
-        Animated.timing(slideUpAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-        Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver: true })
-      ]).start();
-    }
-  }, [step]);
-
-  const handleNext = async () => {
-    if (step === 6) {
-      if (!isReplay) {
+  const [sample, setSample] = useState("");
+  const [error, setError] = useState("");
+  const [leaving, setLeaving] = useState(false);
+  const lock = useRef(false);
+  const finish = async () => {
+    if (lock.current) return;
+    lock.current = true; setLeaving(true); setError("");
+    try {
+      if (route.params?.isReplay && navigation.canGoBack()) navigation.goBack();
+      else {
         await completeOnboardingStep("done");
         navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
-      } else {
-        navigation.goBack();
       }
-    } else {
-      setStep(step + 1);
-      slideUpAnim.setValue(50);
-      opacityAnim.setValue(0);
-    }
+    } catch { setError("Chưa lưu được trạng thái hướng dẫn. Vui lòng thử lại."); }
+    finally { lock.current = false; setLeaving(false); }
   };
-
-  const handleSubmitSearch = () => {
-    if (searchText.trim().length > 0) {
-      setStep(2);
-    }
-  };
-
-  const renderTooltip = (title: string, desc: string, showNext = true, customAction?: () => void) => (
-    <Animated.View style={{
-      position: "absolute", bottom: 40, left: 20, right: 20,
-      backgroundColor: colors.card, borderRadius: 16, padding: 20,
-      boxShadow: "0 10px 30px rgba(0,0,0,0.3)", zIndex: 100,
-      borderWidth: 1, borderColor: colors.line,
-      transform: [{ translateY: slideUpAnim }], opacity: opacityAnim
-    }}>
-      <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "900", marginBottom: 8 }}>{title}</Text>
-      <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700", lineHeight: 20, marginBottom: showNext ? 20 : 0 }}>{desc}</Text>
-      {showNext && (
-        <Pressable 
-          onPress={customAction || handleNext}
-          style={({ pressed }) => ({
-            backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10,
-            alignItems: "center", opacity: pressed ? 0.8 : 1
-          })}
-        >
-          <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }}>{step === 6 ? "Bắt đầu sử dụng" : "Tiếp tục"}</Text>
-        </Pressable>
-      )}
-    </Animated.View>
-  );
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
-      {/* Fake Header */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20, zIndex: 100 }}>
-        <View>
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }}>Chào bạn mới!</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", marginTop: 2 }}>Cùng khám phá Z-Pantry nhé.</Text>
-        </View>
-        {isReplay ? (
-          <Pressable onPress={() => navigation.goBack()} style={{ padding: 8, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 20 }}>
-            <Ionicons name="close" size={20} color={colors.white} />
-          </Pressable>
-        ) : (
-          <Pressable 
-            onPress={async () => {
-              await completeOnboardingStep("done");
-              navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
-            }}
-            hitSlop={10}
-          >
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "700" }}>Bỏ qua</Text>
-          </Pressable>
-        )}
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", flex: 1 }}>Hướng dẫn sử dụng</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Bỏ qua hướng dẫn" disabled={leaving} onPress={finish} style={{ minHeight: 44, justifyContent: "center" }}>
+        <Text style={{ color: colors.primary, fontWeight: "800" }}>Bỏ qua</Text>
+      </Pressable>
+    </View>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 22, maxWidth: 720, width: "100%", alignSelf: "center" }}>
+      <Text style={{ color: colors.muted }}>Bước {step + 1}/{steps.length} · Có thể xem theo thứ tự bất kỳ</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={"Bước " + (index + 1) + ": " + item.title} accessibilityState={{ selected: index === step }} onPress={() => setStep(index)} style={{ minWidth: 44, minHeight: 44, borderRadius: 22, backgroundColor: index === step ? colors.primary : colors.surface, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: index === step ? colors.textDark : colors.text, fontWeight: "800" }}>{index + 1}</Text>
+        </Pressable>)}
       </View>
-
-      {/* Fake Search Bar area */}
-      <View style={{ paddingHorizontal: 20, zIndex: step === 1 ? 50 : 1 }}>
-        <View style={{
-          flexDirection: "row", alignItems: "center", backgroundColor: step === 1 ? colors.white : colors.card,
-          borderRadius: 14, borderWidth: 2, borderColor: step === 1 ? colors.primary : colors.line, paddingHorizontal: 16, height: 54,
-          boxShadow: step === 1 ? "0 0 15px rgba(244,162,28,0.4)" : "none"
-        }}>
-          <Ionicons name="search" size={20} color={step === 1 ? colors.primary : colors.muted} />
-          <TextInput 
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholder="Nhập tên món ăn bạn thích (VD: Bún bò)..."
-            placeholderTextColor={colors.muted}
-            onSubmitEditing={handleSubmitSearch}
-            editable={step === 1}
-            style={{ flex: 1, marginLeft: 10, color: colors.text, fontSize: 15, fontWeight: "700" }}
-          />
-          {step === 1 && searchText.length > 0 && (
-            <Pressable onPress={handleSubmitSearch} style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
-              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "900" }}>Phân tích</Text>
-            </Pressable>
-          )}
-        </View>
+      <View style={{ gap: 16, padding: 20, borderRadius: 16, backgroundColor: colors.surface }}>
+        <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "900" }}>{steps[step].title}</Text>
+        <Text style={{ color: colors.text, fontSize: 16, lineHeight: 25 }}>{steps[step].description}</Text>
+        {step === 1 ? <><TextInput accessibilityLabel="Nhập thử nguyên liệu (không bắt buộc)" value={sample} onChangeText={setSample} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={{ minHeight: 48, color: colors.text, padding: 12, borderBottomWidth: 1, borderColor: colors.line }} /><Text style={{ color: colors.muted }}>Ví dụ minh họa, không ghi dữ liệu vào tủ.</Text></> : null}
       </View>
-
-      {/* Fake Results Area */}
-      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 30, zIndex: (step === 3 || step === 4) ? 50 : 1 }}>
-        {step === 2 && (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", marginTop: -100 }}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: "center" }}>
-              <Ionicons name="sparkles" size={60} color={colors.primary} />
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900", marginTop: 20 }}>AI đang phân tích món "{searchText}"...</Text>
-              <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", marginTop: 8 }}>Đang bóc tách nguyên liệu</Text>
-            </Animated.View>
-          </View>
-        )}
-
-        {(step === 3 || step === 4 || step === 5) && (
-          <View>
-            <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900", marginBottom: 15 }}>Nguyên liệu cho "{searchText}"</Text>
-            
-            {["Thịt bò", "Hành tây", "Tiêu đen"].map((item, idx) => (
-              <View key={item} style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.card, padding: 15, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: colors.line }}>
-                <MaterialCommunityIcons name="food-apple" size={24} color={colors.primary} />
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800", marginLeft: 12, flex: 1 }}>{item}</Text>
-                <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700" }}>500g</Text>
-              </View>
-            ))}
-
-            <View style={{ marginTop: 20, zIndex: step === 4 ? 60 : 1 }}>
-              <Pressable style={{
-                backgroundColor: step === 4 ? colors.primary : colors.card,
-                borderWidth: step === 4 ? 0 : 1, borderColor: colors.line,
-                borderRadius: 14, paddingVertical: 16, alignItems: "center",
-                boxShadow: step === 4 ? "0 0 20px rgba(244,162,28,0.5)" : "none"
-              }}>
-                <Text style={{ color: step === 4 ? colors.white : colors.text, fontSize: 16, fontWeight: "900" }}>Lưu vào Tủ (Pantry)</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Fake AddIngredientScreen */}
-      {step === 5 && (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 90, padding: 22, paddingTop: 60 }}>
-          <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }}>Thêm vào tủ</Text>
-          <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, marginTop: 18 }}>
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", marginBottom: 14 }}>Chọn nguyên liệu</Text>
-            <View style={{ height: 46, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, justifyContent: "center", paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700" }}>Tìm nguyên liệu chưa có trong tủ</Text>
-            </View>
-            <View style={{ marginTop: 14, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.white, padding: 10, borderRadius: 14, borderWidth: 2, borderColor: colors.primary }}>
-              <View style={{ width: 58, height: 58, borderRadius: 12, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-                <MaterialCommunityIcons name="food-apple" size={32} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                 <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }}>Thịt bò</Text>
-                 <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800" }}>Thịt · kg</Text>
-              </View>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-                 <MaterialCommunityIcons name="check" size={19} color={colors.white} />
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Overlay Background */}
-      {(step === 0 || step === 1 || step === 4 || step === 5 || step === 6) && (
-        <View style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.6)", zIndex: step === 5 ? 95 : 10 }} pointerEvents="none" />
-      )}
-
-      {/* Tooltips */}
-      {step === 0 && renderTooltip("Chào mừng đến Z-Pantry! \uD83C\uDF89", "Mình sẽ hướng dẫn bạn cách sử dụng các tính năng tuyệt vời của app nhé. Sẽ rất nhanh thôi!")}
-      {step === 1 && renderTooltip("Nhập món ăn đầu tiên", "Hãy thử nhập một món ăn bất kỳ mà bạn muốn nấu hôm nay vào ô tìm kiếm phía trên.", false)}
-      {step === 3 && renderTooltip("Tuyệt vời! \uD83E\uDD16", "Z-Pantry AI đã tự động phân tích món ăn của bạn thành các nguyên liệu cần thiết.")}
-      {step === 4 && renderTooltip("Thêm vào Tủ lạnh", "Bạn có thể lưu ngay các nguyên liệu này vào tủ lạnh ảo của mình chỉ với một nút bấm ở trên.")}
-      {step === 5 && renderTooltip("Chi tiết nguyên liệu", "Tại đây bạn có thể tìm kiếm nguyên liệu và chọn nó để thêm vào tủ của bạn. Hãy điền số lượng và hạn sử dụng tương ứng nhé!")}
-      {step === 6 && renderTooltip("Hoàn thành! \uD83C\uDF1F", "Bạn đã nắm được cách Z-Pantry hoạt động. Khám phá tủ lạnh và các công thức ngon ngay bây giờ nhé!")}
-      
-    </SafeAreaView>
-  );
+      {error ? <Text accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Text> : null}
+    </ScrollView>
+    <View style={{ padding: 20, gap: 12, flexDirection: "row" }}>
+      <PrimaryButton title="Bước trước" variant="soft" disabled={step === 0 || leaving} onPress={() => setStep(value => value - 1)} style={{ flex: 1 }} />
+      <PrimaryButton title={step === steps.length - 1 ? "Hoàn tất" : "Bước tiếp"} disabled={leaving} onPress={step === steps.length - 1 ? finish : () => setStep(value => value + 1)} style={{ flex: 1 }} />
+    </View>
+  </SafeAreaView>;
 }

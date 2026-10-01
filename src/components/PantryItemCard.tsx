@@ -18,6 +18,7 @@ function statusCopy(status: PantryItem["status"]) {
 
 function locationCopy(location: PantryItem["location"]) {
   if (location === "Ngan dong") return "Ngăn đông";
+  if (location === "Ke bep") return "Kệ bếp";
   return "Tủ lạnh";
 }
 

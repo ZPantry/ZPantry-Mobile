@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -15,6 +15,7 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { PantryItem, PantryStatus } from "@/types";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import PrimaryButton from "@/components/PrimaryButton";
 
 const pantryCategories = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
@@ -26,6 +27,7 @@ type PantryListItem = PantryItem & {
 function normalizeLocation(location: string): PantryItem["location"] {
   const lower = location.toLowerCase();
   if (lower.includes("đông") || lower.includes("dong") || lower.includes("freeze")) return "Ngan dong";
+  if (lower === "pantry" || lower.includes("kệ") || lower.includes("bep") || lower.includes("shelf")) return "Ke bep";
   return "Ngan mat";
 }
 
@@ -86,18 +88,8 @@ export default function PantryScreen() {
   const navigation = useNavigation<any>();
   const { user, onboardingStep, completeOnboardingStep } = useAuth();
   const displayName = user?.fullName || "bạn";
-  const floatAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (onboardingStep === "interactive_guide") {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatAnim, { toValue: -8, duration: 800, useNativeDriver: true }),
-          Animated.timing(floatAnim, { toValue: 0, duration: 800, useNativeDriver: true })
-        ])
-      ).start();
-    }
-  }, [onboardingStep, floatAnim]);
+  const [showExpiry, setShowExpiry] = useState(false);
+  const notified = useRef("");
 
   const loadPantry = useCallback(async () => {
     setIsLoading(true);
@@ -122,33 +114,39 @@ export default function PantryScreen() {
 
   const filtered = useMemo(() => {
     if (active === "Ngăn đông") return items.filter((item) => item.location === "Ngan dong");
-    if (active === "Kệ bếp") return items.filter((item) => item.location === "Ngan mat" && item.name.toLowerCase().includes("gạo"));
+    if (active === "Kệ bếp") return items.filter((item) => item.location === "Ke bep");
     return items.filter((item) => item.location === "Ngan mat");
   }, [active, items]);
 
-  const expiringItem = items.find((item) => item.status === "danger" || item.status === "warning");
+  const expiringItems = items.filter((item) => item.status === "danger" || item.status === "warning");
+  const expiryKey = expiringItems.map(item => item.id + item.apiItem.expiredAt).sort().join("|");
+  useEffect(() => {
+    if (expiryKey && notified.current !== expiryKey && onboardingStep === "done") {
+      notified.current = expiryKey;
+      setShowExpiry(true);
+    }
+  }, [expiryKey, onboardingStep]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
-        style={{ position: "absolute", top: 0, bottom: 1, left: 0, right: 0 }}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 200, gap: 18 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 24, gap: 14 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
-          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Thông báo hạn dùng" onPress={() => setShowExpiry(true)} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
-            <View style={{ position: "absolute", top: 3, right: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger }} />
-          </View>
+            {expiringItems.length ? <View style={{ position: "absolute", top: 5, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} /> : null}
+          </Pressable>
         </View>
 
-        <Pressable accessibilityRole="button" onPress={() => navigation.navigate("PantryImport")}
-          style={{ padding: 18, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.primary, gap: 6 }}>
-          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: "900" }}>Nhập nhanh từ ảnh</Text>
-          <Text style={{ color: colors.text, lineHeight: 21 }}>Chọn ảnh thực phẩm hoặc hóa đơn, kiểm tra rồi thêm vào tủ.</Text>
-        </Pressable>
+        <View style={{ gap: 8 }}>
+          <PrimaryButton title="Thêm bằng thực đơn" variant="soft" icon="silverware-fork-knife" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
+          <PrimaryButton title="Thêm bằng văn bản" variant="outline" icon="text" onPress={() => navigation.navigate("PantryImport", { method: "TEXT" })} />
+          <PrimaryButton title="Thêm nhanh" variant="outline" icon="plus-circle-outline" onPress={() => navigation.navigate("QuickAdd")} />
+        </View>
         <View>
           <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
             Tủ lạnh của {displayName}
@@ -159,9 +157,10 @@ export default function PantryScreen() {
         </View>
 
         {errorMessage ? <ExpiryAlertCard title={errorMessage} tone="danger" /> : null}
-        {expiringItem ? <ExpiryAlertCard title={`${expiringItem.name} ${expiringItem.expiryLabel.toLowerCase()}. Ưu tiên dùng sớm để tránh lãng phí.`} tone={expiringItem.status === "danger" ? "danger" : "warning"} /> : null}
 
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Thêm thực phẩm"
           onPress={() => {
             if (onboardingStep === "interactive_guide") {
               completeOnboardingStep("done");
@@ -169,29 +168,28 @@ export default function PantryScreen() {
             navigation.navigate("AddIngredient");
           }}
           style={({ pressed }) => ({
-            minHeight: 76,
-            borderRadius: 22,
+            minHeight: 52,
+            borderRadius: 12,
             backgroundColor: colors.primary,
             borderWidth: 1,
             borderColor: colors.secondary,
             flexDirection: "row",
             alignItems: "center",
             padding: 10,
-            gap: 14,
-            boxShadow: "0 16px 30px rgba(244,162,28,0.30)",
+            gap: 10,
             opacity: pressed ? 0.86 : 1,
             transform: [{ scale: pressed ? 0.99 : 1 }]
           })}
         >
-          <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.24)", alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="plus" size={30} color={colors.white} />
+          <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.24)", alignItems: "center", justifyContent: "center" }}>
+            <MaterialCommunityIcons name="plus" size={22} color={colors.white} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.white, fontSize: 20, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.white, fontSize: 16, fontWeight: "800" }} selectable>
               Thêm thực phẩm
             </Text>
             <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "800", marginTop: 3 }} selectable>
-              Chọn nguyên liệu chưa có trong tủ
+              Chọn nguyên liệu và nhập số lượng
             </Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={26} color={colors.white} />
@@ -241,27 +239,24 @@ export default function PantryScreen() {
         </View>
       </ScrollView>
 
-      {onboardingStep === "interactive_guide" && (
-        <Animated.View style={{ 
-          position: "absolute", 
-          top: 250, 
-          alignSelf: "center",
-          width: 260,
-          backgroundColor: "rgba(20, 20, 20, 0.85)", 
-          padding: 16, 
-          borderRadius: 16, 
-          alignItems: "center", 
-          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-          borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.15)",
-          transform: [{ translateY: floatAnim }],
-          zIndex: 100
-        }}>
-          <MaterialCommunityIcons name="arrow-up-thick" size={26} color={colors.primary} style={{ marginBottom: 5 }} />
-          <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900", textAlign: "center", marginBottom: 6 }}>Thêm thực phẩm 🍎</Text>
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700", textAlign: "center" }}>Bấm nút phía trên để cất nguyên liệu vào tủ.</Text>
-        </Animated.View>
-      )}
+      {onboardingStep === "interactive_guide" ? <View style={{ padding: 12, backgroundColor: colors.surface, gap: 8 }}>
+        <Text style={{ color: colors.text }}>Bạn có thể thêm nguyên liệu bằng nhiều cách trong Thêm nhanh.</Text>
+        <PrimaryButton title="Bỏ qua hướng dẫn" variant="soft" onPress={() => { void completeOnboardingStep("done"); }} />
+      </View> : null}
+      <Modal transparent visible={showExpiry} animationType="fade" onRequestClose={() => setShowExpiry(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxHeight: "75%", maxWidth: 520, width: "100%", alignSelf: "center" }}>
+            <Text style={{ color: colors.primary, fontSize: 22, fontWeight: "900" }}>Hạn dùng cần chú ý</Text>
+            <ScrollView contentContainerStyle={{ gap: 12 }}>
+              {expiringItems.length ? expiringItems.map(item => <View key={item.id} style={{ gap: 4 }}>
+                <Text style={{ color: colors.text, fontWeight: "800" }}>{item.name}</Text>
+                <Text style={{ color: item.status === "danger" ? "#FFB3B3" : colors.muted }}>{item.expiryLabel}</Text>
+              </View>) : <Text style={{ color: colors.text }}>Chưa có thực phẩm sắp hết hạn.</Text>}
+            </ScrollView>
+            <PrimaryButton title="Đóng thông báo" onPress={() => setShowExpiry(false)} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

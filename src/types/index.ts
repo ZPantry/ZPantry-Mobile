@@ -24,7 +24,7 @@ export type PantryItem = {
   id: string;
   name: string;
   quantity: string;
-  location: "Ngan mat" | "Ngan dong";
+  location: "Ngan mat" | "Ngan dong" | "Ke bep";
   expiryLabel: string;
   status: PantryStatus;
   icon: string;
@@ -59,7 +59,10 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   ProfileSetup: { editing?: boolean } | undefined;
-  PantryImport: undefined;
+  PantryImport: { method?: "TEXT" | "MENU" | "FOOD_IMAGE" | "RECEIPT" } | undefined;
+  QuickAdd: undefined;
+  ManualMealSuggestion: undefined;
+  CreateRecipe: undefined;
   CookingHistory: undefined;
   AccountSettings: undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;
