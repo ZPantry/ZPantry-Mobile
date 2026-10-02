@@ -2,10 +2,11 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import * as WebBrowser from "expo-web-browser";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
 import { colors } from "@/constants/colors";
@@ -47,20 +48,32 @@ export default function LoginScreen() {
     });
   }, []);
 
+  useEffect(() => {
+    // Khởi tạo cấu hình ngay khi màn hình được load (Chỉ trên Native)
+    if (Platform.OS !== "web") {
+      GoogleSignin.configure({
+        // QUAN TRỌNG: Ở đây phải dùng mã của ZPantry - WebApp (bắt đầu bằng 230462808538-af67...), KHÔNG dùng mã của AndroidApp
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-web-client-id", 
+        offlineAccess: true, // Bắt buộc để lấy được idToken gửi cho Spring Boot
+      });
+    }
+  }, []);
+
   const googleConfig = useMemo(
     () => ({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-web-client-id",
       iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-ios-client-id",
       androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "missing-google-android-client-id",
       redirectUri,
-      selectAccount: true
+      selectAccount: true,
+      scopes: ["profile", "email"]
     }),
     [redirectUri]
   );
-  const facebookClientId = useMemo(() => process.env.EXPO_PUBLIC_FACEBOOK_APP_ID || process.env.EXPO_PUBLIC_FACEBOOK_ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_FACEBOOK_WEB_CLIENT_ID || "missing-facebook-app-id", []);
-  const isGoogleReady = !googleConfig.webClientId.startsWith("missing-");
-  const isFacebookReady = !facebookClientId.startsWith("missing-");
   const [googleRequest, googleResponse, promptGoogleAsync] = Google.useAuthRequest(googleConfig);
+
+  const facebookClientId = useMemo(() => process.env.EXPO_PUBLIC_FACEBOOK_APP_ID || process.env.EXPO_PUBLIC_FACEBOOK_ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_FACEBOOK_WEB_CLIENT_ID || "missing-facebook-app-id", []);
+  const isFacebookReady = !facebookClientId.startsWith("missing-");
   const [facebookRequest, facebookResponse, promptFacebookAsync] = AuthSession.useAuthRequest(
     {
       clientId: facebookClientId,
@@ -191,12 +204,54 @@ export default function LoginScreen() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!isGoogleReady) {
-      showMissingConfig("Google", "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
+    setAuthMessage("");
+    
+    if (Platform.OS === "web") {
+      if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
+        showMissingConfig("Google", "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
+        return;
+      }
+      await promptGoogleAsync();
       return;
     }
-    setAuthMessage("");
-    await promptGoogleAsync();
+
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      // Thành công! Bạn đã lấy được id_token
+      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+      console.log("ID Token (Native):", idToken);
+      
+      // TODO: Gửi idToken này xuống API Spring Boot của bạn
+      // fetch('http://<ip-may-tinh>:8080/api/auth/google', { ... })
+      
+      // Mock login for UI logic temporarily until API is connected
+      if (idToken) {
+        const user = userInfo.data?.user || (userInfo as any).user;
+        signIn({
+          fullName: user?.name || "Google User",
+          email: user?.email || "google@zpantry.local",
+          accessToken: idToken,
+          refreshToken: "",
+          userId: user?.id || "google-user",
+          role: "user",
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+        });
+        navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('Người dùng đã hủy đăng nhập');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Đang xử lý đăng nhập...');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Lỗi', 'Không có Google Play Services');
+      } else {
+        console.log('Lỗi khác:', error);
+        setAuthMessage(getFriendlyErrorMessage(error, "Google chưa thể hoàn tất đăng nhập. Vui lòng thử lại.", "auth"));
+      }
+    }
   };
 
   const handleFacebookLogin = async () => {
@@ -208,12 +263,23 @@ export default function LoginScreen() {
     await promptFacebookAsync({ useProxy: false } as never);
   };
 
+
+
   useEffect(() => {
-    if (googleResponse?.type === "error") {
+    if (Platform.OS !== "web" || !googleResponse) return;
+
+    if (googleResponse.type === "error") {
       setAuthMessage("Google không thể hoàn tất đăng nhập. Vui lòng thử lại.");
       return;
     }
-    const accessToken = googleResponse?.type === "success" ? googleResponse.authentication?.accessToken || googleResponse.params.access_token : undefined;
+    const accessToken = googleResponse.type === "success" ? googleResponse.authentication?.accessToken || googleResponse.params.access_token : undefined;
+    const idToken = googleResponse.type === "success" ? googleResponse.authentication?.idToken || googleResponse.params.id_token : undefined;
+    
+    if (idToken) {
+      console.log("ID Token (Web):", idToken);
+      // TODO: Gửi idToken này xuống API Spring Boot của bạn
+    }
+
     if (!accessToken) return;
 
     fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } })
@@ -222,7 +288,7 @@ export default function LoginScreen() {
         signIn({
           fullName: profile.name || "Google User",
           email: profile.email || "google@zpantry.local",
-          accessToken,
+          accessToken: idToken || accessToken,
           refreshToken: "",
           userId: profile.sub || "google-user",
           role: "user",
