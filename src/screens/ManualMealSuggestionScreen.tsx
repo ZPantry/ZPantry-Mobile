@@ -1,8 +1,10 @@
+import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -224,7 +226,7 @@ export default function ManualMealSuggestionScreen() {
                 style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
               >
                 <Ionicons name="chevron-back" size={28} color={colors.primary} />
-                <Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }} selectable>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: "600" }} selectable>
                   Quay lại
                 </Text>
               </Pressable>
@@ -235,7 +237,7 @@ export default function ManualMealSuggestionScreen() {
             </View>
 
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: "700" }} selectable>
                 Gợi ý theo nguyên liệu tự chọn
               </Text>
               <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", lineHeight: 21 }} selectable>
@@ -244,7 +246,7 @@ export default function ManualMealSuggestionScreen() {
             </View>
 
             <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 12 }}>
-              <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.text, fontSize: 16, fontWeight: "700" }} selectable>
                 Nguyên liệu bạn muốn dùng
               </Text>
 
@@ -252,7 +254,7 @@ export default function ManualMealSuggestionScreen() {
                 style={{
                   minHeight: 50,
                   borderRadius: 14,
-                  backgroundColor: "rgba(255,255,255,0.12)",
+                  backgroundColor: colors.surface2,
                   borderWidth: 1,
                   borderColor: colors.line,
                   flexDirection: "row",
@@ -306,10 +308,10 @@ export default function ManualMealSuggestionScreen() {
                           })}
                         >
                           <View style={{ flex: 1 }}>
-                            <Text style={{ color: colors.textDark, fontSize: 14, fontWeight: "900" }} selectable>
+                            <Text style={{ color: colors.textDark, fontSize: 14, fontWeight: "700" }} selectable>
                               {ingredient.name}
                             </Text>
-                            <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "800", marginTop: 2 }} selectable>
+                            <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "600", marginTop: 2 }} selectable>
                               {ingredient.category || "Ingredient"} · {getIngredientUnit(ingredient)}
                             </Text>
                           </View>
@@ -338,24 +340,24 @@ export default function ManualMealSuggestionScreen() {
                   paddingHorizontal: 12,
                   paddingVertical: 10,
                   textAlignVertical: "top",
-                  backgroundColor: "rgba(255,255,255,0.10)"
+                  backgroundColor: colors.surface2
                 }}
               />
             </View>
 
             <View style={{ gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
                   Nguyên liệu đã chọn
                 </Text>
-                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }} selectable>
                   {selectedIngredients.length} mục
                 </Text>
               </View>
 
               {selectedIngredients.length === 0 ? (
                 <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "900" }} selectable>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "700" }} selectable>
                     Chưa chọn nguyên liệu
                   </Text>
                 </View>
@@ -364,10 +366,10 @@ export default function ManualMealSuggestionScreen() {
                   <View key={item.ingredientId} style={{ backgroundColor: colors.white, borderRadius: 14, padding: 12, gap: 10 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+                        <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                           {item.name}
                         </Text>
-                        <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "800", marginTop: 2 }} selectable>
+                        <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "600", marginTop: 2 }} selectable>
                           {item.category || "Ingredient"}
                         </Text>
                       </View>
@@ -387,10 +389,10 @@ export default function ManualMealSuggestionScreen() {
 
             <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "700" }} selectable>
                   Số món gợi ý
                 </Text>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }} selectable>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }} selectable>
                   Danh mục: {recipes.length}
                 </Text>
               </View>
@@ -401,7 +403,7 @@ export default function ManualMealSuggestionScreen() {
               </View>
 
               {errorMessage ? (
-                <Text style={{ color: "#FFE6E6", fontWeight: "800", lineHeight: 20 }} selectable>
+                <Text style={{ color: colors.danger, fontWeight: "600", lineHeight: 20 }} selectable>
                   {errorMessage}
                 </Text>
               ) : null}
@@ -412,10 +414,10 @@ export default function ManualMealSuggestionScreen() {
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
                 Món được gợi ý
               </Text>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }} selectable>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }} selectable>
                 {recommendationCount} mục
               </Text>
             </View>
@@ -423,7 +425,7 @@ export default function ManualMealSuggestionScreen() {
         }
         ListEmptyComponent={
           <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 16, fontWeight: "700" }} selectable>
               Chưa có gợi ý
             </Text>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
@@ -458,11 +460,11 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
     >
       <View style={{ height: 132, backgroundColor: gradient.start, padding: 14, justifyContent: "flex-end" }}>
         <View style={{ position: "absolute", top: -30, right: -10, width: 110, height: 110, borderRadius: 55, backgroundColor: gradient.end, opacity: 0.35 }} />
-        <View style={{ position: "absolute", left: -18, bottom: -24, width: 96, height: 96, borderRadius: 48, backgroundColor: "rgba(255,255,255,0.18)" }} />
+        <View style={{ position: "absolute", left: -18, bottom: -24, width: 96, height: 96, borderRadius: 48, backgroundColor: colors.surface2 }} />
 
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "900", lineHeight: 28 }} selectable>
+            <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "700", lineHeight: 28 }} selectable>
               {recommendation.name}
             </Text>
             <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "700", lineHeight: 18, marginTop: 3, opacity: 0.92 }} selectable>
@@ -470,7 +472,7 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
             </Text>
           </View>
           <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.25)" }}>
-            <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "700" }} selectable>
               {matchPercent}%
             </Text>
           </View>
@@ -482,7 +484,7 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
         <IngredientLine title="Còn thiếu" items={recommendation.missingIngredients} tone="warning" />
 
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>
             Xem chi tiết
           </Text>
           <Ionicons name="arrow-forward-circle" size={24} color={colors.primary} />
@@ -497,7 +499,7 @@ function IngredientLine({ title, items, tone }: { title: string; items: string[]
 
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700" }} selectable>
         {title}
       </Text>
       {items.length === 0 ? (
@@ -508,7 +510,7 @@ function IngredientLine({ title, items, tone }: { title: string; items: string[]
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7 }}>
           {items.map((item) => (
             <View key={item} style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: `${accent}22` }}>
-              <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "800" }} selectable>
+              <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "600" }} selectable>
                 {item}
               </Text>
             </View>
@@ -531,14 +533,14 @@ function MiniField({
   keyboardType?: "default" | "decimal-pad";
 }) {
   return (
-    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: "#EEF3EF", borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
+    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.mutedDark}
         keyboardType={keyboardType}
-        style={{ color: colors.textDark, fontSize: 14, fontWeight: "800" }}
+        style={{ color: colors.textDark, fontSize: 14, fontWeight: "600" }}
       />
     </View>
   );

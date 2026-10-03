@@ -7,11 +7,13 @@ export const endpoints = {
     register: "/api/Auth/register",
     verifyOtp: "/api/Auth/verify-otp",
     login: "/api/Auth/login",
+    google: "/api/Auth/google",
     refreshToken: "/api/Auth/refresh-token",
     logout: "/api/Auth/logout"
   },
   users: { list: "/api/users", item: (id: string) => item("/api/users", id) },
   profile: (id: string) => `${item("/api/users", id)}/profile`,
+  profileV2: "/api/me/profile/v2",
   pantryImport: {
     text: "/api/me/pantry/parse",
     receipt: "/api/me/pantry-import/receipt/analyze",

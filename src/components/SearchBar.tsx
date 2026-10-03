@@ -1,5 +1,6 @@
+import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { colors } from "@/constants/colors";
 
 type Props = {
@@ -16,7 +17,7 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
     <View
       style={{
         minHeight: 48,
-        borderRadius: 999,
+        borderRadius: 8,
         backgroundColor: colors.card,
         borderWidth: 1,
         borderColor: colors.line,
@@ -24,10 +25,10 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         alignItems: "center",
         gap: 10,
         paddingHorizontal: 14,
-        boxShadow: "0 10px 22px rgba(0,0,0,0.16)"
+        boxShadow: "0 2px 6px rgba(0,48,20,0.04)"
       }}
     >
-      <Ionicons name="search" size={21} color={colors.white} />
+      <Ionicons name="search" size={19} color={colors.muted} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -36,10 +37,10 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         blurOnSubmit
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
-        style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0 }}
+        style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0 }}
       />
       <Pressable onPress={onActionPress || onSubmit} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
-        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable={false}>
+        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }} selectable={false}>
           {actionLabel}
         </Text>
       </Pressable>

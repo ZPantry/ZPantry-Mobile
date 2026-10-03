@@ -25,6 +25,14 @@ export type MealRecommendationRequest = {
   topK?: number;
 };
 
+export type PersonalizedRecommendationOptions = {
+  mode?: "AUTO" | "PANTRY_BASED" | "PROFILE_BASED";
+  mealType?: string;
+  maxCookTimeMinutes?: number;
+  servings?: number;
+  includeIngredients?: boolean;
+};
+
 export type MealRecommendation = {
   mealId: string;
   persistedMeal?: boolean;
@@ -168,9 +176,10 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
-  async personalized(topK = 5) {
+  async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}) {
+    const { mode, mealType, maxCookTimeMinutes, servings, includeIngredients } = options;
     const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
-      method: "POST", auth: true, body: JSON.stringify({ topK }), timeoutMs: 60000
+      method: "POST", auth: true, body: JSON.stringify({ topK, mode, mealType, maxCookTimeMinutes, servings, includeIngredients }), timeoutMs: 60000
     });
     // Java wraps the AI service envelope; validate both layers before normalizing.
     const body = unwrapEnvelope<RawMealRecommendationResponse>(response);

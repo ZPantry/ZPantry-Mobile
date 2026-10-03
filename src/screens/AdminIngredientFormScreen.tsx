@@ -1,7 +1,9 @@
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient, IngredientPayload } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -165,7 +167,7 @@ export default function AdminIngredientFormScreen() {
         <RemoteImage uri={form.localImageUri || form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
         <Pressable onPress={chooseImage} style={({ pressed }) => ({ minHeight: 46, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.78 : 1 })}>
           <MaterialCommunityIcons name="image-plus" size={20} color={colors.primary} />
-          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700" }} selectable>
             {form.localImageUri ? "Đổi ảnh upload" : "Chọn ảnh upload"}
           </Text>
         </Pressable>
@@ -208,7 +210,7 @@ export default function AdminIngredientFormScreen() {
           </View>
         </View>
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 18 }}>Chất gây dị ứng đã xác định</Text>
+          <Text style={{ color: colors.text, fontWeight: "600", fontSize: 18 }}>Chất gây dị ứng đã xác định</Text>
           <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
         </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
@@ -224,7 +226,7 @@ function AdminFormHeader({ title, subtitle, onBack }: { title: string; subtitle:
         <Ionicons name="chevron-back" size={25} color={colors.primary} />
       </Pressable>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }} selectable>
           {title}
         </Text>
         <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 2 }} selectable>
@@ -243,10 +245,10 @@ function RemoteImage({ uri, style }: { uri?: string | null; style: object }) {
 function FormInput({ label, value, onChangeText, placeholder, keyboardType }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: "default" | "decimal-pad" }) {
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} keyboardType={keyboardType} style={{ minHeight: 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
+      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} keyboardType={keyboardType} style={{ minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
     </View>
   );
 }
@@ -254,14 +256,14 @@ function FormInput({ label, value, onChangeText, placeholder, keyboardType }: { 
 function FormActions({ isSaving, saveLabel, onSave, onCancel }: { isSaving: boolean; saveLabel: string; onSave: () => void; onCancel: () => void }) {
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
-        <Text style={{ color: colors.text, fontWeight: "900" }} selectable>
+      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+        <Text style={{ color: colors.text, fontWeight: "700" }} selectable>
           Hủy
         </Text>
       </Pressable>
       <Pressable onPress={onSave} disabled={isSaving} style={({ pressed }) => ({ flex: 1.4, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSaving ? 0.76 : 1 })}>
         {isSaving ? <ActivityIndicator color={colors.textDark} /> : <MaterialCommunityIcons name="content-save" size={20} color={colors.textDark} />}
-        <Text style={{ color: colors.textDark, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.textDark, fontWeight: "700" }} selectable>
           {isSaving ? "Đang lưu..." : saveLabel}
         </Text>
       </Pressable>
@@ -272,7 +274,7 @@ function FormActions({ isSaving, saveLabel, onSave, onCancel }: { isSaving: bool
 function ErrorBanner({ message }: { message: string }) {
   return (
     <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
-      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+      <Text style={{ color: colors.danger, fontSize: 13, fontWeight: "600", lineHeight: 20 }} selectable>
         {message}
       </Text>
     </View>

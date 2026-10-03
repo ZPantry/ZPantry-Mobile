@@ -1,7 +1,9 @@
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -232,7 +234,7 @@ export default function AdminRecipeFormScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" onBack={() => navigation.goBack()} />
         {!form.id ? <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CreateRecipe")} style={{ paddingVertical: 12 }}>
-          <Text style={{ color: colors.primary, fontWeight: "800" }}>Tạo bằng tìm kiếm nguyên liệu ›</Text>
+          <Text style={{ color: colors.primary, fontWeight: "600" }}>Tạo bằng tìm kiếm nguyên liệu ›</Text>
         </Pressable> : null}
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
@@ -240,7 +242,7 @@ export default function AdminRecipeFormScreen() {
         <RemoteImage uri={form.localImageUri || form.imageUrl} style={{ width: "100%", height: 180, borderRadius: 16, backgroundColor: colors.secondary }} />
         <Pressable onPress={chooseImage} style={({ pressed }) => ({ minHeight: 46, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.78 : 1 })}>
           <MaterialCommunityIcons name="image-plus" size={20} color={colors.primary} />
-          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700" }} selectable>
             {form.localImageUri ? "Đổi ảnh upload" : "Chọn ảnh upload"}
           </Text>
         </Pressable>
@@ -278,7 +280,7 @@ export default function AdminRecipeFormScreen() {
         <FormInput label="Cách nấu" value={form.instructionText} onChangeText={(instructionText) => setForm((current) => ({ ...current, instructionText }))} placeholder="Bước 1..." multiline />
 
         <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700" }} selectable>
             Nguyên liệu trong công thức
           </Text>
           <FormInput label="Tìm nguyên liệu" value={ingredientSearch} onChangeText={setIngredientSearch} placeholder="Cà, trứng, gạo..." />
@@ -292,10 +294,10 @@ export default function AdminRecipeFormScreen() {
                   <Pressable key={ingredient.id} onPress={() => addRecipeIngredient(ingredient)} style={({ pressed }) => ({ width: "47.5%", minWidth: 142, flexGrow: 1, borderRadius: 14, backgroundColor: selected ? "rgba(57,217,138,0.20)" : colors.white, borderWidth: 2, borderColor: selected ? colors.success : "transparent", overflow: "hidden", opacity: pressed ? 0.82 : 1 })}>
                     <RemoteImage uri={ingredient.imageUrl} style={{ width: "100%", height: 76, backgroundColor: colors.secondary }} />
                     <View style={{ padding: 9, gap: 4 }}>
-                      <Text numberOfLines={2} style={{ color: colors.textDark, fontSize: 13, fontWeight: "900", lineHeight: 17 }}>
+                      <Text numberOfLines={2} style={{ color: colors.textDark, fontSize: 13, fontWeight: "700", lineHeight: 17 }}>
                         {ingredient.name}
                       </Text>
-                      <Text style={{ color: selected ? colors.success : colors.primaryDark, fontSize: 10, fontWeight: "900" }} selectable>
+                      <Text style={{ color: selected ? colors.success : colors.primaryDark, fontSize: 10, fontWeight: "700" }} selectable>
                         {selected ? "Đã thêm" : ingredient.unit}
                       </Text>
                     </View>
@@ -308,8 +310,8 @@ export default function AdminRecipeFormScreen() {
 
         <View style={{ gap: 10 }}>
           {form.ingredients.length === 0 ? (
-            <View style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "rgba(255,255,255,0.12)", padding: 14 }}>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+            <View style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface2, padding: 14 }}>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }} selectable>
                 Chưa có nguyên liệu trong công thức.
               </Text>
             </View>
@@ -319,7 +321,7 @@ export default function AdminRecipeFormScreen() {
               return (
                 <View key={`${item.ingredientId}-${index}`} style={{ borderRadius: 14, backgroundColor: colors.white, padding: 12, gap: 10 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <Text style={{ flex: 1, color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+                    <Text style={{ flex: 1, color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                       {ingredient?.name || item.ingredientId}
                     </Text>
                     <Pressable onPress={() => removeRecipeIngredient(index)}>
@@ -327,12 +329,12 @@ export default function AdminRecipeFormScreen() {
                     </Pressable>
                   </View>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput value={String(item.quantity)} onChangeText={(value) => updateRecipeIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
-                    <TextInput value={item.unit} onChangeText={(unit) => updateRecipeIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
+                    <TextInput value={String(item.quantity)} onChangeText={(value) => updateRecipeIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
+                    <TextInput value={item.unit} onChangeText={(unit) => updateRecipeIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
                   </View>
                   <TextInput value={item.note} onChangeText={(note) => updateRecipeIngredient(index, { note })} placeholder="Ghi chú cho nguyên liệu" placeholderTextColor={colors.mutedDark} style={{ minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "700", paddingHorizontal: 10 }} />
-                  <Pressable onPress={() => updateRecipeIngredient(index, { isRequired: !item.isRequired })} style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: item.isRequired ? colors.secondary : "#EEF3EF", paddingHorizontal: 10, paddingVertical: 6 }}>
-                    <Text style={{ color: item.isRequired ? colors.primaryDark : colors.mutedDark, fontSize: 11, fontWeight: "900" }} selectable>
+                  <Pressable onPress={() => updateRecipeIngredient(index, { isRequired: !item.isRequired })} style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: item.isRequired ? colors.secondary : colors.surface2, paddingHorizontal: 10, paddingVertical: 6 }}>
+                    <Text style={{ color: item.isRequired ? colors.primaryDark : colors.mutedDark, fontSize: 11, fontWeight: "700" }} selectable>
                       {item.isRequired ? "Bắt buộc" : "Tùy chọn"}
                     </Text>
                   </Pressable>
@@ -343,7 +345,7 @@ export default function AdminRecipeFormScreen() {
         </View>
 
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontWeight: "800", fontSize: 18 }}>Chất gây dị ứng của món</Text>
+          <Text style={{ color: colors.text, fontWeight: "600", fontSize: 18 }}>Chất gây dị ứng của món</Text>
           <Text style={{ color: colors.muted, lineHeight: 21 }}>Khai báo đầy đủ theo thành phần thực tế. Bộ lọc gợi ý sử dụng danh sách này.</Text>
           <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
         </View>
@@ -360,7 +362,7 @@ function AdminFormHeader({ title, subtitle, onBack }: { title: string; subtitle:
         <Ionicons name="chevron-back" size={25} color={colors.primary} />
       </Pressable>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }} selectable>
           {title}
         </Text>
         <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 2 }} selectable>
@@ -379,7 +381,7 @@ function RemoteImage({ uri, style }: { uri?: string | null; style: object }) {
 function FormInput({ label, value, onChangeText, placeholder, keyboardType, multiline = false }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: "default" | "decimal-pad"; multiline?: boolean }) {
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
       <TextInput
@@ -389,7 +391,7 @@ function FormInput({ label, value, onChangeText, placeholder, keyboardType, mult
         placeholderTextColor={colors.muted}
         keyboardType={keyboardType}
         multiline={multiline}
-        style={{ minHeight: multiline ? 84 : 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0, textAlignVertical: multiline ? "top" : "center" }}
+        style={{ minHeight: multiline ? 84 : 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0, textAlignVertical: multiline ? "top" : "center" }}
       />
     </View>
   );
@@ -398,14 +400,14 @@ function FormInput({ label, value, onChangeText, placeholder, keyboardType, mult
 function FormActions({ isSaving, saveLabel, onSave, onCancel }: { isSaving: boolean; saveLabel: string; onSave: () => void; onCancel: () => void }) {
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
-        <Text style={{ color: colors.text, fontWeight: "900" }} selectable>
+      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+        <Text style={{ color: colors.text, fontWeight: "700" }} selectable>
           Hủy
         </Text>
       </Pressable>
       <Pressable onPress={onSave} disabled={isSaving} style={({ pressed }) => ({ flex: 1.4, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, opacity: pressed || isSaving ? 0.76 : 1 })}>
         {isSaving ? <ActivityIndicator color={colors.textDark} /> : <MaterialCommunityIcons name="content-save" size={20} color={colors.textDark} />}
-        <Text style={{ color: colors.textDark, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.textDark, fontWeight: "700" }} selectable>
           {isSaving ? "Đang lưu..." : saveLabel}
         </Text>
       </Pressable>
@@ -416,7 +418,7 @@ function FormActions({ isSaving, saveLabel, onSave, onCancel }: { isSaving: bool
 function ErrorBanner({ message }: { message: string }) {
   return (
     <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
-      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+      <Text style={{ color: colors.danger, fontSize: 13, fontWeight: "600", lineHeight: 20 }} selectable>
         {message}
       </Text>
     </View>
@@ -427,7 +429,7 @@ function LoadingCard() {
   return (
     <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 10 }}>
       <ActivityIndicator color={colors.primary} />
-      <Text style={{ color: colors.text, fontWeight: "800" }} selectable>
+      <Text style={{ color: colors.text, fontWeight: "600" }} selectable>
         Đang tải dữ liệu...
       </Text>
     </View>

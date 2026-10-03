@@ -258,6 +258,129 @@ test('Auth routes retain casing and logout requires authentication', async () =>
   assert.equal(calls[0][1].auth, undefined);
 });
 
+test('Google ID tokens are exchanged with Java, without treating provider credentials as app sessions', async () => {
+  const calls = [];
+  const session = { accessToken: 'zpantry-access', refreshToken: 'zpantry-refresh', email: 'fixture@example.invalid' };
+  const { authApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return session; } } })('@/api/auth');
+  assert.equal(await authApi.google('google-id-token'), session);
+  assert.equal(calls[0][0], '/api/Auth/google');
+  assert.equal(calls[0][1].method, 'POST');
+  assert.equal(calls[0][1].auth, undefined);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { idToken: 'google-id-token' });
+});
+
+async function withGoogleConfig(action) {
+  const keys = ['EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID', 'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'EXPO_PUBLIC_AUTH_REDIRECT_URI'];
+  const previous = keys.map(key => process.env[key]);
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = 'fixture.apps.googleusercontent.com';
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = 'ios-fixture.apps.googleusercontent.com';
+  delete process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI;
+  try { await action(); } finally {
+    keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
+  }
+}
+
+test('native Google flow requires configuration, distinguishes cancellation and rejects missing ID tokens', async () => {
+  await withGoogleConfig(async () => {
+    let response = { type: 'success', data: { idToken: 'provider-id-token' } };
+    const configurations = [];
+    const provider = {
+      GoogleSignin: { configure: value => configurations.push(value), hasPlayServices: async () => true, signIn: async () => response },
+      statusCodes: {}, isErrorWithCode: () => false
+    };
+    const mocks = { 'react-native': { Platform: { OS: 'android' } }, '@react-native-google-signin/google-signin': provider };
+    const google = loader(mocks)('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    assert.equal(google.ready, true);
+    assert.equal(await google.getIdToken(), 'provider-id-token');
+    assert.equal(configurations[0].webClientId, process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+    assert.equal(configurations[0].offlineAccess, false);
+    response = { type: 'cancelled' };
+    assert.equal(await google.getIdToken(), null);
+    response = { type: 'success', data: { idToken: null } };
+    await assert.rejects(google.getIdToken(), /chưa trả về/);
+    delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const unconfigured = loader(mocks)('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    assert.equal(unconfigured.ready, false);
+    await assert.rejects(unconfigured.getIdToken(), /chưa sẵn sàng/);
+  });
+});
+
+test('native Google SDK reports Android configuration and Play Services failures without exchanging a token', async () => {
+  await withGoogleConfig(async () => {
+    let code = '10';
+    const provider = {
+      GoogleSignin: { configure: () => {}, hasPlayServices: async () => true, signIn: async () => { throw { code }; } },
+      statusCodes: { SIGN_IN_CANCELLED: 'cancelled', PLAY_SERVICES_NOT_AVAILABLE: 'play-unavailable', IN_PROGRESS: 'in-progress' },
+      isErrorWithCode: error => typeof error?.code === 'string'
+    };
+    const google = loader({ 'react-native': { Platform: { OS: 'android' } }, '@react-native-google-signin/google-signin': provider })('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    await assert.rejects(google.getIdToken(), /com.zpantry.app.*SHA-1.*Web Client ID/);
+    code = 'play-unavailable';
+    await assert.rejects(google.getIdToken(), /Google Play Services/);
+    code = 'in-progress';
+    await assert.rejects(google.getIdToken(), /đang được xử lý/);
+    code = 'cancelled';
+    assert.equal(await google.getIdToken(), null);
+  });
+});
+
+test('web Google flow accepts only successful ID-token responses and handles close/error without a token', async () => {
+  await withGoogleConfig(async () => {
+    let response = { type: 'success', params: { id_token: 'web-provider-token' } };
+    let config;
+    const mocks = {
+      'expo-auth-session/providers/google': { useIdTokenAuthRequest: value => { config = value; return [{}, null, async () => response]; } },
+      'expo-web-browser': { maybeCompleteAuthSession() {} }
+    };
+    const google = loader(mocks)('@/hooks/useGoogleSignIn.web').useGoogleSignIn();
+    assert.equal(google.ready, true);
+    assert.equal(await google.getIdToken(), 'web-provider-token');
+    assert.equal(config.selectAccount, true);
+    response = { type: 'dismiss' };
+    assert.equal(await google.getIdToken(), null);
+    response = { type: 'error', params: { error: 'access_denied' } };
+    await assert.rejects(google.getIdToken(), /Chưa xác thực/);
+    response = { type: 'success', params: { access_token: 'not-an-id-token' } };
+    await assert.rejects(google.getIdToken(), /Chưa xác thực/);
+    delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const unconfigured = loader(mocks)('@/hooks/useGoogleSignIn.web').useGoogleSignIn();
+    assert.equal(unconfigured.ready, false);
+    await assert.rejects(unconfigured.getIdToken(), /chưa sẵn sàng/);
+  });
+});
+
+test('V2 profile uses the self route and preserves birthday, multiple goals and server nutrition targets', async () => {
+  const calls = [];
+  const payload = { birthDate: '2000-02-29', gender: 'FEMALE', heightCm: 165.5, weightKg: 55,
+    activityLevel: 'MODERATE', goals: ['QUICK_COOKING', 'WASTE_REDUCTION'], dietPreference: 'EAT_CLEAN', allergies: ['NO_ALLERGIES'] };
+  const saved = { ...payload, dailyCalorieTarget: 1850, dailyProteinTarget: 70, weightLossAllowed: false, healthWarning: 'Server warning' };
+  const { profileApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return saved; } } })('@/api/profile');
+  assert.equal(await profileApi.getCurrent(), saved);
+  assert.equal(await profileApi.saveCurrent(payload), saved);
+  assert.equal(calls.every(([route, options]) => route === '/api/me/profile/v2' && options.auth), true);
+  assert.equal(calls[1][1].method, 'PUT');
+  assert.deepEqual(JSON.parse(calls[1][1].body), payload);
+});
+
+test('birth dates reject calendar rollover/future dates and keep date-only values without UTC drift', () => {
+  const { parseBirthDate, formatBirthDate } = load('@/utils/userProfile');
+  const today = new Date(2024, 2, 1, 0, 0);
+  for (const value of ['', '2024-2-1', '2023-02-29', '2024-02-30', '2024-03-02', '2024-13-01']) {
+    assert.equal(parseBirthDate(value, today), null, value);
+  }
+  assert.equal(formatBirthDate(parseBirthDate('2024-02-29', today)), '2024-02-29');
+  assert.equal(formatBirthDate(parseBirthDate('2024-03-01', today)), '2024-03-01');
+});
+
+test('personalized suggestions send documented profile-only filters and preserve empty results', async () => {
+  const calls = [];
+  const { recommendationsApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return { items: [] }; } } })('@/api/recommendations');
+  assert.deepEqual(await recommendationsApi.personalized(5, { mode: 'PROFILE_BASED', mealType: 'DINNER', servings: 2, maxCookTimeMinutes: 30 }), { recommendations: [] });
+  assert.deepEqual(JSON.parse(calls[0][1].body), { topK: 5, mode: 'PROFILE_BASED', mealType: 'DINNER', servings: 2, maxCookTimeMinutes: 30 });
+  assert.equal(calls[0][0], '/api/recommendations/v2/meals');
+  assert.equal(calls[0][1].auth, true);
+});
+
 test('image upload distinguishes unavailable services, oversized images and network errors', () => {
   const { getFriendlyErrorMessage } = load('@/utils/localize');
   const message = (status, text) => getFriendlyErrorMessage(Object.assign(new Error(text), { status }), 'fallback', 'imageUpload');

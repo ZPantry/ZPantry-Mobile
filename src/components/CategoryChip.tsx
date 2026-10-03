@@ -1,6 +1,7 @@
+import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { Pressable, Text } from "react-native";
+import { Pressable} from "react-native";
 import { colors } from "@/constants/colors";
 
 type Props = {
@@ -21,15 +22,15 @@ export default function CategoryChip({ label, active = false, icon, onPress }: P
         flexDirection: "row",
         alignItems: "center",
         gap: 7,
-        backgroundColor: active ? colors.primary : colors.card,
+        backgroundColor: active ? colors.dark : colors.card,
         borderWidth: 1,
-        borderColor: active ? colors.secondary : colors.line,
+        borderColor: active ? colors.dark : colors.line,
         opacity: pressed ? 0.82 : 1,
-        boxShadow: active ? "0 8px 20px rgba(244, 162, 28, 0.26)" : "0 8px 18px rgba(0,0,0,0.14)"
+        boxShadow: "0 2px 6px rgba(0,48,20,0.04)"
       })}
     >
       {icon ? <MaterialCommunityIcons name={icon} size={17} color={active ? colors.white : colors.primary} /> : null}
-      <Text style={{ color: active ? colors.white : colors.text, fontWeight: "800", fontSize: 13 }} selectable>
+      <Text style={{ color: active ? colors.white : colors.text, fontWeight: "600", fontSize: 13 }} selectable>
         {label}
       </Text>
     </Pressable>

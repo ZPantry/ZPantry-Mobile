@@ -1,8 +1,10 @@
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -250,15 +252,15 @@ export default function CreateRecipeScreen() {
             overflow: "hidden",
             backgroundColor: gradient.start,
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.18)"
+            borderColor: colors.surface2
           }}
         >
           <View style={{ position: "absolute", top: -36, right: -24, width: 150, height: 150, borderRadius: 75, backgroundColor: gradient.end, opacity: 0.34 }} />
-          <View style={{ position: "absolute", left: -18, bottom: -26, width: 120, height: 120, borderRadius: 60, backgroundColor: "rgba(255,255,255,0.22)" }} />
+          <View style={{ position: "absolute", left: -18, bottom: -26, width: 120, height: 120, borderRadius: 60, backgroundColor: colors.surface2 }} />
 
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: colors.textDark, fontSize: 30, fontWeight: "900", lineHeight: 36 }} selectable>
+              <Text style={{ color: colors.textDark, fontSize: 30, fontWeight: "700", lineHeight: 36 }} selectable>
                 Tạo công thức
               </Text>
               <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700", lineHeight: 19, opacity: 0.9 }} selectable>
@@ -270,7 +272,7 @@ export default function CreateRecipeScreen() {
                 width: 56,
                 height: 56,
                 borderRadius: 18,
-                backgroundColor: "rgba(255,255,255,0.28)",
+                backgroundColor: colors.surface2,
                 alignItems: "center",
                 justifyContent: "center"
               }}
@@ -281,7 +283,7 @@ export default function CreateRecipeScreen() {
         </View>
 
         <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
             Thông tin công thức
           </Text>
           <Field label="Tên món" value={name} onChangeText={setName} placeholder="Cơm chiên trứng" />
@@ -297,7 +299,7 @@ export default function CreateRecipeScreen() {
           </View>
 
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
               Độ khó
             </Text>
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
@@ -308,7 +310,7 @@ export default function CreateRecipeScreen() {
           </View>
 
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
               Nguồn công thức
             </Text>
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
@@ -323,10 +325,10 @@ export default function CreateRecipeScreen() {
 
         <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
               Nguyên liệu
             </Text>
-            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }} selectable>
               {selectedIngredients.length} đã chọn
             </Text>
           </View>
@@ -368,7 +370,7 @@ export default function CreateRecipeScreen() {
                     >
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+                          <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                             {item.name}
                           </Text>
                           <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", marginTop: 4 }} selectable>
@@ -390,7 +392,7 @@ export default function CreateRecipeScreen() {
                 <View key={item.ingredientId} style={{ borderRadius: 16, backgroundColor: colors.white, padding: 12, gap: 10 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+                      <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                         {item.ingredientName}
                       </Text>
                       <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "700", marginTop: 4 }} selectable>
@@ -411,8 +413,8 @@ export default function CreateRecipeScreen() {
               ))}
             </View>
           ) : (
-            <View style={{ borderRadius: 16, padding: 14, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: colors.line }}>
-              <Text style={{ color: colors.text, fontWeight: "800", lineHeight: 20 }} selectable>
+            <View style={{ borderRadius: 16, padding: 14, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line }}>
+              <Text style={{ color: colors.text, fontWeight: "600", lineHeight: 20 }} selectable>
                 Tìm và chọn các nguyên liệu cần dùng cho món ăn.
               </Text>
             </View>
@@ -420,18 +422,18 @@ export default function CreateRecipeScreen() {
         </View>
 
         <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
             Cách nấu
           </Text>
           <Field label="Các bước nấu" value={instructionText} onChangeText={setInstructionText} placeholder="Nhập từng bước nấu món ăn" multiline />
 
           {errorMessage ? (
-            <Text style={{ color: "#FFE2E2", fontWeight: "800", lineHeight: 20 }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", lineHeight: 20 }} selectable>
               {errorMessage}
             </Text>
           ) : null}
 
-          <Text style={{ color: colors.text, fontWeight: "800" }}>Chất gây dị ứng</Text>
+          <Text style={{ color: colors.text, fontWeight: "600" }}>Chất gây dị ứng</Text>
           <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
           <PrimaryButton title={isSaving ? "Đang lưu…" : "Tạo công thức"} icon="content-save" disabled={isSaving || !canCreate} onPress={submitRecipe} />
         </View>
@@ -459,7 +461,7 @@ function Field({
 }) {
   return (
     <View style={{ gap: 8 }}>
-      <Text style={{ color: light ? colors.textDark : colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: light ? colors.textDark : colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
       <View
@@ -468,7 +470,7 @@ function Field({
           borderRadius: 14,
           borderWidth: 1,
           borderColor: colors.line,
-          backgroundColor: light ? "#EEF3EF" : "rgba(255,255,255,0.12)",
+          backgroundColor: light ? colors.surface2 : colors.surface2,
           paddingHorizontal: 12,
           paddingVertical: multiline ? 10 : 0,
           justifyContent: multiline ? "flex-start" : "center"
@@ -506,14 +508,14 @@ function FieldInline({
   keyboardType?: "default" | "decimal-pad";
 }) {
   return (
-    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: "#EEF3EF", borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
+    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.mutedDark}
         keyboardType={keyboardType}
-        style={{ color: colors.textDark, fontSize: 14, fontWeight: "800" }}
+        style={{ color: colors.textDark, fontSize: 14, fontWeight: "600" }}
       />
     </View>
   );

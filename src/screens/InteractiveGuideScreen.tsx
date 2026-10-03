@@ -1,6 +1,8 @@
+import Text from "@/components/AppText";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -39,20 +41,20 @@ export default function InteractiveGuideScreen() {
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <View style={{ paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", flex: 1 }}>Hướng dẫn sử dụng</Text>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700", flex: 1 }}>Hướng dẫn sử dụng</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Bỏ qua hướng dẫn" disabled={leaving} onPress={finish} style={{ minHeight: 44, justifyContent: "center" }}>
-        <Text style={{ color: colors.primary, fontWeight: "800" }}>Bỏ qua</Text>
+        <Text style={{ color: colors.primary, fontWeight: "600" }}>Bỏ qua</Text>
       </Pressable>
     </View>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 22, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <Text style={{ color: colors.muted }}>Bước {step + 1}/{steps.length} · Có thể xem theo thứ tự bất kỳ</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={"Bước " + (index + 1) + ": " + item.title} accessibilityState={{ selected: index === step }} onPress={() => setStep(index)} style={{ minWidth: 44, minHeight: 44, borderRadius: 22, backgroundColor: index === step ? colors.primary : colors.surface, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: index === step ? colors.textDark : colors.text, fontWeight: "800" }}>{index + 1}</Text>
+          <Text style={{ color: index === step ? colors.textDark : colors.text, fontWeight: "600" }}>{index + 1}</Text>
         </Pressable>)}
       </View>
       <View style={{ gap: 16, padding: 20, borderRadius: 16, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "900" }}>{steps[step].title}</Text>
+        <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "700" }}>{steps[step].title}</Text>
         <Text style={{ color: colors.text, fontSize: 16, lineHeight: 25 }}>{steps[step].description}</Text>
         {step === 1 ? <><TextInput accessibilityLabel="Nhập thử nguyên liệu (không bắt buộc)" value={sample} onChangeText={setSample} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={{ minHeight: 48, color: colors.text, padding: 12, borderBottomWidth: 1, borderColor: colors.line }} /><Text style={{ color: colors.muted }}>Ví dụ minh họa, không ghi dữ liệu vào tủ.</Text></> : null}
       </View>

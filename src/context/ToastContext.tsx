@@ -75,11 +75,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               flexDirection: "row",
               alignItems: "center",
               gap: 10,
-              boxShadow: "0 14px 30px rgba(0,0,0,0.24)"
+              boxShadow: "0 8px 24px rgba(0,48,20,0.12)"
             }}
           >
             <MaterialCommunityIcons name={meta.icon as never} size={24} color={meta.color} />
-            <Text style={{ flex: 1, color: colors.textDark, fontSize: 14, fontWeight: "900", lineHeight: 20 }} selectable>
+            <Text accessibilityRole="alert" style={{ flex: 1, color: colors.textDark, fontSize: 14, fontWeight: "600", lineHeight: 20 }} selectable>
               {toast.message}
             </Text>
           </View>

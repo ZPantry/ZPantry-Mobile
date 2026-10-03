@@ -1,7 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
-import type { MealRecommendation } from "@/api/recommendations";
+import type { MealRecommendation, PersonalizedRecommendationOptions } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
 import type { AdminUser } from "@/api/users";
 
@@ -56,6 +56,7 @@ export type UserProfile = {
 };
 
 export type RootStackParamList = {
+  Plan: undefined;
   Login: undefined;
   Onboarding: undefined;
   ProfileSetup: { editing?: boolean } | undefined;
@@ -75,6 +76,7 @@ export type RootStackParamList = {
   PantryItemDetail: { pantryItem: PantryApiItem; ingredient?: Ingredient };
   MealRecommendationResults: {
     recommendations: MealRecommendation[];
+    mode?: PersonalizedRecommendationOptions["mode"];
     pantryItems: Array<{
       id: string;
       ingredientId: string;

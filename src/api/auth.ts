@@ -53,6 +53,13 @@ export const authApi = {
     });
   },
 
+  google(idToken: string) {
+    return apiRequest<LoginResponse>(endpoints.auth.google, {
+      method: "POST",
+      body: JSON.stringify({ idToken })
+    });
+  },
+
   refreshToken(refreshToken: string) {
     return apiRequest<RefreshTokenResponse>(endpoints.auth.refreshToken, {
       method: "POST",

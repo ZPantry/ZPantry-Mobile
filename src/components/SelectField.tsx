@@ -1,5 +1,6 @@
+import Text from "@/components/AppText";
 import { Host, Picker } from "@expo/ui";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { colors } from "@/constants/colors";
 
 export type SelectOption = {
@@ -13,15 +14,16 @@ type Props = {
   options: readonly SelectOption[];
   onValueChange: (value: string) => void;
   hint?: string;
+  disabled?: boolean;
 };
 
-export default function SelectField({ label, value, options, onValueChange, hint }: Props) {
+export default function SelectField({ label, value, options, onValueChange, hint, disabled = false }: Props) {
   const hasCurrentValue = options.some((option) => option.value === value);
   const displayedOptions = hasCurrentValue || !value ? options : [{ label: value, value }, ...options];
 
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
       <View
@@ -29,14 +31,14 @@ export default function SelectField({ label, value, options, onValueChange, hint
           minHeight: 48,
           borderRadius: 12,
           overflow: "hidden",
-          backgroundColor: "rgba(255,255,255,0.14)",
+          backgroundColor: colors.input,
           borderWidth: 1,
           borderColor: colors.line,
           justifyContent: "center"
         }}
       >
-        <Host style={{ width: "100%", minHeight: 46 }} seedColor={colors.primary} colorScheme="dark">
-          <Picker selectedValue={value} onValueChange={onValueChange} appearance="menu">
+        <Host style={{ width: "100%", minHeight: 46 }} seedColor={colors.primary} colorScheme="light">
+          <Picker selectedValue={value} onValueChange={onValueChange} appearance="menu" enabled={!disabled}>
             {displayedOptions.map((option) => (
               <Picker.Item key={option.value} label={option.label} value={option.value} />
             ))}

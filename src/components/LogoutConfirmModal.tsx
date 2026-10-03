@@ -1,5 +1,6 @@
+import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ActivityIndicator, Modal, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, View } from "react-native";
 import { colors } from "@/constants/colors";
 
 type LogoutConfirmModalProps = {
@@ -26,7 +27,7 @@ export default function LogoutConfirmModal({ visible, isSigningOut = false, onSt
             </Text>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Ở lại" disabled={isSigningOut} onPress={onStay} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSigningOut ? 0.76 : 1 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Ở lại" disabled={isSigningOut} onPress={onStay} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center", opacity: pressed || isSigningOut ? 0.76 : 1 })}>
               <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
                 Ở lại
               </Text>

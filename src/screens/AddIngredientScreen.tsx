@@ -1,6 +1,8 @@
+import Text from "@/components/AppText";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ingredientsApi, type Ingredient } from "@/api/ingredients";
 import { pantryApi } from "@/api/pantry";
@@ -84,9 +86,9 @@ export default function AddIngredientScreen() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />} contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 32, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <AppBackButton onPress={() => navigation.goBack()} />
-      <Text style={{ color: colors.text, fontSize: 26, fontWeight: "900" }}>Thêm thực phẩm</Text>
+      <Text style={{ color: colors.text, fontSize: 26, fontWeight: "700" }}>Thêm thực phẩm</Text>
       {tutorialStep !== null ? <View style={{ gap: 10, padding: 14, borderRadius: 12, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.primary, fontWeight: "800" }}>Hướng dẫn {tutorialStep + 1}/3</Text>
+        <Text style={{ color: colors.primary, fontWeight: "600" }}>Hướng dẫn {tutorialStep + 1}/3</Text>
         <Text style={{ color: colors.text, lineHeight: 21 }}>{tips[tutorialStep]}</Text>
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <PrimaryButton title="Bước trước" variant="soft" disabled={tutorialStep === 0} onPress={() => setTutorialStep(tutorialStep - 1)} />
@@ -99,23 +101,23 @@ export default function AddIngredientScreen() {
       {loaded && !filtered.length ? <Text style={{ color: colors.muted }}>Không tìm thấy nguyên liệu. Hãy thử từ khóa khác.</Text> : null}
       <View style={{ gap: 8 }}>
         {filtered.slice(0, 30).map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={"Chọn " + item.name} accessibilityState={{ selected: selectedId === item.id }} disabled={saving} onPress={() => { setSelectedId(item.id); setUnit(item.defaultUnit || item.unit || "g"); setError(""); }} style={{ minHeight: 48, padding: 12, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: selectedId === item.id ? colors.primary : colors.line, flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ flex: 1, color: colors.text, fontWeight: "800" }}>{item.name}</Text><Text style={{ color: colors.primary }}>{selectedId === item.id ? "Đã chọn" : item.unit}</Text>
+          <Text style={{ flex: 1, color: colors.text, fontWeight: "600" }}>{item.name}</Text><Text style={{ color: colors.primary }}>{selectedId === item.id ? "Đã chọn" : item.unit}</Text>
         </Pressable>)}
         {filtered.length > 30 ? <Text style={{ color: colors.muted }}>Đang hiện 30/{filtered.length} nguyên liệu. Nhập tên để tìm chính xác hơn.</Text> : null}
       </View>
-      <Text style={{ color: colors.primary, fontWeight: "800" }}>{selected ? "Đang chọn: " + selected.name : "Chọn nguyên liệu để lưu"}</Text>
+      <Text style={{ color: colors.primary, fontWeight: "600" }}>{selected ? "Đang chọn: " + selected.name : "Chọn nguyên liệu để lưu"}</Text>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1 }}><Field label="Số lượng" value={quantity} onChangeText={setQuantity} numeric disabled={saving} /></View>
         <View style={{ flex: 1 }}><Field label="Đơn vị" value={unit} onChangeText={setUnit} disabled={saving} /></View>
       </View>
       <Field label="Hạn dùng (không bắt buộc)" value={expiredAt} onChangeText={setExpiredAt} placeholder="YYYY-MM-DD" disabled={saving} />
-      <Text style={{ color: colors.text, fontWeight: "800" }}>Nơi cất</Text>
+      <Text style={{ color: colors.text, fontWeight: "600" }}>Nơi cất</Text>
       <View pointerEvents={saving ? "none" : "auto"} style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         {storageOptions.map(item => <CategoryChip key={item.value} label={item.label} active={storageLocation === item.value} onPress={() => setStorageLocation(item.value)} />)}
       </View>
       <Field label="Ghi chú" value={note} onChangeText={setNote} disabled={saving} />
       <Text style={{ color: colors.muted, lineHeight: 21 }}>Nếu nguyên liệu đã có trong tủ, số lượng này sẽ thay thế số lượng hiện tại.</Text>
-      {error ? <Text accessibilityRole="alert" style={{ color: "#FFE6E6" }}>{error}</Text> : null}
+      {error ? <Text accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Text> : null}
       {!loaded && !loading ? <PrimaryButton title="Tải lại danh mục" onPress={load} variant="soft" /> : null}
       <PrimaryButton title={saving ? "Đang lưu…" : "Xác nhận lưu vào tủ"} disabled={saving || loading} onPress={save} />
     </ScrollView>

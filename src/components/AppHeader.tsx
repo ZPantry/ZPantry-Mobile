@@ -1,4 +1,5 @@
-import { Image, Text, View } from "react-native";
+import Text from "@/components/AppText";
+import { Image, View } from "react-native";
 import { colors } from "@/constants/colors";
 
 type Props = {

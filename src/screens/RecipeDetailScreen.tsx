@@ -1,8 +1,10 @@
+import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Pressable, RefreshControl, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealIngredientCheckResponse } from "@/api/recommendations";
 import { recommendationsApi } from "@/api/recommendations";
@@ -148,15 +150,15 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
-          <Text style={{color:colors.text,fontWeight:"800"}}>Ngày lên thực đơn (YYYY-MM-DD)</Text>
+          <Text style={{color:colors.text,fontWeight:"600"}}>Ngày lên thực đơn (YYYY-MM-DD)</Text>
           <TextInput accessibilityLabel="Ngày lên thực đơn" value={plannedDate} onChangeText={setPlannedDate} placeholder="YYYY-MM-DD" style={{color:colors.text,padding:12,backgroundColor:colors.card,borderRadius:10}}/>
           {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", textAlign: "center" }} selectable>
               {errorMessage}
             </Text>
           ) : null}
 
-          <Text style={{ color: colors.text, fontSize: 31, lineHeight: 38, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 31, lineHeight: 38, fontWeight: "700" }} selectable>
             {title}
           </Text>
 
@@ -203,7 +205,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
                   steps.map((step, index) => (
                     <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12 }}>
                       <View style={{ width: 30, height: 30, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
+                        <Text style={{ color: colors.white, fontWeight: "700" }} selectable>
                           {index + 1}
                         </Text>
                       </View>
@@ -229,7 +231,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
 function RecipeSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 18, gap: 14, borderWidth: 1, borderColor: colors.line }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
         {title}
       </Text>
       {children}
@@ -241,7 +243,7 @@ function Row({ icon, color, text }: { icon: keyof typeof Ionicons.glyphMap; colo
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <Ionicons name={icon} size={22} color={color} />
-      <Text style={{ color: colors.text, fontWeight: "800", flex: 1, lineHeight: 21 }} selectable>
+      <Text style={{ color: colors.text, fontWeight: "600", flex: 1, lineHeight: 21 }} selectable>
         {text}
       </Text>
     </View>
