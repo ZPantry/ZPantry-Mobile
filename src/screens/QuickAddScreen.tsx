@@ -20,7 +20,7 @@ export default function QuickAddScreen() {
         <Text style={{ color: colors.onDark, fontSize: 20, fontWeight: "700" }}>Căn bếp gọn, bữa ăn đủ đầy</Text>
         <Text style={{ color: colors.onDarkMuted, lineHeight: 22 }}>Nhập một lần, kiểm tra từng nguyên liệu và dùng ngay để lên thực đơn.</Text>
       </View>
-      <AddMethod title="Thêm thủ công" description="Tìm trong danh mục, nhập lượng và hạn sử dụng." icon="plus" onPress={() => navigation.navigate("AddIngredient")} />
+      <AddMethod title="Thêm thủ công" description="Chọn nhiều nguyên liệu, tăng lượng mỗi lần 100 và lưu cùng lúc." icon="plus" onPress={() => navigation.navigate("AddIngredient")} />
       <AddMethod title="Ảnh thực phẩm / hóa đơn" description="Tự nhận diện loại ảnh, kiểm tra kết quả trước khi lưu." icon="camera-outline" badge="Nhận diện tự động" onPress={() => navigation.navigate("PantryImport", { method: "FOOD_IMAGE" })} />
       <AddMethod title="Thêm bằng thực đơn" description="Lấy nguyên liệu từ các món đã lên lịch, theo đúng khẩu phần." icon="silverware-fork-knife" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
     </ScrollView>

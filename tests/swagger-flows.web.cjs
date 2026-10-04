@@ -7,6 +7,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = path.resolve('dist');
 const uid = '55f2f378-692a-4268-924e-e8c648190e32';
 const iid = '11f2f378-692a-4268-924e-e8c648190e32';
+const iid2 = '66f2f378-692a-4268-924e-e8c648190e32';
 const rid = '22f2f378-692a-4268-924e-e8c648190e32';
 const recid = '33f2f378-692a-4268-924e-e8c648190e32';
 const targetid = '44f2f378-692a-4268-924e-e8c648190e32';
@@ -23,6 +24,7 @@ const server = http.createServer((req, res) => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const errors = [], calls = [], aliases = [];
+  let failBatch = true;
   let failReset = true, failAlias = true, failMenu = true, failComplete = true, completed = false;
   const out = path.resolve('work/swagger-review-2026-10-04'); fs.mkdirSync(out, { recursive: true });
   async function open(role, width = 390, step) {
@@ -39,7 +41,7 @@ const server = http.createServer((req, res) => {
         if (failReset) { failReset = false; return route.fulfill({ status: 400, json: { message: 'Invalid OTP' } }); }
         return ok(null);
       }
-      if (p === '/api/ingredients') return paged([ingredient]);
+      if (p === '/api/ingredients') return paged([ingredient, { ...ingredient, id: iid2, name: 'Sữa tươi', normalizedName: 'sua tuoi', unit: 'ml' }, { ...ingredient, id: 'no-unit', name: 'Chưa có đơn vị', unit: '' }]);
       if (p === `/api/ingredients/${iid}/aliases`) {
         if (method === 'GET') return ok(aliases);
         if (failAlias) { failAlias = false; return route.fulfill({ status: 500, json: { message: 'Synthetic failure' } }); }
@@ -68,6 +70,10 @@ const server = http.createServer((req, res) => {
         return ok({ cookingLog: { id: 'log-1', mealName: recipe.name, cookedAt: '2026-10-04T10:00:00Z' }, consumedIngredients: [], updatedPantryItems: [], warnings: [] });
       }
       if (p === `/api/users/${uid}`) return ok({ id: uid, fullName: 'Nguyễn Minh Khang', email: 'fixture@example.invalid', role });
+      if (p === '/api/me/pantry/items/batch') {
+        if (failBatch) { failBatch = false; return route.fulfill({ status: 500, json: { message: 'Synthetic batch failure' } }); }
+        return ok(body.items.map(item => ({ id: item.ingredientId, ...item })));
+      }
       if (p === '/api/me/pantry/items' && method === 'POST') return ok({ id: iid, ...body });
       if (p === `/api/me/pantry/items/${iid}` && method === 'PUT') return ok({ id: iid, ...body });
       if (p === '/api/users') return paged([{ id: targetid, fullName: 'Người dùng thử', email: 'target@example.invalid', role: 'USER', createdAt: '2026-10-01', isActive: true }]);
@@ -189,7 +195,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await ux.getByLabel('Ngày sinh · Ngày').inputValue(), '29');
     await ux.getByLabel('Ngày sinh · Năm').selectOption('2001');
     assert.equal(await ux.getByLabel('Ngày sinh · Ngày').inputValue(), '28');
-    await ux.getByTestId('slider-cm').press('ArrowRight');
+    await ux.getByRole('button', { name: 'Tăng Chiều cao', exact: true }).click();
     await ux.getByRole('button', { name: 'Tăng Cân nặng', exact: true }).click();
     const selectedColor = await ux.getByLabel('Mức vận động').evaluate(el => getComputedStyle(el).backgroundColor);
     assert.equal(selectedColor, 'rgb(255, 240, 216)');
@@ -225,26 +231,54 @@ const server = http.createServer((req, res) => {
     assert.equal((await firstVisit.getByTestId('fixed-back-header').last().boundingBox()).y, quickBack.y);
     await firstVisit.screenshot({ path: path.join(out, 'quick-add-fixed-back-mobile.png'), animations: 'disabled' });
     await firstVisit.getByRole('button', { name: 'Quay lại', exact: true }).click();
-    await firstVisit.getByRole('button', { name: 'Thêm một nguyên liệu', exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Chọn nguyên liệu thủ công', exact: true }).click();
     await firstVisit.getByRole('button', { name: 'Chọn Cà rốt', exact: true }).click();
-    const quantity = firstVisit.getByLabel('Số lượng', { exact: true });
-    await quantity.fill('250');
-    assert.equal(await quantity.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)');
-    assert.equal(await quantity.evaluate(el => getComputedStyle(el).color), 'rgb(26, 28, 27)');
-    assert.equal(await firstVisit.getByText('Bỏ qua hướng dẫn', { exact: true }).count(), 0);
-    const expiry = firstVisit.getByLabel('Hạn dùng (số ngày còn lại)', { exact: true });
+    const carrot = firstVisit.getByTestId('selected-ingredient-' + iid);
+    assert.equal(await firstVisit.getByRole('button', { name: 'Giảm 100 g Cà rốt', exact: true }).isDisabled(), true);
+    await firstVisit.getByRole('button', { name: 'Thêm 100 g Cà rốt', exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Thêm 100 g Cà rốt', exact: true }).click();
+    await carrot.getByText('300 g', { exact: true }).waitFor();
+    await firstVisit.getByRole('button', { name: 'Giảm 100 g Cà rốt', exact: true }).click();
+    await carrot.getByText('200 g', { exact: true }).waitFor();
+    await firstVisit.getByLabel('Tìm nguyên liệu', { exact: true }).fill('sua');
+    await firstVisit.getByRole('button', { name: 'Chọn Sữa tươi', exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Bỏ Sữa tươi', exact: true }).click();
+    assert.equal(await firstVisit.getByTestId('selected-ingredient-' + iid2).count(), 0);
+    await firstVisit.getByRole('button', { name: 'Chọn Sữa tươi', exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Thêm 100 ml Sữa tươi', exact: true }).click();
+    const milk = firstVisit.getByTestId('selected-ingredient-' + iid2);
+    await milk.getByText('200 ml', { exact: true }).waitFor();
+    await firstVisit.getByLabel('Tìm nguyên liệu', { exact: true }).fill('');
+    assert.equal(await firstVisit.getByRole('button', { name: 'Chọn Chưa có đơn vị', exact: true }).isDisabled(), true);
+    assert.equal(await firstVisit.getByLabel('Đơn vị', { exact: true }).count(), 0);
+    const expiry = carrot.getByLabel('Hạn dùng (số ngày còn lại)', { exact: true });
     await expiry.fill('7');
     assert.equal(await firstVisit.locator('select:visible').count(), 0);
     const date = await firstVisit.evaluate(() => {
       const d = new Date(); d.setDate(d.getDate() + 7);
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     });
-    await firstVisit.getByText('Hết hạn ngày ' + date.split('-').reverse().join('/'), { exact: true }).waitFor();
+    await carrot.getByText('Hết hạn ngày ' + date.split('-').reverse().join('/'), { exact: true }).waitFor();
     await firstVisit.screenshot({ path: path.join(out, 'ingredient-inputs-mobile.png'), animations: 'disabled' });
-    await firstVisit.getByRole('button', { name: 'Xác nhận lưu vào tủ', exact: true }).click();
+    await firstVisit.setViewportSize({ width: 1280, height: 900 });
+    await firstVisit.getByText('Thêm thực phẩm', { exact: true }).scrollIntoViewIfNeeded();
+    await firstVisit.screenshot({ path: path.join(out, 'batch-ingredients-desktop.png'), animations: 'disabled' });
+    await firstVisit.setViewportSize({ width: 375, height: 667 });
+    await firstVisit.getByRole('button', { name: 'Lưu 2 nguyên liệu vào tủ', exact: true }).click();
+    await firstVisit.getByRole('alert').waitFor();
+    await carrot.getByText('200 g', { exact: true }).waitFor();
+    assert.equal(await expiry.inputValue(), '7');
+    await firstVisit.getByRole('button', { name: 'Lưu 2 nguyên liệu vào tủ', exact: true }).click();
     await firstVisit.getByRole('tab', { name: 'Kho thực phẩm', exact: true }).waitFor();
-    const pantrySave = calls.filter(c => c.p === '/api/me/pantry/items' && c.method === 'POST').at(-1);
-    assert.equal(pantrySave.body.expiredAt, new Date(date).toISOString());
+    const pantrySave = calls.filter(c => c.p === '/api/me/pantry/items/batch' && c.method === 'POST').at(-1);
+    assert.equal(pantrySave.body.items.length, 2);
+    assert.equal(pantrySave.body.items[0].expiredAt, new Date(date).toISOString());
+    assert.equal(pantrySave.body.items[0].quantity, 200);
+    assert.equal(pantrySave.body.items[0].unit, 'g');
+    assert.equal(pantrySave.body.items[1].quantity, 200);
+    assert.equal(pantrySave.body.items[1].unit, 'ml');
+    assert.equal(pantrySave.body.items[1].expiredAt, null);
+    assert.equal(calls.filter(c => c.p === '/api/me/pantry/items' && c.method === 'POST').length, 0);
     assert.equal(calls.filter(c => c.p === '/api/me/pantry/parse').length, 0);
     await firstVisit.getByRole('tab', { name: 'Kho thực phẩm', exact: true }).click();
     assert.equal(await firstVisit.getByRole('button', { name: 'Thêm bằng văn bản', exact: true }).count(), 0);
@@ -284,7 +318,7 @@ const server = http.createServer((req, res) => {
     await catalog.screenshot({ path: path.join(out, 'aliases-mobile.png'), fullPage: true }); await catalog.close();
     assert.deepEqual(errors, []);
     fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ status: 'passed', calls: calls.filter(c => c.method !== 'GET'), errors }, null, 2));
-    console.log('PASS: fixed back header, clear quantity inputs, one-time survey, draggable AI without accidental chat, no automatic guides, separate OTP/password forms, leap-year date selectors, slider values saved, survey icons, orange selects, AI chat, reset failure/retry, pantry quantities, feedback, menu and completion failure/retry, role hierarchy, aliases, image confirmation; no browser runtime errors.');
+    console.log('PASS: batch ingredient selection, search, canonical units, +100/-100, remove/reselect, missing-unit disabled, batch failure/retry, fixed back header, clear quantity inputs, one-time survey, draggable AI without accidental chat, no automatic guides, separate OTP/password forms, leap-year date selectors, slider values saved, survey icons, orange selects, AI chat, reset failure/retry, pantry quantities, feedback, menu and completion failure/retry, role hierarchy, aliases, image confirmation; no browser runtime errors.');
   } catch (e) {
     for (const page of browser.contexts().flatMap(c => c.pages())) { await page.screenshot({ path: path.join(out, 'failure.png'), fullPage: true }); console.error((await page.locator('body').innerText()).slice(-6000)); }
     throw e;

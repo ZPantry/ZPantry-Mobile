@@ -731,3 +731,21 @@ test('display name uses FullName and never email fallback', () => {
   assert.equal(userDisplayName({ fullName: 'khang@example.invalid', email: 'khang@example.invalid' }), 'bạn');
   assert.equal(userDisplayName({ email: 'khang@example.invalid' }), 'bạn');
 });
+
+
+test('batch pantry sends one items request with canonical units and normalized dates', async () => {
+  const calls = [];
+  const { pantryApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return JSON.parse(args[1].body).items; } } })('@/api/pantry');
+  const first = { ingredientId: 'a', quantity: 200, unit: 'g', expiredAt: '2027-01-05', storageLocation: 'fridge', note: '' };
+  const second = { ...first, ingredientId: 'b', quantity: 300, unit: 'ml', expiredAt: null };
+  const saved = await pantryApi.saveItems([first, second]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], '/api/me/pantry/items/batch');
+  assert.equal(calls[0][1].auth, true);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { items: [{ ...first, expiredAt: '2027-01-05T00:00:00.000Z' }, second] });
+  assert.equal(saved.length, 2);
+  for (const invalid of [[], [first, first], [{ ...first, unit: '' }], [{ ...first, quantity: 0 }]]) {
+    await assert.rejects(pantryApi.saveItems(invalid));
+  }
+  assert.equal(calls.length, 1);
+});

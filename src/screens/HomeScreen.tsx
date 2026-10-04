@@ -155,7 +155,7 @@ export default function HomeScreen() {
           {showAddMethods ? <View style={{ gap: 8 }}>
             <PrimaryButton title="Chọn ảnh / quét thực phẩm" icon="camera-outline" onPress={() => navigation.navigate('PantryImport', { method: 'FOOD_IMAGE' })} />
             <PrimaryButton title="Nhập tay nguyên liệu" variant="soft" onPress={() => navigation.navigate('QuickAdd')} />
-            <PrimaryButton title="Thêm một nguyên liệu" variant="outline" onPress={() => navigation.navigate('AddIngredient')} />
+            <PrimaryButton title="Chọn nguyên liệu thủ công" variant="outline" onPress={() => navigation.navigate('AddIngredient')} />
           </View> : null}
         </View>
         <View style={{ position: 'relative', marginTop: 2 }}>

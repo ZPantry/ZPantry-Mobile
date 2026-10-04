@@ -41,6 +41,7 @@ export const endpoints = {
   pantry: {
     list: "/api/me/pantry",
     create: "/api/me/pantry/items",
+    batch: "/api/me/pantry/items/batch",
     item: (id: string) => item("/api/me/pantry/items", id)
   },
   recommendations: {

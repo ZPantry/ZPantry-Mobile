@@ -1,0 +1,67 @@
+
+> z-pantry-ai-meal-planner@1.0.0 test:api
+> node --test tests/api-contract.test.cjs
+
+✔ password recovery sends the deployed schema and rejects invalid reset before writing (13.1385ms)
+✔ reset OTP verification never uses registration verification and propagates rejection (15.4836ms)
+✔ role assignment respects the backend hierarchy and uses PATCH (10.0889ms)
+✔ ingredient aliases encode paths and reject empty or overlong names (13.3175ms)
+✔ unified image analysis adapts ingredients and refuses unknown images without pantry mutation (28.3208ms)
+✔ recipe pantry comparison scales portions, converts known units, excludes expired food and preserves shortages (5.1367ms)
+✔ menu detail scales recipe amounts to the saved serving size (10.9049ms)
+✔ recommendation metadata preserves only actual persisted IDs and validates feedback (22.1866ms)
+✔ text pantry parsing sends only JSON text and requires explicit confirmation (14.922ms)
+✔ menu pantry preview scales portions and merges ingredients without mixing units or guessing quantities (7.9891ms)
+✔ menu preview reads each recipe once and never writes pantry before confirmation (9.3777ms)
+✔ manual recommendations send Java candidate objects, keep text and selections, and unwrap AI results (18.0417ms)
+✔ manual recommendations reject failed or malformed nested AI responses instead of showing empty success (14.7543ms)
+✔ pagination loads beyond the first server page (1.3313ms)
+✔ role capabilities match Java admin and catalog roles (1.1132ms)
+✔ concurrent expired requests rotate refresh token once and retry with the new token (34.6295ms)
+✔ late refresh cannot resurrect a signed-out session; network failure preserves credentials (9.9973ms)
+✔ native secure storage persists remembered sessions and forgets non-remembered sessions (24.9334ms)
+✔ survey is reserved for verified new accounts and does not repeat after its first display (14.9218ms)
+✔ menu detail composes recipe and matching pantry, excluding unrelated ingredients (8.834ms)
+✔ pantry update sends explicit null expiry and rejects negative quantities before writing (7.5339ms)
+✔ HTTP 200 failure envelopes reject missing users and repeated deletes (0.2535ms)
+✔ nullable user fields are preserved (0.0701ms)
+✔ empty page has zero totalPages; out-of-range page preserves metadata (0.0792ms)
+✔ null-data command success keeps message, empty HTTP response remains null (0.043ms)
+✔ empty challenges and framework validation errors have usable messages (0.08ms)
+✔ Android localhost retains scheme and supports a normalized override (0.252ms)
+✔ owner UI guard does not grant an admin-other bypass (0.0599ms)
+✔ partial profile update omits untouched nullable fields and preserves exact strings (0.1159ms)
+✔ users keep UUID routes, PUT method and only the documented request fields (9.0316ms)
+✔ Auth routes retain casing and logout requires authentication (4.4923ms)
+✔ Google ID tokens are exchanged with Java, without treating provider credentials as app sessions (4.1348ms)
+✔ native Google flow requires configuration, distinguishes cancellation and rejects missing ID tokens (12.6097ms)
+✔ native Google SDK reports Android configuration and Play Services failures without exchanging a token (5.5127ms)
+✔ web Google flow accepts only successful ID-token responses and handles close/error without a token (10.1239ms)
+✔ V2 profile uses the self route and preserves birthday, multiple goals and server nutrition targets (4.6383ms)
+✔ birth dates reject calendar rollover/future dates and keep date-only values without UTC drift (0.7523ms)
+✔ personalized suggestions send documented profile-only filters and preserve empty results (21.6846ms)
+✔ image upload distinguishes unavailable services, oversized images and network errors (3.5942ms)
+✔ registration failures explain duplicate email and unavailable OTP delivery (0.1389ms)
+✔ ingredients client does not expose the unsupported Java GET detail route (6.9326ms)
+✔ admin multipart forms use the Java API camelCase field names (10.1387ms)
+✔ today-menu completion form uses Spring model attribute field names (0.3321ms)
+✔ frontend catalog includes the new profile route and never calls AI directly (1.4879ms)
+✔ transport handles empty 401/403 and HTTP 200 logical failures (8.8038ms)
+✔ health profile uses owner path, canonical enums and an explicit allergen array (4.3132ms)
+✔ V2 sends only topK, unwraps nested AI results, and does not invent persisted meals (12.3317ms)
+✔ image analysis sends multipart image to Java and never confirms automatically (11.7583ms)
+✔ import refuses unresolved, duplicate and invalid quantities before any pantry write (10.4944ms)
+✔ catalog JSON writes preserve and clear allergens; create matches the Java protein spelling (8.7577ms)
+✔ catalog image upload precedes one write and upload failure prevents catalog mutation (6.4644ms)
+✔ imported pantry items without expiry do not become expired today (7.0211ms)
+✔ expiry days cross months and leap years and reject invalid input (4.3522ms)
+✔ display name uses FullName and never email fallback (1.6367ms)
+✔ batch pantry sends one items request with canonical units and normalized dates (8.159ms)
+ℹ tests 55
+ℹ suites 0
+ℹ pass 55
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 751.5996

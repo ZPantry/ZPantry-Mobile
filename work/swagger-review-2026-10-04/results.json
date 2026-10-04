@@ -154,15 +154,51 @@
       }
     },
     {
-      "p": "/api/me/pantry/items",
+      "p": "/api/me/pantry/items/batch",
       "method": "POST",
       "body": {
-        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
-        "quantity": 250,
-        "unit": "g",
-        "expiredAt": "2026-10-11T00:00:00.000Z",
-        "storageLocation": "fridge",
-        "note": ""
+        "items": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "g",
+            "expiredAt": "2026-10-11T00:00:00.000Z",
+            "storageLocation": "fridge",
+            "note": ""
+          },
+          {
+            "ingredientId": "66f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "ml",
+            "expiredAt": null,
+            "storageLocation": "fridge",
+            "note": ""
+          }
+        ]
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/batch",
+      "method": "POST",
+      "body": {
+        "items": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "g",
+            "expiredAt": "2026-10-11T00:00:00.000Z",
+            "storageLocation": "fridge",
+            "note": ""
+          },
+          {
+            "ingredientId": "66f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "ml",
+            "expiredAt": null,
+            "storageLocation": "fridge",
+            "note": ""
+          }
+        ]
       }
     },
     {
