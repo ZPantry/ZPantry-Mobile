@@ -20,6 +20,7 @@ import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
 import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
+import RecommendationAnalysisSampleScreen from "@/screens/RecommendationAnalysisSampleScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
 import CreateRecipeScreen from "@/screens/CreateRecipeScreen";
@@ -166,6 +167,7 @@ export default function AppNavigator() {
           <Stack.Screen name="InteractiveGuide" component={InteractiveGuideScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
           <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />
+          <Stack.Screen name="RecommendationAnalysisSample" component={RecommendationAnalysisSampleScreen} options={{ title: "Phân tích món ăn" }} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
           <Stack.Screen name="TodayMenuItemDetail" component={TodayMenuItemDetailScreen} />
         </>

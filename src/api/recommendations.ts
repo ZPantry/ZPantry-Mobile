@@ -44,9 +44,12 @@ export type MealRecommendation = {
   score: number;
   rank?: number;
   reason?: string;
+  reasons?: string[];
+  cookTimeMinutes?: number | null;
   missingIngredientCount?: number;
   matchedIngredients: string[];
   missingIngredients: string[];
+  expiringSoonIngredients: string[];
 };
 
 export type MealRecommendationResponse = {
@@ -88,6 +91,9 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
   recipeName?: string;
   matchScore?: number;
   confidence?: number;
+  cookTimeMinutes?: number | null;
+  reasons?: string[];
+  expiringSoonIngredients?: RawIngredientName[];
   matchedIngredients?: RawIngredientName[];
   missingIngredients?: RawIngredientName[];
   matchingIngredientNames?: RawIngredientName[];
@@ -123,8 +129,9 @@ function normalizeIngredientNames(items: RawIngredientName[] | undefined) {
 function normalizeRecommendation(item: RawMealRecommendation, index: number): MealRecommendation {
   const mealId = item.mealId || item.recipeId || item.id || item.recipe?.id || `recommendation-${index}`;
   const recipeId = item.recipeId || item.recipe?.id || "";
-  const description = item.description || item.reason || item.recipe?.description || "Món phù hợp với nguyên liệu bạn đang có.";
-  const reason = item.note || item.reason || "";
+  const reasons = Array.isArray(item.reasons) ? item.reasons.filter((reason): reason is string => typeof reason === "string") : [];
+  const description = item.description || item.reason || reasons.join(" · ") || item.recipe?.description || "Món phù hợp với nguyên liệu bạn đang có.";
+  const reason = item.note || item.reason || reasons[0] || "";
 
   return {
     mealId,
@@ -137,9 +144,12 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
     score: normalizeScore(item.score ?? item.matchScore ?? item.confidence),
     rank: item.rank || index + 1,
     reason: translateRecommendationText(reason),
+    reasons: reasons.map(translateRecommendationText),
+    cookTimeMinutes: typeof item.cookTimeMinutes === "number" ? item.cookTimeMinutes : undefined,
     missingIngredientCount: Number(item.missingIngredientCount ?? item.missingIngredientNames?.length ?? item.missingIngredients?.length ?? 0),
     matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredientNames || item.matching),
-    missingIngredients: normalizeIngredientNames(item.missingIngredients || item.missingIngredientNames || item.missing)
+    missingIngredients: normalizeIngredientNames(item.missingIngredients || item.missingIngredientNames || item.missing),
+    expiringSoonIngredients: normalizeIngredientNames(item.expiringSoonIngredients)
   };
 }
 
