@@ -1,7 +1,9 @@
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { FlatList, Image, Pressable, RefreshControl, View } from "react-native";
+import { FlatList, Image, Pressable, View } from "react-native";
+import { useEffect, useState } from "react";
+import { recipesApi } from "@/api/recipes";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealRecommendation } from "@/api/recommendations";
 import AppBackButton from "@/components/AppBackButton";
@@ -17,7 +19,21 @@ function formatPercent(score: number) {
 }
 
 export default function MealRecommendationResultsScreen({ route, navigation }: Props) {
-  const recommendations = route.params.recommendations;
+  const [recommendations, setRecommendations] = useState(route.params.recommendations);
+  useEffect(() => {
+    let active = true;
+    setRecommendations(route.params.recommendations);
+    if (!route.params.recommendations.some(r => r.recipeId && (r.name === "Món được gợi ý" || !r.imageUrl))) return;
+    void recipesApi.all().then(catalog => {
+      if (!active) return;
+      const recipes = new Map(catalog.map(r => [r.id, r]));
+      setRecommendations(route.params.recommendations.map(r => {
+        const recipe = recipes.get(r.recipeId);
+        return recipe ? { ...r, name: r.name === "Món được gợi ý" ? recipe.name : r.name, imageUrl: r.imageUrl || recipe.imageUrl } : r;
+      }));
+    }).catch(() => { /* Keep the successful recommendation response available. */ });
+    return () => { active = false; };
+  }, [route.params.recommendations]);
   const pantryItems = route.params.pantryItems;
   const mode = route.params.mode;
   const description = mode === "PROFILE_BASED" ? "Dựa trên hồ sơ ăn uống và các bộ lọc đã chọn."
@@ -30,7 +46,6 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
       <FlatList
         data={recommendations}
         keyExtractor={(item) => item.mealId}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => navigation.goBack()} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: 20, paddingBottom: 42, gap: 14, maxWidth: 900, width: "100%", alignSelf: "center" }}
         ListHeaderComponent={
@@ -73,7 +88,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
             </Text>
           </View>
         }
-        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { mealId: item.persistedMeal === false ? undefined : item.mealId, recipeId: item.recipeId })} />}
+        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { mealId: item.persistedMeal ? item.mealId : undefined, recipeId: item.recipeId, recommendationId: item.recommendationId })} />}
       />
     </SafeAreaView>
   );
@@ -103,6 +118,9 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Xem ${recommendation.name}`}
+      disabled={!recommendation.recipeId}
       onPress={onPress}
       style={({ pressed }) => ({
         backgroundColor: colors.white,
@@ -142,7 +160,7 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>
-          Kiểm tra nguyên liệu thiếu
+          {recommendation.recipeId ? "Xem công thức và nguyên liệu thiếu" : "Chưa có công thức liên kết"}
         </Text>
         <Ionicons name="arrow-forward-circle" size={25} color={colors.primary} />
       </View>

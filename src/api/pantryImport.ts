@@ -3,13 +3,15 @@ import { endpoints } from "@/api/endpoints";
 import { recipesApi, type Recipe, type UploadFile } from "@/api/recipes";
 import type { TodayMenuItem } from "@/api/todayMenu";
 
-export type ImportSource = "RECEIPT" | "FOOD_IMAGE";
+export type ImportSource = "RECEIPT" | "FOOD_IMAGE" | "AUTO";
 export type ImportMethod = ImportSource | "TEXT" | "MENU";
 export type ImportPreviewItem = {
   rawName: string; normalizedName: string; ingredientId: string | null;
   canonicalIngredientName: string | null; quantity: number | null; unit: string | null;
   price: number | null; confidence: number | null;
   resolverStatus: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED";
+  reviewRequired?: boolean;
+  sourceUnit?: string | null;
 };
 export type ImportPreview = { sourceType: ImportMethod; items: ImportPreviewItem[]; warnings: string[] };
 export type ImportItem = { ingredientId: string; quantity: number; unit: string };
@@ -69,12 +71,17 @@ export const pantryImportApi = {
     const recipes = new Map(await Promise.all([...new Set(meals.map(meal => meal.recipeId!))].map(async id => [id, await recipesApi.get(id)] as const)));
     return buildMenuPreview(meals.map(meal => ({ recipe: recipes.get(meal.recipeId!)!, servingSize: meal.servingSize })));
   },
-  analyze(source: ImportSource, file: UploadFile) {
+  async analyze(source: ImportSource, file: UploadFile): Promise<ImportPreview> {
     const body = new FormData();
     body.append("image", file as Blob);
-    return apiRequest<ImportPreview>(source === "RECEIPT" ? endpoints.pantryImport.receipt : endpoints.pantryImport.food, {
+    const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(source === "AUTO" ? endpoints.pantryImport.autoImage : source === "RECEIPT" ? endpoints.pantryImport.receipt : endpoints.pantryImport.food, {
       method: "POST", auth: true, body, timeoutMs: 90000
     });
+    const items = source === "AUTO" ? result.ingredients : result.items;
+    if (!Array.isArray(items)) throw new ApiError("Kết quả phân tích ảnh không hợp lệ. Vui lòng thử lại.", 502);
+    if (source === "AUTO" && result.imageType === "UNKNOWN")
+      return { sourceType: "AUTO", items: [], warnings: [...(result.warnings || []), "Chưa xác định được loại ảnh. Hãy chọn ảnh thực phẩm hoặc hóa đơn rõ hơn."] };
+    return { sourceType: source === "AUTO" ? (result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE") : source, items, warnings: result.warnings || [] };
   },
   confirm(items: ImportItem[]) {
     validateImportItems(items);

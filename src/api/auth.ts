@@ -18,6 +18,7 @@ export type LoginPayload = {
 };
 
 export type AuthMessageResponse = ApiMessageResponse;
+export type ResetPasswordPayload = { email: string; otpCode: string; newPassword: string; confirmPassword: string };
 
 export type LoginResponse = {
   accessToken: string;
@@ -31,7 +32,29 @@ export type LoginResponse = {
 
 export type RefreshTokenResponse = Pick<LoginResponse, "accessToken" | "expiresAt" | "refreshToken">;
 
+// A reset-specific verification endpoint must preserve the OTP for reset-password.
+// Registration verify-otp confirms email and must not be used for this flow.
+const resetOtpVerifyPath = process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH?.trim();
 export const authApi = {
+  canVerifyPasswordResetOtp: Boolean(resetOtpVerifyPath),
+  async verifyPasswordResetOtp(payload: VerifyOtpPayload) {
+    if (!/^\d{6}$/.test(payload.otpCode)) throw new Error("Mã OTP phải gồm 6 chữ số.");
+    if (!resetOtpVerifyPath) return false;
+    await apiRequest<AuthMessageResponse>(resetOtpVerifyPath, { method: "POST", body: JSON.stringify(payload) });
+    return true;
+  },
+  forgotPassword(email: string) {
+    return apiRequest<AuthMessageResponse>(endpoints.auth.forgotPassword, {
+      method: "POST", body: JSON.stringify({ email: email.trim() })
+    });
+  },
+  resetPassword(payload: ResetPasswordPayload) {
+    if (!/^\d{6}$/.test(payload.otpCode) || payload.newPassword.length < 8 || payload.newPassword.length > 200 || payload.newPassword !== payload.confirmPassword)
+      throw new Error("Kiểm tra mã OTP và mật khẩu mới (8–200 ký tự), xác nhận phải trùng khớp.");
+    return apiRequest<AuthMessageResponse>(endpoints.auth.resetPassword, {
+      method: "POST", body: JSON.stringify(payload)
+    });
+  },
   register(payload: RegisterPayload) {
     return apiRequest<AuthMessageResponse>(endpoints.auth.register, {
       method: "POST",

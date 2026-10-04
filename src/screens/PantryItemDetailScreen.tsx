@@ -1,3 +1,4 @@
+import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -78,7 +79,7 @@ export default function PantryItemDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(String(initialItem?.quantity ?? 1));
   const [unit, setUnit] = useState(initialItem?.unit ?? ingredient?.unit ?? "phần");
-  const [expiredAt, setExpiredAt] = useState(toInputDate(initialItem?.expiredAt ?? new Date().toISOString()));
+  const [expiredAt, setExpiredAt] = useState(toInputDate(initialItem?.expiredAt ?? ""));
   const [storageLocation, setStorageLocation] = useState(displayStorageLocation(initialItem?.storageLocation ?? "Ngan mat"));
   const [note, setNote] = useState(initialItem?.note ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -100,7 +101,7 @@ export default function PantryItemDetailScreen() {
     if (!item?.id || !item.ingredientId) return "Không tìm thấy nguyên liệu cần cập nhật.";
     if (!Number.isFinite(amount) || amount <= 0) return "Số lượng phải lớn hơn 0.";
     if (!unit.trim()) return "Đơn vị không được để trống.";
-    if (expiredAt && Number.isNaN(new Date(expiredAt).getTime())) return "Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.";
+    if (expiredAt && (!/^\d{4}-\d{2}-\d{2}$/.test(expiredAt) || Number.isNaN(new Date(expiredAt).getTime()))) return "Vui lòng chọn đủ ngày, tháng và năm cho hạn dùng.";
     return "";
   };
 
@@ -272,7 +273,7 @@ export default function PantryItemDetailScreen() {
                 <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="quả" />
               </View>
             </View>
-            <FormInput label="Hạn dùng" value={expiredAt} onChangeText={setExpiredAt} placeholder="2026-07-05" />
+            <DateField label="Hạn dùng" value={expiredAt} onChange={setExpiredAt} optional disabled={isSaving} />
             <View style={{ gap: 8 }}>
               <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
                 Nơi cất

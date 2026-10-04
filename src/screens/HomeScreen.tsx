@@ -1,3 +1,4 @@
+import AiChefChat from "@/components/AiChefChat";
 import FigmaAsset from '@/components/FigmaAsset';
 import { homeAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -159,7 +160,7 @@ export default function HomeScreen() {
         </View>
         <View style={{ position: 'relative', marginTop: 2 }}>
           <ActionRow asset={assets.imgContainer1} icon="silverware-fork-knife" title="Hôm nay nấu gì?" subtitle={isLoading ? 'Đang kiểm tra tủ của bạn…' : pantryItems.length + ' nguyên liệu trong tủ · khám phá món phù hợp'} onPress={() => navigation.navigate('MealSuggestion')} />
-          <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: -42 }}><FigmaAsset asset={assets.imgProperty1Default} /></View>
+          <AiChefChat style={{ position: 'absolute', left: 0, top: -42, zIndex: 2 }} />
         </View>
         <View style={{ gap: 12 }}>
           <SectionHeading title="Món ngon tuần này 🔥" action="Khám phá" onPress={() => navigation.navigate("MealSuggestion")} />

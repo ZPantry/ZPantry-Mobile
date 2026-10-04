@@ -10,6 +10,7 @@ import { ingredientsApi } from "@/api/ingredients";
 import type { UploadFile } from "@/api/recipes";
 import SelectField from "@/components/SelectField";
 import AllergenChoices from "@/components/AllergenChoices";
+import IngredientAliases from "@/components/IngredientAliases";
 import type { FoodAllergen } from "@/api/profile";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
@@ -113,6 +114,7 @@ export default function AdminIngredientFormScreen() {
   };
 
   const saveIngredient = async () => {
+    if (isSaving) return;
     const cleanName = form.name.trim();
     const cleanUnit = form.unit.trim();
     if (!cleanName) {
@@ -214,6 +216,7 @@ export default function AdminIngredientFormScreen() {
           <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
         </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
+        {form.id ? <IngredientAliases ingredientId={form.id} disabled={isSaving} /> : <Text style={{ color: colors.muted, lineHeight: 21 }}>Sau khi tạo nguyên liệu, mở lại để thêm các tên gọi khác.</Text>}
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,3 +1,4 @@
+import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -123,6 +124,7 @@ export default function PlanScreen() {
         </View>
 
         <View style={{flexDirection:"row",gap:8}}><PrimaryButton title="Ngày trước" variant="outline" onPress={()=>changeDay(-1)} style={{flex:1}}/><PrimaryButton title="Ngày sau" variant="outline" onPress={()=>changeDay(1)} style={{flex:1}}/></View>
+        <DateField label="Ngày xem thực đơn" value={todayKey} onChange={v => { if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { const [y, m, d] = v.split('-').map(Number); requestId.current++; setItems([]); setLoaded(false); setToday(new Date(y, m - 1, d)); } }} />
         <PrimaryButton title="Lịch sử nấu ăn" variant="soft" onPress={()=>navigation.navigate("CookingHistory")}/>
         <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
           <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700" }} selectable>

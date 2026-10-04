@@ -22,15 +22,15 @@ export default function CategoryChip({ label, active = false, icon, onPress }: P
         flexDirection: "row",
         alignItems: "center",
         gap: 7,
-        backgroundColor: active ? colors.dark : colors.card,
+        backgroundColor: active ? colors.secondary : colors.card,
         borderWidth: 1,
-        borderColor: active ? colors.dark : colors.line,
+        borderColor: active ? colors.primary : colors.line,
         opacity: pressed ? 0.82 : 1,
         boxShadow: "0 2px 6px rgba(0,48,20,0.04)"
       })}
     >
-      {icon ? <MaterialCommunityIcons name={icon} size={17} color={active ? colors.white : colors.primary} /> : null}
-      <Text style={{ color: active ? colors.white : colors.text, fontWeight: "600", fontSize: 13 }} selectable>
+      {icon ? <MaterialCommunityIcons name={icon} size={17} color={active ? colors.primaryDark : colors.primary} /> : null}
+      <Text style={{ color: active ? colors.primaryDark : colors.text, fontWeight: "600", fontSize: 13 }} selectable>
         {label}
       </Text>
     </Pressable>

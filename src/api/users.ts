@@ -21,6 +21,10 @@ export type UpdateUserPayload = {
 };
 
 export const usersApi = {
+  changeRole(id: string, role: string) {
+    if (!["USER", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role)) throw new Error("Vai trò không hợp lệ.");
+    return apiRequest<ApiMessageResponse>(endpoints.users.role(id), { method: "PATCH", auth: true, body: JSON.stringify({ role }) });
+  },
   all() { return collectPages(page => usersApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 10) {
     return apiRequest<PaginatedResponse<AdminUser>>(`${endpoints.users.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });

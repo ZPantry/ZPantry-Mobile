@@ -10,6 +10,14 @@ export default function WebFormStyles() {
     const style = document.createElement("style");
     style.id = "zpantry-form-styles";
     style.textContent = `
+      select { color-scheme: light; background-color: ${colors.secondary} !important; color: ${colors.text} !important; border-color: ${colors.line} !important; height: 46px !important; width: 100%; box-shadow: none !important; font-family: 'BeVietnamPro_400Regular', sans-serif !important; }
+      select:has(option:checked[value=""]) { background-color: ${colors.input} !important; }
+      [data-expo-ui-slider] { --_track-fill: ${colors.primary} !important; --_track-bg: ${colors.line} !important; min-height: 44px; touch-action: pan-y; }
+      select:focus-visible { outline: 2px solid ${colors.primary} !important; outline-offset: -2px; }
+      select option { background: ${colors.surface}; color: ${colors.text}; }
+      select option:checked { background: ${colors.secondary}; }
+      [data-expo-ui-slider]::-webkit-slider-thumb { border-color: ${colors.primary} !important; background: ${colors.primary} !important; }
+      [data-expo-ui-slider]::-moz-range-thumb { border-color: ${colors.primary} !important; background: ${colors.primary} !important; }
       input, textarea { background-color: transparent !important; outline: none; }
       input:focus-visible, textarea:focus-visible { outline: 1px solid ${colors.primary}; outline-offset: 3px; }
       input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus,

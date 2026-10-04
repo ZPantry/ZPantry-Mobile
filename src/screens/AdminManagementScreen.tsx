@@ -1,5 +1,5 @@
 import Text from "@/components/AppText";
-import { canManageUsers } from "@/utils/roles";
+import { canManageUsers, assignableRoles } from "@/utils/roles";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -182,7 +182,7 @@ export default function AdminManagementScreen() {
                 ) : displayedUsers.length === 0 ? (
                   <EmptyState message="Không tìm thấy user phù hợp." />
                 ) : (
-                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={canUpdateUser(currentUser?.userId, user.id) ? () => navigation.navigate("AdminUserForm", { user }) : undefined} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
+                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={canUpdateUser(currentUser?.userId, user.id) || assignableRoles(currentUser?.role, user.role).length ? () => navigation.navigate("AdminUserForm", { user }) : undefined} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
                 )}
               </View>
             </>
@@ -511,7 +511,7 @@ function ActionRow({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
 function IconButton({ icon, tone, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: "edit" | "delete"; onPress: () => void }) {
   const color = tone === "delete" ? colors.danger : colors.primaryDark;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 12, backgroundColor: tone === "delete" ? "rgba(255,77,79,0.12)" : colors.secondary, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={tone === "delete" ? "Xóa" : "Chỉnh sửa"} onPress={onPress} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: tone === "delete" ? "rgba(255,77,79,0.12)" : colors.secondary, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
       <MaterialCommunityIcons name={icon} size={20} color={color} />
     </Pressable>
   );

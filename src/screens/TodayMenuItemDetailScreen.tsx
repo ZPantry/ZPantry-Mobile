@@ -2,7 +2,7 @@ import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, Pressable, RefreshControl, TextInput, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,6 +39,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const completionLock = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadDetail = useCallback(async () => {
@@ -76,13 +77,14 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [toast]);
 
   const completeMeal = useCallback(async () => {
-    if (!item || isCooked) return;
+    if (!item || isCooked || completionLock.current) return;
 
     if (!pickedImage) {
       toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
       return;
     }
 
+    completionLock.current = true;
     setIsCompleting(true);
     try {
       const result = await todayMenuApi.complete(item.id, {
@@ -97,6 +99,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     } catch (error) {
       toast.show(getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default"), "danger");
     } finally {
+      completionLock.current = false;
       setIsCompleting(false);
     }
   }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
@@ -181,7 +184,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : null}
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
-                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" onPress={chooseImage} />
+                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
                 {pickedImage ? <Image source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
                 <View style={{ gap: 10 }}>
@@ -192,6 +195,9 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                     {[1, 2, 3, 4, 5].map((value) => (
                       <Pressable
                         key={value}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Đánh giá món ${value} sao`}
+                        disabled={isCompleting || isCooked}
                         onPress={() => setRating(value)}
                         style={{
                           width: 42,
@@ -212,6 +218,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
                 <TextInput
                   value={note}
+                  accessibilityLabel="Ghi chú sau khi nấu"
+                  editable={!isCompleting && !isCooked}
                   onChangeText={setNote}
                   placeholder="Ghi chú sau khi nấu"
                   placeholderTextColor={colors.muted}
@@ -232,7 +240,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 {isCooked ? (
                   <InfoRow icon="checkmark-circle" color={colors.success} text="Món này đã hoàn thành. Pantry đã được xử lý ở lần xác nhận hoàn thành." />
                 ) : (
-                  <PrimaryButton title={isCompleting ? "Đang lưu..." : "Hoàn thành và ghi log"} icon="check-circle" onPress={completeMeal} />
+                  <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting} onPress={completeMeal} />
                 )}
               </Section>
 

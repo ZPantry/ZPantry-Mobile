@@ -58,6 +58,7 @@ export type UserProfile = {
 export type RootStackParamList = {
   Plan: undefined;
   Login: undefined;
+  ForgotPassword: undefined;
   Onboarding: undefined;
   ProfileSetup: { editing?: boolean } | undefined;
   PantryImport: { method?: "TEXT" | "MENU" | "FOOD_IMAGE" | "RECEIPT" } | undefined;
@@ -87,7 +88,7 @@ export type RootStackParamList = {
       source?: "pantry" | "extra";
     }>;
   };
-  RecipeDetail: { mealId?: string; recipeId: string };
+  RecipeDetail: { mealId?: string; recipeId: string; recommendationId?: string };
   TodayMenuItemDetail: { itemId: string };
 };
 

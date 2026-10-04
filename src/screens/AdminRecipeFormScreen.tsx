@@ -291,13 +291,13 @@ export default function AdminRecipeFormScreen() {
               {filteredIngredients.map((ingredient) => {
                 const selected = form.ingredients.some((item) => item.ingredientId === ingredient.id);
                 return (
-                  <Pressable key={ingredient.id} onPress={() => addRecipeIngredient(ingredient)} style={({ pressed }) => ({ width: "47.5%", minWidth: 142, flexGrow: 1, borderRadius: 14, backgroundColor: selected ? "rgba(57,217,138,0.20)" : colors.white, borderWidth: 2, borderColor: selected ? colors.success : "transparent", overflow: "hidden", opacity: pressed ? 0.82 : 1 })}>
+                  <Pressable key={ingredient.id} onPress={() => addRecipeIngredient(ingredient)} style={({ pressed }) => ({ width: "47.5%", minWidth: 142, flexGrow: 1, borderRadius: 14, backgroundColor: selected ? colors.secondary : colors.white, borderWidth: 2, borderColor: selected ? colors.primary : "transparent", overflow: "hidden", opacity: pressed ? 0.82 : 1 })}>
                     <RemoteImage uri={ingredient.imageUrl} style={{ width: "100%", height: 76, backgroundColor: colors.secondary }} />
                     <View style={{ padding: 9, gap: 4 }}>
                       <Text numberOfLines={2} style={{ color: colors.textDark, fontSize: 13, fontWeight: "700", lineHeight: 17 }}>
                         {ingredient.name}
                       </Text>
-                      <Text style={{ color: selected ? colors.success : colors.primaryDark, fontSize: 10, fontWeight: "700" }} selectable>
+                      <Text style={{ color: selected ? colors.primary : colors.primaryDark, fontSize: 10, fontWeight: "700" }} selectable>
                         {selected ? "Đã thêm" : ingredient.unit}
                       </Text>
                     </View>

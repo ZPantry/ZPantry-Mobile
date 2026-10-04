@@ -1,3 +1,4 @@
+import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
@@ -20,7 +21,7 @@ export default function PantryImportScreen() {
   const method: ImportMethod = route.params?.method || "FOOD_IMAGE";
   const imageMethod = method === "FOOD_IMAGE" || method === "RECEIPT";
   const toast = useToast();
-  const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE");
+  const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "AUTO");
   const [text, setText] = useState("");
   const [menuDate, setMenuDate] = useState(() => {
     const now = new Date();
@@ -48,7 +49,7 @@ export default function PantryImportScreen() {
     let active = true;
     setMeals([]); setSelectedMeals([]); setMenuError("");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(menuDate) || Number.isNaN(Date.parse(menuDate)) || new Date(menuDate).toISOString().slice(0, 10) !== menuDate) {
-      setMenuLoading(false); setMenuError("Nhập ngày hợp lệ theo dạng YYYY-MM-DD."); return;
+      setMenuLoading(false); setMenuError("Vui lòng chọn đủ ngày, tháng và năm hợp lệ."); return;
     }
     setMenuLoading(true);
     void todayMenuApi.all(menuDate).then(items => {
@@ -132,11 +133,11 @@ export default function PantryImportScreen() {
       </> : null}
       {method === "MENU" ? <>
         <Text style={{ color: colors.text }}>Ngày thực đơn</Text>
-        <TextInput accessibilityLabel="Ngày thực đơn" value={menuDate} onChangeText={setMenuDate} editable={!busy && rows === null} placeholder="YYYY-MM-DD" placeholderTextColor={colors.muted} style={inputStyle} />
+        <DateField label="Ngày thực đơn" value={menuDate} onChange={setMenuDate} disabled={busy || rows !== null} />
         {menuLoading ? <ActivityIndicator color={colors.primary} /> : null}
         {menuError ? <><Text accessibilityRole="alert" style={{ color: colors.danger }}>{menuError}</Text><Action label="Tải lại thực đơn" disabled={menuLoading || busy} soft onPress={() => setMenuRetry(v => v + 1)} /></> : null}
         {!menuLoading && !menuError && !meals.length ? <><Text style={{ color: colors.muted }}>Ngày này chưa có món. Thêm món vào thực đơn rồi quay lại đây.</Text><Action label="Mở thực đơn" soft onPress={() => navigation.popTo("Tabs", { screen: "Plan" })} /></> : null}
-        {meals.map(meal => <Pressable key={meal.id} accessibilityRole="checkbox" accessibilityLabel={meal.mealName} accessibilityState={{ checked: selectedMeals.includes(meal.id) }} aria-checked={selectedMeals.includes(meal.id)} disabled={busy || rows !== null || !meal.recipeId} onPress={() => setSelectedMeals(current => current.includes(meal.id) ? current.filter(id => id !== meal.id) : [...current, meal.id])} style={{ padding: 12, minHeight: 48, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: selectedMeals.includes(meal.id) ? colors.primary : colors.line }}>
+        {meals.map(meal => <Pressable key={meal.id} accessibilityRole="checkbox" accessibilityLabel={meal.mealName} accessibilityState={{ checked: selectedMeals.includes(meal.id) }} aria-checked={selectedMeals.includes(meal.id)} disabled={busy || rows !== null || !meal.recipeId} onPress={() => setSelectedMeals(current => current.includes(meal.id) ? current.filter(id => id !== meal.id) : [...current, meal.id])} style={{ padding: 12, minHeight: 48, borderRadius: 10, backgroundColor: selectedMeals.includes(meal.id) ? colors.secondary : colors.surface, borderWidth: 1, borderColor: selectedMeals.includes(meal.id) ? colors.primary : colors.line }}>
           <Text style={{ color: colors.text, fontWeight: "600" }}>{selectedMeals.includes(meal.id) ? "✓ " : ""}{meal.mealName}</Text><Text style={{ color: colors.muted }}>{meal.servingSize} khẩu phần{meal.recipeId ? "" : " · Chưa có công thức"}</Text>
         </Pressable>)}
         {rows === null ? <Action label="Xem nguyên liệu cần thêm" onPress={prepare} disabled={busy || menuLoading || !selectedMeals.length} /> : null}
@@ -144,7 +145,7 @@ export default function PantryImportScreen() {
       {imageMethod ? <>
       <View pointerEvents={busy || rows !== null ? "none" : "auto"}>
         <SelectField label="Bạn muốn nhận diện gì?" value={source} onValueChange={(v) => setSource(v as ImportSource)} options={[
-          { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
+          { value: "AUTO", label: "Tự nhận diện loại ảnh" }, { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
         ]} />
       </View>
       {image ? <Image source={{ uri: image.uri }} resizeMode="contain" style={{ height: 210, borderRadius: 18, backgroundColor: colors.card }} /> :
@@ -164,7 +165,9 @@ export default function PantryImportScreen() {
         {rows.map((r) => <View key={r.key} style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: r.ingredientId ? colors.line : colors.primary, padding: 16, gap: 12 }}>
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
             <View style={{ flex: 1, gap: 4 }}><Text style={{ color: colors.text, fontSize: 17, fontWeight: "600" }}>{r.rawName}</Text>
-              <Text style={{ color: r.ingredientId ? colors.muted : colors.primary }}>{r.ingredientId ? r.canonicalIngredientName : "Cần chọn nguyên liệu tương ứng"}</Text></View>
+              <Text style={{ color: r.ingredientId ? colors.muted : colors.primaryDark }}>{r.ingredientId ? r.canonicalIngredientName : "Cần chọn nguyên liệu tương ứng"}</Text>
+              {r.reviewRequired || r.resolverStatus === "AMBIGUOUS" ? <Text style={{ color: colors.warning, fontSize: 12 }}>Cần kiểm tra lại kết quả nhận diện</Text> : null}
+              {r.sourceUnit && r.sourceUnit !== r.unit ? <Text style={{ color: colors.muted, fontSize: 12 }}>Đơn vị trên ảnh: {r.sourceUnit}</Text> : null}</View>
             <Pressable disabled={busy} accessibilityLabel={`Bỏ ${r.rawName}`} onPress={() => { setRows((current) => current?.filter((x) => x.key !== r.key) ?? null); if (editing === r.key) setEditing(null); }} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={{ color: colors.danger }}>Bỏ</Text></Pressable>
           </View>
           <Action soft label={editing === r.key ? "Đóng tìm kiếm" : r.ingredientId ? "Đổi nguyên liệu" : "Chọn nguyên liệu"} disabled={busy}

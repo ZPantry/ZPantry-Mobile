@@ -296,9 +296,9 @@ export default function ManualMealSuggestionScreen() {
                           style={({ pressed }) => ({
                             minHeight: 48,
                             borderRadius: 14,
-                            backgroundColor: isSelected ? "rgba(57,217,138,0.16)" : colors.white,
+                            backgroundColor: isSelected ? colors.secondary : colors.white,
                             borderWidth: 1,
-                            borderColor: isSelected ? "rgba(57,217,138,0.42)" : colors.line,
+                            borderColor: isSelected ? colors.primary : colors.line,
                             paddingHorizontal: 12,
                             paddingVertical: 10,
                             flexDirection: "row",
@@ -315,7 +315,7 @@ export default function ManualMealSuggestionScreen() {
                               {ingredient.category || "Ingredient"} · {getIngredientUnit(ingredient)}
                             </Text>
                           </View>
-                          <Ionicons name={isSelected ? "checkmark-circle" : "add-circle"} size={24} color={isSelected ? colors.success : colors.primary} />
+                          <Ionicons name={isSelected ? "checkmark-circle" : "add-circle"} size={24} color={isSelected ? colors.primaryDark : colors.primary} />
                         </Pressable>
                       );
                     })
@@ -433,7 +433,7 @@ export default function ManualMealSuggestionScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { recipeId: item.recipeId })} />}
+        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { recipeId: item.recipeId, recommendationId: item.recommendationId, mealId: item.persistedMeal ? item.mealId : undefined })} />}
       />
     </SafeAreaView>
   );
@@ -448,6 +448,7 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Xem ${recommendation.name}`}
+      disabled={!recommendation.recipeId}
       style={({ pressed }) => ({
         borderRadius: 20,
         overflow: "hidden",

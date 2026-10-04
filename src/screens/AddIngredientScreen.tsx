@@ -1,3 +1,4 @@
+import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -73,7 +74,7 @@ export default function AddIngredientScreen() {
     if (!unit.trim()) return setError("Vui lòng nhập đơn vị.");
     const date = expiredAt.trim();
     if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date))
-      return setError("Hạn dùng cần là ngày hợp lệ theo dạng YYYY-MM-DD.");
+      return setError("Vui lòng chọn đủ ngày, tháng và năm cho hạn dùng.");
     lock.current = true; setSaving(true); setError("");
     try {
       await pantryApi.saveItem({ ingredientId: selected.id, quantity: amount, unit: unit.trim(), expiredAt: date || null, storageLocation, note: note.trim() });
@@ -100,7 +101,7 @@ export default function AddIngredientScreen() {
       {loading && !loaded ? <ActivityIndicator color={colors.primary} /> : null}
       {loaded && !filtered.length ? <Text style={{ color: colors.muted }}>Không tìm thấy nguyên liệu. Hãy thử từ khóa khác.</Text> : null}
       <View style={{ gap: 8 }}>
-        {filtered.slice(0, 30).map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={"Chọn " + item.name} accessibilityState={{ selected: selectedId === item.id }} disabled={saving} onPress={() => { setSelectedId(item.id); setUnit(item.defaultUnit || item.unit || "g"); setError(""); }} style={{ minHeight: 48, padding: 12, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: selectedId === item.id ? colors.primary : colors.line, flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {filtered.slice(0, 30).map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={"Chọn " + item.name} accessibilityState={{ selected: selectedId === item.id }} disabled={saving} onPress={() => { setSelectedId(item.id); setUnit(item.defaultUnit || item.unit || "g"); setError(""); }} style={{ minHeight: 48, padding: 12, borderRadius: 10, backgroundColor: selectedId === item.id ? colors.secondary : colors.surface, borderWidth: 1, borderColor: selectedId === item.id ? colors.primary : colors.line, flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Text style={{ flex: 1, color: colors.text, fontWeight: "600" }}>{item.name}</Text><Text style={{ color: colors.primary }}>{selectedId === item.id ? "Đã chọn" : item.unit}</Text>
         </Pressable>)}
         {filtered.length > 30 ? <Text style={{ color: colors.muted }}>Đang hiện 30/{filtered.length} nguyên liệu. Nhập tên để tìm chính xác hơn.</Text> : null}
@@ -110,7 +111,7 @@ export default function AddIngredientScreen() {
         <View style={{ flex: 1 }}><Field label="Số lượng" value={quantity} onChangeText={setQuantity} numeric disabled={saving} /></View>
         <View style={{ flex: 1 }}><Field label="Đơn vị" value={unit} onChangeText={setUnit} disabled={saving} /></View>
       </View>
-      <Field label="Hạn dùng (không bắt buộc)" value={expiredAt} onChangeText={setExpiredAt} placeholder="YYYY-MM-DD" disabled={saving} />
+      <DateField label="Hạn dùng" value={expiredAt} onChange={setExpiredAt} optional disabled={saving} />
       <Text style={{ color: colors.text, fontWeight: "600" }}>Nơi cất</Text>
       <View pointerEvents={saving ? "none" : "auto"} style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         {storageOptions.map(item => <CategoryChip key={item.value} label={item.label} active={storageLocation === item.value} onPress={() => setStorageLocation(item.value)} />)}

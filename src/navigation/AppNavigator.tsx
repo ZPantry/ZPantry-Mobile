@@ -16,6 +16,7 @@ import AdminUserFormScreen from "@/screens/AdminUserFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
@@ -166,7 +167,10 @@ export default function AppNavigator() {
           <Stack.Screen name="TodayMenuItemDetail" component={TodayMenuItemDetailScreen} />
         </>
       ) : (
+        <>
         <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        </>
       )}
     </Stack.Navigator>
   );

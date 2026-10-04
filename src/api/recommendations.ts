@@ -34,6 +34,7 @@ export type PersonalizedRecommendationOptions = {
 };
 
 export type MealRecommendation = {
+  recommendationId?: string;
   mealId: string;
   persistedMeal?: boolean;
   recipeId: string;
@@ -96,6 +97,8 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
 };
 
 type RawMealRecommendationResponse = Partial<MealRecommendationResponse> & {
+  recommendationId?: string;
+  mealRecommendationId?: string;
   items?: RawMealRecommendation[];
   meals?: RawMealRecommendation[];
 };
@@ -119,12 +122,14 @@ function normalizeIngredientNames(items: RawIngredientName[] | undefined) {
 
 function normalizeRecommendation(item: RawMealRecommendation, index: number): MealRecommendation {
   const mealId = item.mealId || item.recipeId || item.id || item.recipe?.id || `recommendation-${index}`;
-  const recipeId = item.recipeId || item.recipe?.id || mealId;
+  const recipeId = item.recipeId || item.recipe?.id || "";
   const description = item.description || item.reason || item.recipe?.description || "Món phù hợp với nguyên liệu bạn đang có.";
   const reason = item.note || item.reason || "";
 
   return {
     mealId,
+    persistedMeal: Boolean(item.mealId),
+    ...(item.recommendationId ? { recommendationId: item.recommendationId } : {}),
     recipeId,
     name: item.name || item.mealName || item.recipeName || item.recipe?.name || "Món được gợi ý",
     description: translateRecommendationText(description),
@@ -141,7 +146,11 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
 function normalizeRecommendationResponse(body: RawMealRecommendationResponse): MealRecommendationResponse {
   const items = Array.isArray(body.recommendations) ? body.recommendations : Array.isArray(body.items) ? body.items : Array.isArray(body.meals) ? body.meals : [];
   return {
-    recommendations: items.map(normalizeRecommendation)
+    recommendations: items.map((item, index) => {
+      const normalized = normalizeRecommendation(item, index);
+      const recommendationId = normalized.recommendationId || body.recommendationId || body.mealRecommendationId;
+      return recommendationId ? { ...normalized, recommendationId } : normalized;
+    })
   };
 }
 
@@ -176,6 +185,18 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
+  get(id: string) { return apiRequest<RecommendationRecord>(endpoints.recommendations.item(id), { auth: true }); },
+  feedback(id: string, payload: RecommendationFeedback) {
+    if (!id || payload.mealRecommendationId !== id || !Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 5)
+      throw new ApiError("Chọn đánh giá từ 1 đến 5 sao cho lượt gợi ý đã lưu.", 400);
+    return apiRequest(endpoints.recommendations.feedback(id), { method: "POST", auth: true, body: JSON.stringify(payload) });
+  },
+  async suggestMissing(payload: { recipeId: string; recipeName: string; requiredIngredients: string[]; userIngredients: string[] }) {
+    const response = await apiRequest<unknown>(endpoints.recommendations.suggestMissing, { method: "POST", auth: true, body: JSON.stringify(payload), timeoutMs: 60000 });
+    const body = unwrapEnvelope<{ missingIngredients?: unknown }>(response);
+    if (!body || !Array.isArray(body.missingIngredients)) throw new ApiError("Kết quả gợi ý nguyên liệu chưa đầy đủ.", 502);
+    return normalizeIngredientStatus(body.missingIngredients);
+  },
   async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}) {
     const { mode, mealType, maxCookTimeMinutes, servings, includeIngredients } = options;
     const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
@@ -186,7 +207,7 @@ export const recommendationsApi = {
     if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
       throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
     const result = normalizeRecommendationResponse(body);
-    return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
+    return result;
   },
   async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<unknown>(endpoints.recommendations.meals, {
@@ -200,7 +221,7 @@ export const recommendationsApi = {
       throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
     const result = normalizeRecommendationResponse(body);
     // V1 persists the request, but does not return persisted meal item IDs.
-    return { recommendations: result.recommendations.map((item) => ({ ...item, persistedMeal: false })) };
+    return result;
   },
 
   async checkMealIngredients(mealId: string) {
@@ -208,6 +229,8 @@ export const recommendationsApi = {
       auth: true
     });
 
-    return normalizeMealIngredientCheck(response);
+    return normalizeMealIngredientCheck(unwrapEnvelope(response));
   }
 };
+export type RecommendationRecord = { id: string; status: string; inputIngredientText: string };
+export type RecommendationFeedback = { mealRecommendationId: string; recipeId: string; rating: number; feedbackType: string; comment: string };

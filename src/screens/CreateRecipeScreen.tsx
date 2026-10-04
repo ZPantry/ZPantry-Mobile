@@ -362,7 +362,7 @@ export default function CreateRecipeScreen() {
                       style={({ pressed }) => ({
                         borderRadius: 14,
                         padding: 12,
-                        backgroundColor: selected ? "rgba(57,217,138,0.14)" : colors.white,
+                        backgroundColor: selected ? colors.secondary : colors.white,
                         borderWidth: 1,
                         borderColor: selected ? "rgba(57,217,138,0.45)" : colors.line,
                         opacity: pressed ? 0.85 : 1
@@ -377,7 +377,7 @@ export default function CreateRecipeScreen() {
                             {item.category || "Ingredient"} · {item.defaultUnit || item.unit || "g"}
                           </Text>
                         </View>
-                        <Ionicons name={selected ? "checkmark-circle" : "add-circle"} size={25} color={selected ? colors.success : colors.primary} />
+                        <Ionicons name={selected ? "checkmark-circle" : "add-circle"} size={25} color={selected ? colors.primary : colors.primary} />
                       </View>
                     </Pressable>
                   );

@@ -1,4 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/types";
 
 import type { ComponentProps } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -22,6 +25,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type AuthMode = "login" | "register" | "otp";
 
 export default function LoginScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const { signIn } = useAuth();
   const google = useGoogleSignIn();
@@ -256,7 +260,7 @@ export default function LoginScreen() {
           </View> : null}
           {mode === "login" ? <View style={{ marginTop: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <CheckboxLine label="Ghi nhớ đăng nhập" checked={rememberMe} disabled={isSubmitting} onPress={() => setRememberMe(v => !v)} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Quên mật khẩu" disabled={isSubmitting} onPress={() => showUnavailable("Quên mật khẩu")} hitSlop={10}><Text style={{ color: colors.primary, fontSize: 11, fontWeight: "600" }}>Quên mật khẩu?</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Quên mật khẩu" disabled={isSubmitting} onPress={() => navigation.navigate("ForgotPassword")} hitSlop={10}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }}>Quên mật khẩu?</Text></Pressable>
           </View> : null}
           {authMessage ? <View style={{ marginTop: 16 }}><Message text={authMessage} tone="danger" /></View> : null}
           {successMessage ? <View style={{ marginTop: 16 }}><Message text={successMessage} tone="success" /></View> : null}
