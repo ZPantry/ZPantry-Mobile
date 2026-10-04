@@ -88,6 +88,10 @@ export type RootStackParamList = {
       source?: "pantry" | "extra";
     }>;
   };
+  RecommendationAnalysisSample: {
+    recommendations: MealRecommendation[];
+    mode?: PersonalizedRecommendationOptions["mode"];
+  };
   RecipeDetail: { mealId?: string; recipeId: string; recommendationId?: string };
   TodayMenuItemDetail: { itemId: string };
 };

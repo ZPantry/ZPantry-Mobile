@@ -87,7 +87,9 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
             </Text>
           </View>
         }
-        renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { mealId: item.persistedMeal ? item.mealId : undefined, recipeId: item.recipeId, recommendationId: item.recommendationId })} />}
+        renderItem={({ item }) => <RecommendationCard recommendation={item}
+          onPress={() => navigation.navigate("RecipeDetail", { mealId: item.persistedMeal ? item.mealId : undefined, recipeId: item.recipeId, recommendationId: item.recommendationId })}
+          onAnalyze={() => navigation.navigate("RecommendationAnalysisSample", { recommendations, mode })} />}
       />
     </SafeAreaView>
   );
@@ -111,7 +113,7 @@ function IngredientSummaryRow({ item }: { item: UsedIngredient }) {
   );
 }
 
-function RecommendationCard({ recommendation, onPress }: { recommendation: MealRecommendation; onPress: () => void }) {
+function RecommendationCard({ recommendation, onPress, onAnalyze }: { recommendation: MealRecommendation; onPress: () => void; onAnalyze: () => void }) {
   const matchPercent = formatPercent(recommendation.score);
   const imageUrl = recommendation.imageUrl || FALLBACK_FOOD_IMAGE_URL;
 
@@ -146,6 +148,9 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
           <Text style={{ color: colors.mutedDark, fontSize: 13, fontWeight: "700", lineHeight: 19, marginTop: 5 }} selectable>
             {recommendation.description}
           </Text>
+          {recommendation.cookTimeMinutes ? <Text style={{ color: colors.mutedDark, fontSize: 12, marginTop: 4 }} selectable>
+            Khoảng {recommendation.cookTimeMinutes} phút
+          </Text> : null}
         </View>
         <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, backgroundColor: colors.secondary }}>
           <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }} selectable>
@@ -156,6 +161,12 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
 
       <IngredientLine title="Đã có" items={recommendation.matchedIngredients} tone="success" />
       <IngredientLine title="Còn thiếu" items={recommendation.missingIngredients} tone="warning" />
+      <IngredientLine title="Nên dùng sớm" items={recommendation.expiringSoonIngredients} tone="warning" />
+
+      {recommendation.reasons?.length ? <View style={{ gap: 4 }}>
+        <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700" }} selectable>Lý do xếp hạng</Text>
+        {recommendation.reasons.map(reason => <Text key={reason} style={{ color: colors.mutedDark, fontSize: 12, lineHeight: 18 }} selectable>• {reason}</Text>)}
+      </View> : null}
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>
@@ -163,6 +174,10 @@ function RecommendationCard({ recommendation, onPress }: { recommendation: MealR
         </Text>
         <Ionicons name="arrow-forward-circle" size={25} color={colors.primary} />
       </View>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Phân tích lựa chọn ${recommendation.name}`}
+        onPress={onAnalyze} style={{ minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, borderWidth: 1, borderColor: colors.primary }}>
+        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>Phân tích danh sách món</Text>
+      </Pressable>
     </Pressable>
   );
 }
