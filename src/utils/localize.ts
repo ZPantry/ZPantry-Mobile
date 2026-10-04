@@ -35,6 +35,11 @@ export function translateApiMessage(message: string) {
   const lower = value.toLowerCase();
 
   if (!value) return value;
+  if (lower.includes("otp") && (lower.includes("expired") || lower.includes("invalid") || lower.includes("incorrect"))) return "Mã OTP không đúng hoặc đã hết hạn. Kiểm tra lại mã hoặc yêu cầu mã mới.";
+  if (lower.includes("password") && (lower.includes("match") || lower.includes("confirm"))) return "Mật khẩu xác nhận chưa trùng khớp.";
+  if (lower.includes("recommendation not found")) return "Không tìm thấy lượt gợi ý đã lưu để gửi phản hồi.";
+  if (lower.includes("alias") && (lower.includes("exist") || lower.includes("duplicate"))) return "Tên gọi này đã được sử dụng. Vui lòng chọn tên khác.";
+  if (lower.includes("role change is not permitted")) return "Bạn không có quyền thay đổi vai trò của tài khoản này.";
   if (lower.includes("this meal already exists in today's menu")) return "Món này đã có trong thực đơn hôm nay.";
   if (lower.includes("recipe not found")) return "Không tìm thấy công thức.";
   if (lower.includes("today menu item not found")) return "Không tìm thấy món trong thực đơn hôm nay.";

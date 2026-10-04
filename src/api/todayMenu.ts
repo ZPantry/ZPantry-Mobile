@@ -131,7 +131,8 @@ export const todayMenuApi = {
     ]);
     const ingredients = recipe?.ingredients ?? [];
     const ids = new Set(ingredients.map(ingredient => ingredient.ingredientId));
-    return { ...item, recipe, requiredIngredients: item.requiredIngredients ?? ingredients,
+    const portionRatio = item.servingSize > 0 && recipe && recipe.servingSize > 0 ? item.servingSize / recipe.servingSize : 1;
+    return { ...item, recipe, requiredIngredients: item.requiredIngredients ?? ingredients.map(ingredient => ({ ...ingredient, quantity: Number((ingredient.quantity * portionRatio).toFixed(4)) })),
       pantryItems: pantry.filter(row => ids.has(row.ingredientId)).map(row => ({ ...row, ingredientName: row.ingredientName || ingredients.find(i => i.ingredientId === row.ingredientId)?.ingredientName || "Nguyên liệu" })) };
   },
 

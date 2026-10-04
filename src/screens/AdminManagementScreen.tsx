@@ -1,8 +1,10 @@
-import { canManageUsers } from "@/utils/roles";
+import Text from "@/components/AppText";
+import { canManageUsers, assignableRoles } from "@/utils/roles";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Image, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Animated, Image, Modal, Pressable, RefreshControl, TextInput, useWindowDimensions, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
@@ -154,7 +156,7 @@ export default function AdminManagementScreen() {
         >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.text, fontSize: 25, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.text, fontSize: 25, fontWeight: "700" }} selectable>
                 {activeTitle}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 2 }} selectable>
@@ -180,7 +182,7 @@ export default function AdminManagementScreen() {
                 ) : displayedUsers.length === 0 ? (
                   <EmptyState message="Không tìm thấy user phù hợp." />
                 ) : (
-                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={canUpdateUser(currentUser?.userId, user.id) ? () => navigation.navigate("AdminUserForm", { user }) : undefined} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
+                  displayedUsers.map((user) => <UserAdminCard key={user.id} user={user} onEdit={canUpdateUser(currentUser?.userId, user.id) || assignableRoles(currentUser?.role, user.role).length ? () => navigation.navigate("AdminUserForm", { user }) : undefined} onDelete={() => setDeleteTarget({ type: "users", id: user.id, name: user.fullName || user.email })} />)
                 )}
               </View>
             </>
@@ -254,9 +256,9 @@ function AdminBottomBar({ activeTab, onChange, tabs }: { activeTab: AdminTab; on
         height: 66,
         borderRadius: 28,
         borderCurve: "continuous",
-        backgroundColor: "rgba(255,255,255,0.30)",
+        backgroundColor: colors.surface2,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.45)",
+        borderColor: colors.line,
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: barHorizontalPadding,
@@ -315,7 +317,7 @@ function AdminBottomTabButton({ item, active, onPress }: { item: (typeof adminTa
       <Animated.View style={{ width: 52, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", transform: [{ scale: iconScale }] }}>
         <MaterialCommunityIcons name={item.icon} size={24} color={active ? colors.primary : colors.text} />
       </Animated.View>
-      <Animated.Text numberOfLines={1} style={{ marginTop: -3, color: active ? colors.primary : colors.text, fontSize: 10, fontWeight: "900", textAlign: "center", opacity: labelOpacity }}>
+      <Animated.Text numberOfLines={1} style={{ marginTop: -3, color: active ? colors.primary : colors.text, fontSize: 10, fontWeight: "700", textAlign: "center", opacity: labelOpacity }}>
         {item.label}
       </Animated.Text>
     </Pressable>
@@ -336,10 +338,10 @@ function MetricCard({ label, value, icon }: { label: string; value: number; icon
   return (
     <View style={{ flex: 1, minWidth: 82, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 6 }}>
       <MaterialCommunityIcons name={icon} size={21} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 23, fontWeight: "900", fontVariant: ["tabular-nums"] }} selectable>
+      <Text style={{ color: colors.text, fontSize: 23, fontWeight: "700", fontVariant: ["tabular-nums"] }} selectable>
         {value}
       </Text>
-      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10, fontWeight: "600" }}>
         {label}
       </Text>
     </View>
@@ -349,13 +351,13 @@ function MetricCard({ label, value, icon }: { label: string; value: number; icon
 function SectionTitle({ title, actionLabel, onAction }: { title: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
         {title}
       </Text>
       {actionLabel && onAction ? (
         <Pressable onPress={onAction} style={({ pressed }) => ({ minHeight: 36, borderRadius: 18, backgroundColor: colors.primary, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.82 : 1 })}>
           <MaterialCommunityIcons name="plus" size={18} color={colors.textDark} />
-          <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.textDark, fontSize: 12, fontWeight: "700" }} selectable>
             {actionLabel}
           </Text>
         </Pressable>
@@ -368,9 +370,9 @@ function SearchBox({ value, onChangeText, placeholder }: { value: string; onChan
   return (
     <View style={{ minHeight: 50, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 13 }}>
       <Ionicons name="search" size={20} color={colors.primary} />
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "800", minHeight: 48 }} />
+      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "600", minHeight: 48 }} />
       {value ? (
-        <Pressable onPress={() => onChangeText("")} style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.14)" }}>
+        <Pressable onPress={() => onChangeText("")} style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface2 }}>
           <Ionicons name="close" size={17} color={colors.text} />
         </Pressable>
       ) : null}
@@ -385,16 +387,16 @@ function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit?: (
         <Image source={{ uri: normalizeRemoteImageUrl(user.avatarUrl) }} style={{ width: 74, height: 74, borderRadius: 22, backgroundColor: colors.secondary }} />
       ) : (
         <View style={{ width: 74, height: 74, borderRadius: 22, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "700" }} selectable>
             {initials(user.fullName || user.email)}
           </Text>
         </View>
       )}
       <View style={{ flex: 1, gap: 5 }}>
-        <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "700" }} selectable>
           {user.fullName || "Chưa có tên"}
         </Text>
-        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800" }}>
+        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "600" }}>
           {user.email}
         </Text>
         <View style={{ flexDirection: "row", gap: 7, flexWrap: "wrap" }}>
@@ -402,7 +404,7 @@ function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit?: (
           <StatusPill text={user.isActive ? "Active" : "Inactive"} tone={user.isActive ? "active" : "inactive"} />
           <StatusPill text={user.isEmailConfirmed ? "Verified" : "Unverified"} tone={user.isEmailConfirmed ? "active" : "inactive"} />
         </View>
-        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "700" }} selectable>
           Tạo: {formatDate(user.createdAt)}
         </Text>
       </View>
@@ -416,12 +418,12 @@ function UserAdminCard({ user, onEdit, onDelete }: { user: AdminUser; onEdit?: (
 
 function RecipeAdminCard({ recipe, onEdit, onDelete }: { recipe: Recipe; onEdit: () => void; onDelete: () => void }) {
   return (
-    <View style={{ borderRadius: 14, backgroundColor: colors.white, overflow: "hidden", boxShadow: "0 12px 24px rgba(0,0,0,0.20)" }}>
+    <View style={{ borderRadius: 14, backgroundColor: colors.white, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,48,20,0.06)" }}>
       <RemoteImage uri={recipe.imageUrl} style={{ width: "100%", height: 132, backgroundColor: colors.secondary }} />
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "700" }} selectable>
               {recipe.name}
             </Text>
             <Text numberOfLines={2} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", lineHeight: 18, marginTop: 3 }}>
@@ -446,13 +448,13 @@ function IngredientAdminCard({ ingredient, onEdit, onDelete }: { ingredient: Ing
     <View style={{ minHeight: 96, borderRadius: 14, backgroundColor: colors.white, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
       <RemoteImage uri={ingredient.imageUrl} style={{ width: 74, height: 74, borderRadius: 14, backgroundColor: colors.secondary }} />
       <View style={{ flex: 1, gap: 5 }}>
-        <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "700" }} selectable>
           {ingredient.name}
         </Text>
-        <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800" }} selectable>
+        <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "600" }} selectable>
           {ingredient.category || "Other"} · {ingredient.unit}
         </Text>
-        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "700" }} selectable>
           {ingredient.caloriesPerUnit} kcal · Đạm {ingredient.proteinPerUnit}g
         </Text>
       </View>
@@ -465,11 +467,11 @@ function IngredientAdminCard({ ingredient, onEdit, onDelete }: { ingredient: Ing
 }
 
 function StatusPill({ text, tone }: { text: string; tone: "admin" | "user" | "active" | "inactive" }) {
-  const backgroundColor = tone === "inactive" ? "rgba(255,77,79,0.14)" : tone === "admin" ? colors.secondary : "#EEF3EF";
+  const backgroundColor = tone === "inactive" ? "rgba(255,77,79,0.14)" : tone === "admin" ? colors.secondary : colors.surface2;
   const color = tone === "inactive" ? colors.danger : tone === "admin" ? colors.primaryDark : colors.mutedDark;
   return (
     <View style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor, paddingHorizontal: 9, paddingVertical: 5 }}>
-      <Text style={{ color, fontSize: 10, fontWeight: "900" }} selectable>
+      <Text style={{ color, fontSize: 10, fontWeight: "700" }} selectable>
         {text}
       </Text>
     </View>
@@ -480,7 +482,7 @@ function MiniInfo({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.gl
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <MaterialCommunityIcons name={icon} size={15} color={colors.primary} />
-      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }} selectable>
+      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }} selectable>
         {text}
       </Text>
     </View>
@@ -490,15 +492,15 @@ function MiniInfo({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.gl
 function ActionRow({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <Pressable onPress={onEdit} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7, opacity: pressed ? 0.82 : 1 })}>
+      <Pressable onPress={onEdit} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7, opacity: pressed ? 0.82 : 1 })}>
         <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.textDark} />
-        <Text style={{ color: colors.textDark, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.textDark, fontWeight: "700" }} selectable>
           Sửa
         </Text>
       </Pressable>
       <Pressable onPress={onDelete} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7, opacity: pressed ? 0.82 : 1 })}>
         <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.danger} />
-        <Text style={{ color: colors.danger, fontWeight: "900" }} selectable>
+        <Text style={{ color: colors.danger, fontWeight: "700" }} selectable>
           Xóa
         </Text>
       </Pressable>
@@ -509,7 +511,7 @@ function ActionRow({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
 function IconButton({ icon, tone, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: "edit" | "delete"; onPress: () => void }) {
   const color = tone === "delete" ? colors.danger : colors.primaryDark;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 12, backgroundColor: tone === "delete" ? "rgba(255,77,79,0.12)" : colors.secondary, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={tone === "delete" ? "Xóa" : "Chỉnh sửa"} onPress={onPress} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 12, backgroundColor: tone === "delete" ? "rgba(255,77,79,0.12)" : colors.secondary, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
       <MaterialCommunityIcons name={icon} size={20} color={color} />
     </Pressable>
   );
@@ -524,7 +526,7 @@ function LoadingCard() {
   return (
     <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 10 }}>
       <ActivityIndicator color={colors.primary} />
-      <Text style={{ color: colors.text, fontWeight: "800" }} selectable>
+      <Text style={{ color: colors.text, fontWeight: "600" }} selectable>
         Đang tải dữ liệu...
       </Text>
     </View>
@@ -535,7 +537,7 @@ function EmptyState({ message }: { message: string }) {
   return (
     <View style={{ minHeight: 92, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", gap: 8, padding: 16 }}>
       <MaterialCommunityIcons name="database-search-outline" size={28} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "900", textAlign: "center" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "700", textAlign: "center" }} selectable>
         {message}
       </Text>
     </View>
@@ -545,7 +547,7 @@ function EmptyState({ message }: { message: string }) {
 function ErrorBanner({ message }: { message: string }) {
   return (
     <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
-      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+      <Text style={{ color: colors.danger, fontSize: 13, fontWeight: "600", lineHeight: 20 }} selectable>
         {message}
       </Text>
     </View>
@@ -561,20 +563,20 @@ function ConfirmDeleteModal({ target, isSaving, onCancel, onConfirm }: { target:
           <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center" }}>
             <MaterialCommunityIcons name="trash-can-outline" size={30} color={colors.danger} />
           </View>
-          <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "700" }} selectable>
             Xóa {label}?
           </Text>
           <Text style={{ color: colors.mutedDark, fontSize: 14, fontWeight: "700", lineHeight: 21 }} selectable>
             {target?.name} sẽ bị xóa khỏi hệ thống quản trị.
           </Text>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 25, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
-              <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+            <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 25, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+              <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                 Hủy
               </Text>
             </Pressable>
             <Pressable onPress={onConfirm} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 25, backgroundColor: colors.danger, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
-              <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.white, fontSize: 15, fontWeight: "700" }} selectable>
                 {isSaving ? "Đang xóa..." : "Xóa"}
               </Text>
             </Pressable>

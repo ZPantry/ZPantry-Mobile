@@ -1,12 +1,16 @@
+import AppInput from "@/components/AppInput";
+import ExpiryDaysField from "@/components/ExpiryDaysField";
+import { expiryDateFromDays, remainingExpiryDays } from "@/utils/expiryDays";
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useMemo, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Modal, Pressable, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
-import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -16,12 +20,6 @@ import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image"
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
-function toInputDate(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
-  return date.toISOString().slice(0, 10);
-}
 
 function normalizeStorageLocation(label: string) {
   if (label === "Ngăn đông") return "freezer";
@@ -76,7 +74,8 @@ export default function PantryItemDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(String(initialItem?.quantity ?? 1));
   const [unit, setUnit] = useState(initialItem?.unit ?? ingredient?.unit ?? "phần");
-  const [expiredAt, setExpiredAt] = useState(toInputDate(initialItem?.expiredAt ?? new Date().toISOString()));
+  const [expiryDays, setExpiryDays] = useState(remainingExpiryDays(initialItem?.expiredAt));
+  const [expiryChanged, setExpiryChanged] = useState(false);
   const [storageLocation, setStorageLocation] = useState(displayStorageLocation(initialItem?.storageLocation ?? "Ngan mat"));
   const [note, setNote] = useState(initialItem?.note ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -98,7 +97,9 @@ export default function PantryItemDetailScreen() {
     if (!item?.id || !item.ingredientId) return "Không tìm thấy nguyên liệu cần cập nhật.";
     if (!Number.isFinite(amount) || amount <= 0) return "Số lượng phải lớn hơn 0.";
     if (!unit.trim()) return "Đơn vị không được để trống.";
-    if (expiredAt && Number.isNaN(new Date(expiredAt).getTime())) return "Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.";
+    if (expiryChanged) {
+      try { expiryDateFromDays(expiryDays); } catch (e) { return (e as Error).message; }
+    }
     return "";
   };
 
@@ -116,12 +117,14 @@ export default function PantryItemDetailScreen() {
         ingredientId: item!.ingredientId,
         quantity: Number(quantity.replace(",", ".")),
         unit: unit.trim(),
-          expiredAt: expiredAt ? new Date(expiredAt).toISOString() : null,
+        expiredAt: expiryChanged ? expiryDateFromDays(expiryDays) : item!.expiredAt || null,
         storageLocation: normalizeStorageLocation(storageLocation),
         note: note.trim()
       };
       const updated = await pantryApi.updateItem(item!.id, payload);
       setItem(updated);
+      setExpiryDays(remainingExpiryDays(updated.expiredAt));
+      setExpiryChanged(false);
       setIsEditing(false);
       toast.show(`Đã cập nhật ${title}.`);
     } catch (error) {
@@ -165,11 +168,11 @@ export default function PantryItemDetailScreen() {
 
   if (!item) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["top"]}>
-        <AppBackButton variant="icon" onPress={() => navigation.goBack()} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["left", "right", "bottom"]}>
+
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10 }}>
           <MaterialCommunityIcons name="fridge-alert-outline" size={42} color={colors.primary} />
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900", textAlign: "center" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700", textAlign: "center" }} selectable>
             Không tìm thấy nguyên liệu
           </Text>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", textAlign: "center", lineHeight: 21 }} selectable>
@@ -181,7 +184,7 @@ export default function PantryItemDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 42 }}>
         <View style={{ height: 312, backgroundColor: colors.surface }}>
           <Image source={{ uri: imageUrl }} resizeMode="cover" style={{ width: "100%", height: "100%" }} />
@@ -189,7 +192,7 @@ export default function PantryItemDetailScreen() {
           <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 132, backgroundColor: "rgba(0,59,30,0.42)" }} />
 
           <View style={{ position: "absolute", left: 22, right: 22, top: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <AppBackButton variant="floating" onPress={() => navigation.goBack()} />
+
             <Pressable
               onPress={() => setIsEditing((current) => !current)}
               style={({ pressed }) => ({
@@ -206,7 +209,7 @@ export default function PantryItemDetailScreen() {
               })}
             >
               <MaterialCommunityIcons name={isEditing ? "eye-outline" : "pencil-outline"} size={19} color={isEditing ? colors.textDark : colors.white} />
-              <Text style={{ color: isEditing ? colors.textDark : colors.white, fontSize: 13, fontWeight: "900" }} selectable>
+              <Text style={{ color: isEditing ? colors.textDark : colors.white, fontSize: 13, fontWeight: "700" }} selectable>
                 {isEditing ? "Xem lại" : "Chỉnh sửa"}
               </Text>
             </Pressable>
@@ -215,14 +218,14 @@ export default function PantryItemDetailScreen() {
           <View style={{ position: "absolute", left: 22, right: 22, bottom: 24, gap: 8 }}>
             <View style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: `${toneColor}E6`, paddingHorizontal: 12, paddingVertical: 7, flexDirection: "row", alignItems: "center", gap: 6 }}>
               <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={16} color={colors.white} />
-              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }} selectable>
                 {expiryCopy(item.expiredAt)}
               </Text>
             </View>
-            <Text numberOfLines={2} style={{ color: colors.white, fontSize: 34, lineHeight: 39, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.26)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }} selectable>
+            <Text numberOfLines={2} style={{ color: colors.white, fontSize: 34, lineHeight: 39, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.26)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }} selectable>
               {title}
             </Text>
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "800" }} selectable>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" }} selectable>
               {category} · {storageText}
             </Text>
           </View>
@@ -235,10 +238,10 @@ export default function PantryItemDetailScreen() {
                 <MaterialCommunityIcons name={heroIcon} size={32} color={colors.primaryDark} />
               </View>
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "700" }} selectable>
                   {`${item.quantity} ${item.unit}`}
                 </Text>
-                <Text style={{ color: colors.mutedDark, fontSize: 13, lineHeight: 18, fontWeight: "800" }} selectable>
+                <Text style={{ color: colors.mutedDark, fontSize: 13, lineHeight: 18, fontWeight: "600" }} selectable>
                   Hạn dùng {expiredDateText} · {storageText}
                 </Text>
               </View>
@@ -247,7 +250,7 @@ export default function PantryItemDetailScreen() {
             <View style={{ borderRadius: 14, backgroundColor: `${toneColor}18`, padding: 13, flexDirection: "row", alignItems: "center", gap: 10 }}>
               <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={24} color={toneColor} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.textDark, fontSize: 16, fontWeight: "700" }} selectable>
                   {expiryCopy(item.expiredAt)}
                 </Text>
                 <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", marginTop: 2, lineHeight: 18 }} selectable>
@@ -259,7 +262,7 @@ export default function PantryItemDetailScreen() {
 
           {isEditing ? (
             <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
               Cập nhật nguyên liệu
             </Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -270,9 +273,9 @@ export default function PantryItemDetailScreen() {
                 <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="quả" />
               </View>
             </View>
-            <FormInput label="Hạn dùng" value={expiredAt} onChangeText={setExpiredAt} placeholder="2026-07-05" />
+            <ExpiryDaysField value={expiryDays} onChange={value => { setExpiryDays(value); setExpiryChanged(true); }} disabled={isSaving} />
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
                 Nơi cất
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
@@ -293,7 +296,7 @@ export default function PantryItemDetailScreen() {
           )}
 
           {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", textAlign: "center", lineHeight: 20 }} selectable>
               {errorMessage}
             </Text>
           ) : null}
@@ -317,7 +320,7 @@ export default function PantryItemDetailScreen() {
               })}
             >
               <MaterialCommunityIcons name="trash-can-outline" size={22} color={colors.danger} />
-              <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "900" }} selectable>
+              <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "700" }} selectable>
                 Xóa khỏi tủ lạnh
               </Text>
             </Pressable>
@@ -332,17 +335,17 @@ export default function PantryItemDetailScreen() {
               <MaterialCommunityIcons name="trash-can-outline" size={30} color={colors.danger} />
             </View>
             <View style={{ gap: 7 }}>
-              <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "900", lineHeight: 27 }} selectable>
+              <Text style={{ color: colors.textDark, fontSize: 22, fontWeight: "700", lineHeight: 27 }} selectable>
                 Xóa khỏi tủ lạnh?
               </Text>
               <Text style={{ color: colors.mutedDark, fontSize: 14, fontWeight: "700", lineHeight: 21 }} selectable>
-                {title} sẽ bị xóa khỏi tủ lạnh của bạn. 
+                {title} sẽ bị xóa khỏi tủ lạnh của bạn.
               </Text>
             </View>
 
             <View style={{ borderRadius: 12, backgroundColor: "#FFF3F3", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
               <MaterialCommunityIcons name="information-outline" size={22} color={colors.danger} />
-              <Text style={{ flex: 1, color: colors.textDark, fontSize: 13, fontWeight: "800", lineHeight: 19 }} selectable>
+              <Text style={{ flex: 1, color: colors.textDark, fontSize: 13, fontWeight: "600", lineHeight: 19 }} selectable>
                 Mục này sẽ biến mất khỏi tủ lạnh và không còn được dùng khi gợi ý món.
               </Text>
             </View>
@@ -361,7 +364,7 @@ export default function PantryItemDetailScreen() {
                   opacity: pressed || isSaving ? 0.76 : 1
                 })}
               >
-                <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
                   Hủy
                 </Text>
               </Pressable>
@@ -378,7 +381,7 @@ export default function PantryItemDetailScreen() {
                   opacity: pressed || isSaving ? 0.76 : 1
                 })}
               >
-                <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+                <Text style={{ color: colors.white, fontSize: 15, fontWeight: "700" }} selectable>
                   {isSaving ? "Đang xóa..." : "Xóa"}
                 </Text>
               </Pressable>
@@ -407,11 +410,11 @@ function FormInput({
 }) {
   return (
     <View style={{ gap: 8 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
       <View style={{ minHeight: multiline ? 78 : 46, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: multiline ? "flex-start" : "center", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0 }}>
-        <TextInput
+        <AppInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -432,10 +435,10 @@ function InfoRow({ icon, label, value }: { icon: keyof typeof MaterialCommunityI
         <MaterialCommunityIcons name={icon} size={22} color={colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }} selectable>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }} selectable>
           {label}
         </Text>
-        <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900", marginTop: 2 }} selectable>
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: "700", marginTop: 2 }} selectable>
           {value}
         </Text>
       </View>

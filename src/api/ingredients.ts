@@ -61,6 +61,16 @@ export function createIngredientFormData(payload: IngredientPayload) {
 }
 
 export const ingredientsApi = {
+  aliases(id: string) {
+    return apiRequest<IngredientAlias[]>(endpoints.ingredients.aliases(id), { auth: true });
+  },
+  addAlias(id: string, aliasName: string) {
+    if (!aliasName.trim() || aliasName.trim().length > 200) throw new Error("Tên gọi cần từ 1 đến 200 ký tự.");
+    return apiRequest<IngredientAlias>(endpoints.ingredients.aliases(id), { method: "POST", auth: true, body: JSON.stringify({ aliasName: aliasName.trim() }) });
+  },
+  removeAlias(id: string, aliasId: string) {
+    return apiRequest<ApiMessageResponse>(endpoints.ingredients.alias(id, aliasId), { method: "DELETE", auth: true });
+  },
   all() { return collectPages(page => ingredientsApi.list(page, 100)); },
   list(pageIndex = 1, pageSize = 50) {
     return apiRequest<PaginatedResponse<Ingredient>>(`${endpoints.ingredients.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
@@ -102,3 +112,4 @@ export const ingredientsApi = {
     });
   }
 };
+export type IngredientAlias = { id: string; ingredientId: string; aliasName: string; normalizedAliasName: string };

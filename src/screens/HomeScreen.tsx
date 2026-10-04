@@ -1,30 +1,30 @@
+import { userDisplayName } from '@/utils/userProfile';
+import FigmaAsset from '@/components/FigmaAsset';
+import { homeAssets as assets } from '@/constants/figmaAssets';
+import Text from "@/components/AppText";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
+import { BrandPanel, SectionHeading, ActionRow } from "@/components/BrandPanel";
 import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PrimaryButton from "@/components/PrimaryButton";
 import MealCard from "@/components/MealCard";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
 import type { Meal } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, RefreshControl, useWindowDimensions, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const shortcuts = [
-  { label: "Thêm nhanh", icon: "plus-circle-outline", target: "QuickAdd" },
-  { label: "Gợi ý món", icon: "chef-hat", target: "MealSuggestion" },
-  { label: "Lập kế hoạch", icon: "calendar-check", target: "Plan" },
-  { label: "Tủ lạnh", icon: "fridge-outline", target: "Pantry" }
-];
 
 function recipeToMeal(recipe: Recipe): Meal {
   return {
@@ -49,13 +49,6 @@ function normalizeSearchText(value?: string | null) {
     .trim();
 }
 
-function daysLeft(expiredAt?: string | null) {
-  if (!expiredAt) return Number.POSITIVE_INFINITY;
-  const time = new Date(expiredAt).getTime();
-  if (Number.isNaN(time)) return Number.POSITIVE_INFINITY;
-  return Math.ceil((time - Date.now()) / (1000 * 60 * 60 * 24));
-}
-
 function formatQuantity(item: PantryApiItem) {
   const quantity = Number(item.quantity ?? 0);
   const quantityText = Number.isFinite(quantity) ? String(quantity) : "0";
@@ -67,14 +60,18 @@ function getPantryName(item: PantryApiItem, ingredient?: Ingredient) {
 }
 
 export default function HomeScreen() {
+  const showUnavailable = useUnavailableFeature();
   const navigation = useNavigation<any>();
-  const { user, onboardingStep, completeOnboardingStep } = useAuth();
-  const displayName = user?.fullName || "bạn";
+  const { user } = useAuth();
+  const displayName = userDisplayName(user);
+  const { width } = useWindowDimensions();
+  const wide = width >= 900;
+  const [showAddMethods, setShowAddMethods] = useState(false);
   const [recipes, setRecipes] = useState<Meal[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryApiItem[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const loadHome = useCallback(async () => {
     setIsLoading(true);
@@ -90,9 +87,7 @@ export default function HomeScreen() {
       setPantryItems(pantryItems);
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được dữ liệu hôm nay."));
-      setRecipes([]);
-      setIngredients([]);
-      setPantryItems([]);
+
     } finally {
       setIsLoading(false);
     }
@@ -114,8 +109,6 @@ export default function HomeScreen() {
       })),
     [ingredientById, pantryItems]
   );
-  const expiringItem = useMemo(() => pantryItems.slice().filter((item) => Number.isFinite(daysLeft(item.expiredAt))).sort((left, right) => daysLeft(left.expiredAt) - daysLeft(right.expiredAt))[0], [pantryItems]);
-  const expiringIngredient = expiringItem ? ingredientById.get(expiringItem.ingredientId) : undefined;
   const normalizedKeyword = normalizeSearchText(searchText);
   const filteredPantryItems = useMemo(() => {
     if (!normalizedKeyword) return pantryWithNames.slice(0, 3);
@@ -131,156 +124,60 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="person-circle-outline" size={42} color={colors.background} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }} selectable>
-                Chào {displayName}!
-              </Text>
-              <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700", marginTop: 2 }} selectable>
-                Hôm nay bạn muốn nấu món gì?
-              </Text>
-            </View>
+      <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
+        contentContainerStyle={{ paddingTop: 62, paddingBottom: 28, gap: 18 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "600", letterSpacing: 0.8 }}>GỢI Ý TỪ ĐẦU BẾP AI</Text>
+            <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>Chào {displayName}! ✨</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>Hôm nay tủ lạnh của bạn có những nguyên liệu tươi ngon nào?</Text>
           </View>
-          <Pressable
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: colors.card,
-              borderWidth: 1,
-              borderColor: colors.line,
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
-            <View style={{ position: "absolute", top: 4, right: 5, width: 13, height: 13, borderRadius: 7, backgroundColor: colors.danger }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Thông báo" onPress={() => showUnavailable("Trung tâm thông báo")} style={{ padding: 10 }}>
+            <FigmaAsset asset={assets.imgContainer} />
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Hồ sơ cá nhân" onPress={() => navigation.navigate("Profile")}
+            style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>
+            <FigmaAsset asset={assets.imgImage1} style={{ borderRadius: 16 }} />
           </Pressable>
         </View>
-
-        <SearchBar placeholder="Tìm món ăn hoặc nguyên liệu" actionLabel="Tìm" value={searchText} onChangeText={setSearchText} onSubmit={() => undefined} />
-
-        <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
-          {shortcuts.map((item) => (
-            <Pressable key={item.label} onPress={() => navigation.navigate(item.target)} style={({ pressed }) => ({ flex: 1, alignItems: "center", gap: 7, opacity: pressed ? 0.75 : 1 })}>
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  backgroundColor: colors.card,
-                  borderWidth: 1,
-                  borderColor: colors.line,
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <MaterialCommunityIcons name={item.icon as never} size={25} color={colors.primary} />
-              </View>
-              <Text style={{ color: colors.text, fontSize: 11, fontWeight: "800", textAlign: "center" }} selectable>
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {errorMessage ? <ExpiryAlertCard title={errorMessage} tone="danger" /> : null}
-
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <StatCard icon="fridge-outline" value={`${pantryItems.length}`} label="Thực phẩm trong tủ" />
-          <StatCard icon="notebook-outline" value={`${recipes.length}`} label="Công thức sẵn sàng" alignRight />
-        </View>
-
-        {pantryItems.length === 0 ? (
-          <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 16, borderWidth: 1, borderColor: colors.line, gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }} selectable>
-              Tủ của bạn đang trống
-            </Text>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-              Thêm nguyên liệu để app gợi ý món phù hợp hơn.
-            </Text>
-          </View>
-        ) : null}
-
-        {(hasSearch || filteredPantryItems.length > 0) ? (
-          <View style={{ gap: 12 }}>
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-              {hasSearch ? "Thực phẩm khớp tìm kiếm" : "Thực phẩm trong tủ"}
-            </Text>
-            {filteredPantryItems.length === 0 ? (
-              <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
-                  Không tìm thấy thực phẩm trong tủ
-                </Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-                  Thử từ khóa khác hoặc thêm nguyên liệu mới vào tủ.
-                </Text>
-              </View>
-            ) : (
-              <View style={{ gap: 10 }}>
-                {filteredPantryItems.map(({ item, ingredient, name }) => (
-                  <PantrySummaryRow key={item.id} name={name} quantity={formatQuantity(item)} imageUrl={ingredient?.imageUrl} onPress={() => navigation.navigate("Pantry")} />
-                ))}
-              </View>
-            )}
-          </View>
-        ) : null}
-
-        <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            {hasSearch ? "Công thức khớp tìm kiếm" : "Gợi ý công thức"}
-          </Text>
-          {filteredRecipes.length === 0 ? (
-            <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
-                {hasSearch ? "Không tìm thấy công thức phù hợp" : "Chưa có công thức để hiển thị"}
-              </Text>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-                {hasSearch ? "Thử tìm bằng tên món hoặc nguyên liệu khác." : "Kéo xuống để tải lại khi có công thức mới."}
-              </Text>
+        {errorMessage ? <><ExpiryAlertCard title={errorMessage} tone="danger" /><PrimaryButton title="Thử tải lại" variant="outline" onPress={loadHome} /></> : null}
+        <View style={{ backgroundColor: '#0D2818', borderRadius: 12, padding: 16, gap: 16, boxShadow: '0 4px 6px rgba(0,0,0,0.08)' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <View style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}><FigmaAsset asset={assets.imgContainer10} /></View>
+            <View style={{ flex: 1, gap: 4 }}><Text style={{ color: '#FFE0B5', fontSize: 11, fontWeight: '600' }}>QUẢN LÝ THỰC PHẨM</Text>
+              <Text style={{ color: colors.white, fontSize: 21, fontWeight: '700' }}>Kho nguyên liệu của {displayName}</Text>
+              <Text style={{ color: colors.onDarkMuted, fontSize: 12, lineHeight: 18 }}>Cập nhật nguyên liệu nhanh chóng để nhận gợi ý món ngon thông minh.</Text>
             </View>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
-              {filteredRecipes.map((meal) => (
-                <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { recipeId: meal.id })} />
-              ))}
-            </ScrollView>
-          )}
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Thêm nguyên liệu" accessibilityState={{ expanded: showAddMethods }} onPress={() => setShowAddMethods(v => !v)} style={{ backgroundColor: colors.primary, minHeight: 60, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <FigmaAsset asset={assets.imgContainer11} /><Text style={{ color: '#642F00', fontSize: 20, fontWeight: '700' }}>Thêm nguyên liệu</Text><FigmaAsset asset={assets.imgContainer12} style={{ transform: [{ rotate: showAddMethods ? '180deg' : '0deg' }] }} />
+          </Pressable>
+          {showAddMethods ? <View style={{ gap: 8 }}>
+            <PrimaryButton title="Chọn ảnh / quét thực phẩm" icon="camera-outline" onPress={() => navigation.navigate('PantryImport', { method: 'FOOD_IMAGE' })} />
+            <PrimaryButton title="Nhập tay nguyên liệu" variant="soft" onPress={() => navigation.navigate('QuickAdd')} />
+            <PrimaryButton title="Chọn nguyên liệu thủ công" variant="outline" onPress={() => navigation.navigate('AddIngredient')} />
+          </View> : null}
         </View>
+        <View style={{ position: 'relative', marginTop: 2 }}>
+          <ActionRow asset={assets.imgContainer1} icon="silverware-fork-knife" title="Hôm nay nấu gì?" subtitle={isLoading ? 'Đang kiểm tra tủ của bạn…' : pantryItems.length + ' nguyên liệu trong tủ · khám phá món phù hợp'} onPress={() => navigation.navigate('MealSuggestion')} />
+        </View>
+        <View style={{ gap: 12 }}>
+          <SectionHeading title="Món ngon tuần này 🔥" action="Khám phá" onPress={() => navigation.navigate("MealSuggestion")} />
+          <SearchBar placeholder="Tìm món ăn hoặc nguyên liệu" actionLabel="Tìm" value={searchText} onChangeText={setSearchText} onSubmit={() => setSearchText(searchText.trim())} />
+          {isLoading && !recipes.length ? <ActivityIndicator color={colors.primary} style={{ padding: 28 }} /> : filteredRecipes.length ?
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4 }}>
+              {filteredRecipes.map(meal => <MealCard key={meal.id} meal={meal} compact onPress={() => navigation.navigate("RecipeDetail", { recipeId: meal.id })} />)}
+            </ScrollView> : !errorMessage ? <Text style={{ color: colors.muted, lineHeight: 21 }}>{hasSearch ? "Không tìm thấy công thức phù hợp. Thử từ khóa khác." : "Chưa có công thức. Kéo xuống để tải lại."}</Text> : null}
+        </View>
+        <View style={{ gap: 12 }}>
+          <SectionHeading title="Có sẵn trong tủ" action="Xem kho" onPress={() => navigation.navigate("Pantry")} />
+          {isLoading && !pantryItems.length ? <Text style={{ color: colors.muted }}>Đang tải nguyên liệu…</Text> : filteredPantryItems.length ?
+            filteredPantryItems.map(({ item, ingredient, name }) => <PantrySummaryRow key={item.id} name={name} quantity={formatQuantity(item)} imageUrl={ingredient?.imageUrl} onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item, ingredient })} />)
+            : !errorMessage ? <ActionRow icon="fridge-outline" title={hasSearch ? "Không tìm thấy nguyên liệu" : "Bắt đầu với tủ thực phẩm của bạn"} subtitle="Thêm những nguyên liệu đang có để tìm món phù hợp." onPress={() => navigation.navigate("AddIngredient")} /> : null}
+        </View>
+        <ActionRow icon="calendar-outline" title="Lên thực đơn hôm nay" subtitle="Sắp xếp bữa ăn và theo dõi những món đã nấu." onPress={() => navigation.navigate("Plan")} />
       </ScrollView>
-
-      {onboardingStep === "interactive_guide" ? <View style={{ padding: 12, gap: 8, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.text }}>Khám phá cách thêm thực phẩm và lên thực đơn.</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <PrimaryButton title="Xem hướng dẫn" variant="soft" style={{ flex: 1 }} onPress={() => navigation.navigate("InteractiveGuide")} />
-          <PrimaryButton title="Bỏ qua" variant="outline" style={{ flex: 1 }} onPress={() => { void completeOnboardingStep("done"); }} />
-        </View>
-      </View> : null}
     </SafeAreaView>
-  );
-}
-
-function StatCard({ icon, value, label, alignRight = false }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; value: string; label: string; alignRight?: boolean }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 8, alignItems: alignRight ? "flex-end" : "flex-start" }}>
-      <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 26, fontWeight: "900", fontVariant: ["tabular-nums"] }} selectable>
-        {value}
-      </Text>
-      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800", textAlign: alignRight ? "right" : "left" }} selectable>
-        {label}
-      </Text>
-    </View>
   );
 }
 
@@ -297,15 +194,15 @@ function PantrySummaryRow({ name, quantity, imageUrl, onPress }: { name: string;
         alignItems: "center",
         gap: 12,
         opacity: pressed ? 0.86 : 1,
-        boxShadow: "0 8px 18px rgba(0,0,0,0.16)"
+        boxShadow: "0 2px 8px rgba(0,48,20,0.06)"
       })}
     >
       <Image source={{ uri: normalizeRemoteImageUrl(imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: colors.secondary }} />
       <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
+        <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "700" }} selectable>
           {name}
         </Text>
-        <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900", marginTop: 3 }} selectable>
+        <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700", marginTop: 3 }} selectable>
           {quantity || "Chưa có số lượng"}
         </Text>
       </View>

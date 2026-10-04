@@ -71,6 +71,16 @@ function normalizePantryItems(response: PantryListResponse) {
 }
 
 export const pantryApi = {
+  async saveItems(items: PantryItemPayload[]) {
+    if (!items.length) throw new ApiError("Vui lòng chọn ít nhất một nguyên liệu.", 400);
+    if (new Set(items.map(item => item.ingredientId)).size !== items.length)
+      throw new ApiError("Mỗi nguyên liệu chỉ được xuất hiện một lần.", 400);
+    const response = await apiRequest<RawPantryApiItem[]>(endpoints.pantry.batch, {
+      method: "POST", auth: true,
+      body: JSON.stringify({ items: items.map(normalizePayload) })
+    });
+    return response.map(normalizePantryItem);
+  },
   async all() {
     return (await collectPages(page => apiRequest<PaginatedResponse<RawPantryApiItem>>(`${endpoints.pantry.list}?pageIndex=${page}&pageSize=100`, { auth: true }))).map(normalizePantryItem);
   },

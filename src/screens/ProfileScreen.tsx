@@ -1,20 +1,27 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { userDisplayName } from '@/utils/userProfile';
+import FigmaAsset from '@/components/FigmaAsset';
+import { profileAssets as assets } from '@/constants/figmaAssets';
+import Text from "@/components/AppText";
 import { useNavigation } from "@react-navigation/native";
-import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppBackButton from "@/components/AppBackButton";
+import { ActionRow } from "@/components/BrandPanel";
+import PrimaryButton from "@/components/PrimaryButton";
 import LogoutConfirmModal from "@/components/LogoutConfirmModal";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 
+import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
+
 export default function ProfileScreen() {
+  const showUnavailable = useUnavailableFeature();
   const navigation = useNavigation<any>();
   const { user, signOut } = useAuth();
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const displayName = user?.fullName || "Bạn";
+  const displayName = userDisplayName(user);
   const displayEmail = user?.email || "Chưa có email";
 
   const confirmSignOut = async () => {
@@ -29,153 +36,55 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView testID="profile-scroll" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 24, gap: 18 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
-          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="notifications-outline" size={21} color={colors.text} />
-            <View style={{ position: "absolute", top: 3, right: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger }} />
+      <ScrollView testID="profile-scroll" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 62, paddingBottom: 24, gap: 18 }}>
+        <View style={{ alignItems: "center", gap: 10, paddingVertical: 16 }}>
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.surface2, borderWidth: 4, borderColor: "#FFDBBD", alignItems: "center", justifyContent: "center" }}>
+            <FigmaAsset asset={assets.imgNguynThuyLinh} style={{ borderRadius: 44 }} />
+          </View>
+          <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>{displayName}</Text>
+          <View style={{ backgroundColor: "#FFDCC6", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <FigmaAsset asset={assets.imgContainer1} /><Text style={{ color: "#311300", fontSize: 11, fontWeight: "600" }}>Thành viên Z-Pantry</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
+            <FigmaAsset asset={assets.imgContainer2} /><Text selectable style={{ color: colors.muted, fontSize: 12 }}>{displayEmail}</Text>
           </View>
         </View>
-
-        <View style={{ alignItems: "center", gap: 10 }}>
-          <View style={{ width: 118, height: 118, borderRadius: 59, borderWidth: 9, borderColor: colors.white, alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="person" size={76} color={colors.white} />
-            <View style={{ position: "absolute", right: 2, bottom: 6, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="star-four-points" size={20} color={colors.background} />
-            </View>
+        <View style={{ padding: 20, borderRadius: 12, backgroundColor: "#00291A", gap: 16, overflow: "hidden" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><FigmaAsset asset={assets.imgContainer5} /></View>
+            <View style={{ flex: 1, gap: 3 }}><Text style={{ color: "#FFDCC6", fontSize: 11, fontWeight: "600", letterSpacing: 0.55 }}>ĐẶC QUYỀN HỘI VIÊN</Text><Text style={{ color: "white", fontSize: 20, fontWeight: "700" }}>PANTRY VIP</Text></View>
+            <Text style={{ color: "#F9F9F7", backgroundColor: "#FFFFFF26", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, fontSize: 11 }}>Sắp có</Text>
           </View>
-          <Text style={{ color: colors.text, fontSize: 25, fontWeight: "900", textAlign: "center", textTransform: "uppercase" }} selectable>
-            {displayName}
-          </Text>
-          <View style={{ borderRadius: 999, backgroundColor: "rgba(255,255,255,0.20)", paddingHorizontal: 10, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <MaterialCommunityIcons name="diamond-stone" size={13} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "900" }} selectable>
-              Thành viên Z-Pantry
-            </Text>
+          <Text style={{ color: "#E2E3E1", fontSize: 14, lineHeight: 21 }}>Nâng tầm trải nghiệm bếp với các quyền lợi hội viên. Thông tin gói và mức phí sẽ được công bố khi tính năng ra mắt.</Text>
+          <View style={{ backgroundColor: "#FFFFFF1A", borderRadius: 8, padding: 14, gap: 10 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, lineHeight: 18 }}>Trong lúc chờ, hãy lưu khẩu vị và dị ứng để gợi ý bữa ăn phù hợp hơn với bạn.</Text>
+            <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })} style={{ minHeight: 40, justifyContent: "center" }}><Text style={{ color: "#FFDCC6", fontSize: 12, fontWeight: "600" }}>Cá nhân hóa khẩu vị →</Text></Pressable>
           </View>
+          <PrimaryButton title="Khám phá gói VIP" onPress={() => showUnavailable("Gói thành viên VIP")} />
         </View>
-
-        <View style={{ flexDirection: "row", gap: 14, justifyContent: "center" }}>
-          <QuickButton icon="camera-outline" label="Nhập từ ảnh" onPress={() => navigation.navigate("PantryImport")} />
-          <QuickButton icon="silverware-fork-knife" label="Gợi ý món" onPress={() => navigation.navigate("MealSuggestion")} />
+        <View style={{ gap: 2, backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" }}>
+          <ActionRow icon="account-outline" title="Thông tin tài khoản" subtitle="Tên hiển thị, email và thông tin cá nhân" onPress={() => navigation.navigate("AccountSettings")} />
+          <ActionRow asset={assets.imgContainer8} icon="fridge-outline" title="Quản lý tủ thực phẩm" subtitle="Các nguyên liệu đang có trong kho" onPress={() => navigation.navigate("Pantry")} />
+          <ActionRow asset={assets.imgContainer10} icon="history" title="Lịch sử nấu ăn" subtitle="Xem lại các bữa ăn của bạn" onPress={() => navigation.navigate("CookingHistory")} />
+          <ActionRow icon="tune-variant" title="Cài đặt khẩu vị & Dị ứng" subtitle="Mục tiêu, chế độ ăn và dị ứng thực phẩm" onPress={() => navigation.navigate("ProfileSetup", { editing: true })} />
+          <ActionRow icon="help-circle-outline" title="Hướng dẫn sử dụng Z-Pantry" subtitle="Khám phá cách dùng ứng dụng" onPress={() => navigation.navigate("InteractiveGuide", { isReplay: true })} />
         </View>
-
-        <Section title="Thông tin cá nhân">
-          <InfoRow label="Tên hiển thị" value={displayName} icon="account-outline" editable={false} />
-          <InfoRow label="Email" value={displayEmail} icon="email-outline" editable={false} />
-        </Section>
-
-        <Section title="Thói quen ăn uống">
-          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })}>
-            <SettingRow title="Chỉnh hồ sơ, chế độ ăn và dị ứng" />
-          </Pressable>
-        </Section>
-
-        <Section title="Cài đặt">
-          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("AccountSettings")}><SettingRow title="Thông tin tài khoản" /></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CookingHistory")}><SettingRow title="Lịch sử nấu ăn" /></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => navigation.navigate("InteractiveGuide", { isReplay: true })}>
-            <SettingRow title="Hướng dẫn sử dụng Z-Pantry" />
-          </Pressable>
-          <View style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.line }}>
-            <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900" }} selectable>
-              1900 1009 <Text style={{ color: colors.primary }}>HOTLINE</Text>
-            </Text>
-            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
-              Gọi cho chúng tôi khi bạn cần hỗ trợ
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Đăng xuất"
-            onPress={() => setIsLogoutVisible(true)}
-            style={({ pressed }) => ({
-              minHeight: 44,
-              borderRadius: 10,
-              backgroundColor: colors.primary,
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "row",
-              gap: 8,
-              opacity: pressed ? 0.82 : 1
-            })}
-          >
-            <MaterialCommunityIcons name="logout" size={21} color={colors.white} />
-            <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
-              Đăng xuất
-            </Text>
-          </Pressable>
-        </Section>
+        <View style={{ gap: 2, backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" }}>
+          <ActionRow icon="devices" title="Kết nối thiết bị" upcoming onPress={() => showUnavailable("Kết nối thiết bị")} />
+          <ActionRow asset={assets.imgContainer11} icon="bell-outline" title="Cài đặt thông báo" upcoming onPress={() => showUnavailable("Cài đặt thông báo")} />
+          <ActionRow asset={assets.imgContainer13} icon="headset" title="Hỗ trợ & Phản hồi" upcoming onPress={() => showUnavailable("Hỗ trợ & Phản hồi")} />
+        </View>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <PrimaryButton title="Nhập từ ảnh" icon="camera-outline" variant="soft" style={{ flex: 1 }} onPress={() => navigation.navigate("PantryImport")} />
+          <PrimaryButton title="Gợi ý món" icon="silverware-fork-knife" variant="soft" style={{ flex: 1 }} onPress={() => navigation.navigate("MealSuggestion")} />
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Đăng xuất" onPress={() => setIsLogoutVisible(true)}
+          style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", gap: 8, justifyContent: "center", alignItems: "center", opacity: pressed ? 0.6 : 1 })}>
+          <FigmaAsset asset={assets.imgContainer7} /><Text style={{ color: colors.danger, fontSize: 14, fontWeight: "600" }}>Đăng xuất</Text>
+        </Pressable>
+        <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Z-Pantry · Bếp nhỏ, cảm hứng lớn</Text>
       </ScrollView>
       <LogoutConfirmModal visible={isLogoutVisible} isSigningOut={isSigningOut} onStay={() => setIsLogoutVisible(false)} onConfirm={confirmSignOut} />
     </SafeAreaView>
-  );
-}
-
-function QuickButton({ icon, label, onPress }: { icon: ComponentProps<typeof MaterialCommunityIcons>["name"]; label: string; onPress?: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        minHeight: 56,
-        borderRadius: 10,
-        backgroundColor: colors.card,
-        borderWidth: 1,
-        borderColor: colors.line,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 5,
-        opacity: pressed ? 0.82 : 1
-      })}
-    >
-      <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "900", textAlign: "center" }} selectable>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View style={{ gap: 10 }}>
-      <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
-        {title}
-      </Text>
-      <View style={{ backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>{children}</View>
-    </View>
-  );
-}
-
-function InfoRow({ label, value, icon, editable = true }: { label: string; value: string; icon: ComponentProps<typeof MaterialCommunityIcons>["name"]; editable?: boolean }) {
-  return (
-    <View style={{ gap: 6 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
-        {label}
-      </Text>
-      <View style={{ minHeight: 38, borderRadius: 9, backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10 }}>
-        <MaterialCommunityIcons name={icon} size={18} color={colors.primary} />
-        <Text style={{ flex: 1, color: colors.text, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
-          {value}
-        </Text>
-        {editable ? (
-          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
-            Thay đổi
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-function SettingRow({ title }: { title: string }) {
-  return (
-    <View style={{ minHeight: 42, borderRadius: 9, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, justifyContent: "center", paddingHorizontal: 12 }}>
-      <Text style={{ color: colors.text, fontSize: 13, fontWeight: "700" }} selectable>
-        {title}
-      </Text>
-    </View>
   );
 }

@@ -1,5 +1,6 @@
+import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, ViewStyle } from "react-native";
+import { Pressable, ViewStyle } from "react-native";
 import { colors } from "@/constants/colors";
 
 type Props = {
@@ -15,6 +16,8 @@ export default function AppBackButton({ label = "Quay lại", onPress, variant =
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       hitSlop={8}
       style={({ pressed }) => [
@@ -22,7 +25,7 @@ export default function AppBackButton({ label = "Quay lại", onPress, variant =
           minWidth: isIconOnly ? 46 : undefined,
           width: isIconOnly ? 46 : undefined,
           height: 46,
-          borderRadius: 17,
+          borderRadius: 10,
           backgroundColor: isFloating ? "rgba(0,59,30,0.72)" : colors.card,
           borderWidth: 1,
           borderColor: colors.line,
@@ -32,14 +35,14 @@ export default function AppBackButton({ label = "Quay lại", onPress, variant =
           gap: 7,
           paddingHorizontal: isIconOnly ? 0 : 12,
           opacity: pressed ? 0.78 : 1,
-          boxShadow: "0 8px 18px rgba(0,0,0,0.18)"
+          boxShadow: "0 2px 6px rgba(0,48,20,0.04)"
         },
         style
       ]}
     >
       <Ionicons name="chevron-back" size={24} color={colors.primary} />
       {isIconOnly ? null : (
-        <Text style={{ color: colors.text, fontSize: 14, fontWeight: "900" }} selectable={false}>
+        <Text style={{ color: colors.text, fontSize: 14, fontWeight: "600" }} selectable={false}>
           {label}
         </Text>
       )}

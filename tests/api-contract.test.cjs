@@ -29,6 +29,115 @@ const { resolveApiBaseUrl } = load('@/api/baseUrl');
 const { canUpdateUser, buildUserUpdate } = load('@/utils/userProfile');
 const id = '55f2f378-692a-4268-924e-e8c648190e32';
 
+test('password recovery sends the deployed schema and rejects invalid reset before writing', async () => {
+  const calls = [];
+  const { authApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return { message: 'OK' }; } } })('@/api/auth');
+  await authApi.forgotPassword(' fixture@example.invalid ');
+  const reset = { email: 'fixture@example.invalid', otpCode: '123456', newPassword: 'new-password', confirmPassword: 'new-password' };
+  await authApi.resetPassword(reset);
+  assert.deepEqual(calls.map(([route]) => route), ['/api/Auth/forgot-password', '/api/Auth/reset-password']);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { email: reset.email });
+  assert.deepEqual(JSON.parse(calls[1][1].body), reset);
+  assert.throws(() => authApi.resetPassword({ ...reset, otpCode: '123' }));
+  assert.throws(() => authApi.resetPassword({ ...reset, confirmPassword: 'different' }));
+  assert.equal(calls.length, 2);
+});
+
+test('reset OTP verification never uses registration verification and propagates rejection', async () => {
+  const previous = process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH;
+  const calls = [];
+  try {
+    delete process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH;
+    const unsupported = loader({ '@/api/client': { apiRequest: async (...args) => calls.push(args) } })('@/api/auth').authApi;
+    assert.equal(await unsupported.verifyPasswordResetOtp({ email: 'fixture@example.invalid', otpCode: '123456' }), false);
+    assert.equal(calls.length, 0);
+    process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH = '/api/Auth/verify-reset-otp';
+    const configured = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); throw new ApiError('Invalid OTP', 400); } } })('@/api/auth').authApi;
+    assert.equal(configured.canVerifyPasswordResetOtp, true);
+    await assert.rejects(configured.verifyPasswordResetOtp({ email: 'fixture@example.invalid', otpCode: '000000' }), /Invalid OTP/);
+    assert.equal(calls[0][0], '/api/Auth/verify-reset-otp');
+    assert.deepEqual(JSON.parse(calls[0][1].body), { email: 'fixture@example.invalid', otpCode: '000000' });
+  } finally {
+    if (previous === undefined) delete process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH;
+    else process.env.EXPO_PUBLIC_RESET_OTP_VERIFY_PATH = previous;
+  }
+});
+
+test('role assignment respects the backend hierarchy and uses PATCH', async () => {
+  const { assignableRoles } = load('@/utils/roles');
+  assert.deepEqual(assignableRoles('ADMIN', 'USER'), ['USER', 'MANAGER']);
+  assert.deepEqual(assignableRoles('ADMIN', 'ADMIN'), []);
+  assert.deepEqual(assignableRoles('MANAGER', 'USER'), []);
+  assert.ok(assignableRoles('SUPER_ADMIN', 'ADMIN').includes('SUPER_ADMIN'));
+  const calls = [];
+  const { usersApi } = loader({ '@/api/client': { apiRequest: async (...args) => calls.push(args) } })('@/api/users');
+  await usersApi.changeRole(id, 'MANAGER');
+  assert.equal(calls[0][0], `/api/admin/users/${id}/role`);
+  assert.equal(calls[0][1].method, 'PATCH');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { role: 'MANAGER' });
+});
+
+test('ingredient aliases encode paths and reject empty or overlong names', async () => {
+  const calls = [];
+  const { ingredientsApi } = loader({ '@/api/client': { apiRequest: async (...args) => calls.push(args) } })('@/api/ingredients');
+  await ingredientsApi.aliases(id); await ingredientsApi.addAlias(id, '  cà rốt Đà Lạt  '); await ingredientsApi.removeAlias(id, 'alias/id');
+  assert.equal(calls[0][0], `/api/ingredients/${id}/aliases`);
+  assert.deepEqual(JSON.parse(calls[1][1].body), { aliasName: 'cà rốt Đà Lạt' });
+  assert.equal(calls[2][0], `/api/ingredients/${id}/aliases/alias%2Fid`);
+  assert.throws(() => ingredientsApi.addAlias(id, ' '));
+  assert.throws(() => ingredientsApi.addAlias(id, 'a'.repeat(201)));
+});
+
+test('unified image analysis adapts ingredients and refuses unknown images without pantry mutation', async () => {
+  const calls = []; let result = { imageType: 'RECEIPT', ingredients: [{ rawName: 'carrot', quantity: 1, unit: 'g', reviewRequired: true }], warnings: ['check'] };
+  const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => { calls.push(args); return result; } } })('@/api/pantryImport');
+  const file = new File(['synthetic'], 'test.png', { type: 'image/png' });
+  const preview = await pantryImportApi.analyze('AUTO', file);
+  assert.equal(calls[0][0], '/api/v2/ingredients/analyze-image');
+  assert.equal(calls[0][1].body.get('image').name, 'test.png');
+  assert.equal(preview.sourceType, 'RECEIPT'); assert.equal(preview.items[0].reviewRequired, true);
+  result = { imageType: 'UNKNOWN', ingredients: [], warnings: [] };
+  assert.deepEqual((await pantryImportApi.analyze('AUTO', file)).items, []);
+  assert.equal(calls.length, 2);
+});
+
+test('recipe pantry comparison scales portions, converts known units, excludes expired food and preserves shortages', () => {
+  const { compareRecipePantry } = load('@/utils/recipePantry');
+  const recipe = { servingSize: 2, ingredients: [{ ingredientId: id, ingredientName: 'Carrot', quantity: 200, unit: 'g' }] };
+  const pantry = [
+    { ingredientId: id, quantity: 0.1, unit: 'kg', expiredAt: '' },
+    { ingredientId: id, quantity: 100, unit: 'g', expiredAt: '' },
+    { ingredientId: id, quantity: 1000, unit: 'g', expiredAt: '2000-01-01' },
+    { ingredientId: id, quantity: 20, unit: 'piece', expiredAt: '' }
+  ];
+  const check = compareRecipePantry(recipe, pantry, 4);
+  assert.equal(check.availableIngredients[0].quantity, 200);
+  assert.equal(check.missingIngredients[0].requiredQuantity, 200);
+  assert.match(check.note, /hết hạn/); assert.match(check.note, /đơn vị/);
+  assert.equal(compareRecipePantry(recipe, pantry, 2).missingIngredients.length, 0);
+});
+
+test('menu detail scales recipe amounts to the saved serving size', async () => {
+  const { todayMenuApi } = loader({
+    '@/api/client': { apiRequest: async () => ({ id, recipeId: 'recipe', servingSize: 4 }) },
+    '@/api/recipes': { recipesApi: { get: async () => ({ servingSize: 2, ingredients: [{ ingredientId: id, quantity: 200, unit: 'g' }] }) } },
+    '@/api/pantry': { pantryApi: { all: async () => [] } }
+  })('@/api/todayMenu');
+  assert.equal((await todayMenuApi.get(id)).requiredIngredients[0].quantity, 400);
+});
+
+test('recommendation metadata preserves only actual persisted IDs and validates feedback', async () => {
+  const calls = [];
+  const { recommendationsApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return { recommendationId: id, items: [{ recipeId: id, mealId: 'stored-meal', recipeName: 'Soup' }] }; } } })('@/api/recommendations');
+  const [item] = (await recommendationsApi.personalized()).recommendations;
+  assert.equal(item.recommendationId, id); assert.equal(item.persistedMeal, true);
+  const feedback = { mealRecommendationId: id, recipeId: id, rating: 5, feedbackType: 'RATING', comment: 'Good' };
+  await recommendationsApi.feedback(id, feedback);
+  assert.equal(calls[1][0], `/api/recommendations/${id}/feedback`);
+  assert.deepEqual(JSON.parse(calls[1][1].body), feedback);
+  assert.throws(() => recommendationsApi.feedback(id, { ...feedback, rating: 6 }));
+});
+
 test('text pantry parsing sends only JSON text and requires explicit confirmation', async () => {
   const calls = [];
   const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => {
@@ -158,6 +267,29 @@ test('native secure storage persists remembered sessions and forgets non-remembe
   await storage.clearSession();assert.equal(await storage.getSession(),null);
 });
 
+test('survey is reserved for verified new accounts and does not repeat after its first display', async () => {
+  const persisted = new Map();
+  const mocks = { 'react-native': { Platform: { OS: 'android' } }, 'expo-secure-store': {
+    getItemAsync: async k => persisted.get(k) ?? null, setItemAsync: async (k, v) => { persisted.set(k, v); }, deleteItemAsync: async k => { persisted.delete(k); }
+  } };
+  const storage = loader(mocks)('@/utils/authStorage').authStorage;
+  const session = { accessToken: 'x.' + Buffer.from(JSON.stringify({ userId: id, email: 'fixture@example.invalid' })).toString('base64url') + '.x', refreshToken: 'fixture-refresh', fullName: 'Fixture', email: 'fixture@example.invalid', role: 'USER', expiresAt: '2099-01-01' };
+  assert.equal(await storage.getOnboardingStep(id), 'done'); // Existing account / new device.
+  await storage.markNewAccount(' Fixture@Example.Invalid ');
+  await storage.saveSession(session, false);
+  assert.equal(await storage.getOnboardingStep(id), 'profile_setup');
+  await storage.setOnboardingStep(id, 'done'); // Marked when the first survey is displayed.
+  await storage.clearSession();
+  const reopened = loader(mocks)('@/utils/authStorage').authStorage;
+  await reopened.saveSession(session, true);
+  assert.equal(await reopened.getOnboardingStep(id), 'done');
+  persisted.set(`onboarding_step_${id}`, 'interactive_guide');
+  assert.equal(await reopened.getOnboardingStep(id), 'done'); // Migrate obsolete guide state.
+  await reopened.markNewAccount(session.email);
+  await reopened.saveSession(session);
+  assert.equal(await reopened.getOnboardingStep(id), 'done'); // Never re-open a completed survey.
+});
+
 test('menu detail composes recipe and matching pantry, excluding unrelated ingredients', async () => {
   const mockLoad=loader({'@/api/client':{apiRequest:async()=>({id,recipeId:'recipe'})},'@/api/recipes':{recipesApi:{get:async()=>({id:'recipe',ingredients:[{ingredientId:'a',ingredientName:'Carrot',quantity:2,unit:'g'}]})}},'@/api/pantry':{pantryApi:{all:async()=>[{id:'row',ingredientId:'a',quantity:3,unit:'g'},{id:'other',ingredientId:'b',quantity:4,unit:'g'}]}}});
   const detail=await mockLoad('@/api/todayMenu').todayMenuApi.get(id);
@@ -256,6 +388,129 @@ test('Auth routes retain casing and logout requires authentication', async () =>
   assert.deepEqual(JSON.parse(calls[0][1].body), { fullName: 'Name', email: 'test@example.dev', password: 'pass' });
   assert.deepEqual(JSON.parse(calls[1][1].body), { email: 'test@example.dev', otpCode: '123456' });
   assert.equal(calls[0][1].auth, undefined);
+});
+
+test('Google ID tokens are exchanged with Java, without treating provider credentials as app sessions', async () => {
+  const calls = [];
+  const session = { accessToken: 'zpantry-access', refreshToken: 'zpantry-refresh', email: 'fixture@example.invalid' };
+  const { authApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return session; } } })('@/api/auth');
+  assert.equal(await authApi.google('google-id-token'), session);
+  assert.equal(calls[0][0], '/api/Auth/google');
+  assert.equal(calls[0][1].method, 'POST');
+  assert.equal(calls[0][1].auth, undefined);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { idToken: 'google-id-token' });
+});
+
+async function withGoogleConfig(action) {
+  const keys = ['EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID', 'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'EXPO_PUBLIC_AUTH_REDIRECT_URI'];
+  const previous = keys.map(key => process.env[key]);
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = 'fixture.apps.googleusercontent.com';
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = 'ios-fixture.apps.googleusercontent.com';
+  delete process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI;
+  try { await action(); } finally {
+    keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
+  }
+}
+
+test('native Google flow requires configuration, distinguishes cancellation and rejects missing ID tokens', async () => {
+  await withGoogleConfig(async () => {
+    let response = { type: 'success', data: { idToken: 'provider-id-token' } };
+    const configurations = [];
+    const provider = {
+      GoogleSignin: { configure: value => configurations.push(value), hasPlayServices: async () => true, signIn: async () => response },
+      statusCodes: {}, isErrorWithCode: () => false
+    };
+    const mocks = { 'react-native': { Platform: { OS: 'android' } }, '@react-native-google-signin/google-signin': provider };
+    const google = loader(mocks)('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    assert.equal(google.ready, true);
+    assert.equal(await google.getIdToken(), 'provider-id-token');
+    assert.equal(configurations[0].webClientId, process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+    assert.equal(configurations[0].offlineAccess, false);
+    response = { type: 'cancelled' };
+    assert.equal(await google.getIdToken(), null);
+    response = { type: 'success', data: { idToken: null } };
+    await assert.rejects(google.getIdToken(), /chưa trả về/);
+    delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const unconfigured = loader(mocks)('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    assert.equal(unconfigured.ready, false);
+    await assert.rejects(unconfigured.getIdToken(), /chưa sẵn sàng/);
+  });
+});
+
+test('native Google SDK reports Android configuration and Play Services failures without exchanging a token', async () => {
+  await withGoogleConfig(async () => {
+    let code = '10';
+    const provider = {
+      GoogleSignin: { configure: () => {}, hasPlayServices: async () => true, signIn: async () => { throw { code }; } },
+      statusCodes: { SIGN_IN_CANCELLED: 'cancelled', PLAY_SERVICES_NOT_AVAILABLE: 'play-unavailable', IN_PROGRESS: 'in-progress' },
+      isErrorWithCode: error => typeof error?.code === 'string'
+    };
+    const google = loader({ 'react-native': { Platform: { OS: 'android' } }, '@react-native-google-signin/google-signin': provider })('@/hooks/useGoogleSignIn').useGoogleSignIn();
+    await assert.rejects(google.getIdToken(), /com.zpantry.app.*SHA-1.*Web Client ID/);
+    code = 'play-unavailable';
+    await assert.rejects(google.getIdToken(), /Google Play Services/);
+    code = 'in-progress';
+    await assert.rejects(google.getIdToken(), /đang được xử lý/);
+    code = 'cancelled';
+    assert.equal(await google.getIdToken(), null);
+  });
+});
+
+test('web Google flow accepts only successful ID-token responses and handles close/error without a token', async () => {
+  await withGoogleConfig(async () => {
+    let response = { type: 'success', params: { id_token: 'web-provider-token' } };
+    let config;
+    const mocks = {
+      'expo-auth-session/providers/google': { useIdTokenAuthRequest: value => { config = value; return [{}, null, async () => response]; } },
+      'expo-web-browser': { maybeCompleteAuthSession() {} }
+    };
+    const google = loader(mocks)('@/hooks/useGoogleSignIn.web').useGoogleSignIn();
+    assert.equal(google.ready, true);
+    assert.equal(await google.getIdToken(), 'web-provider-token');
+    assert.equal(config.selectAccount, true);
+    response = { type: 'dismiss' };
+    assert.equal(await google.getIdToken(), null);
+    response = { type: 'error', params: { error: 'access_denied' } };
+    await assert.rejects(google.getIdToken(), /Chưa xác thực/);
+    response = { type: 'success', params: { access_token: 'not-an-id-token' } };
+    await assert.rejects(google.getIdToken(), /Chưa xác thực/);
+    delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const unconfigured = loader(mocks)('@/hooks/useGoogleSignIn.web').useGoogleSignIn();
+    assert.equal(unconfigured.ready, false);
+    await assert.rejects(unconfigured.getIdToken(), /chưa sẵn sàng/);
+  });
+});
+
+test('V2 profile uses the self route and preserves birthday, multiple goals and server nutrition targets', async () => {
+  const calls = [];
+  const payload = { birthDate: '2000-02-29', gender: 'FEMALE', heightCm: 165.5, weightKg: 55,
+    activityLevel: 'MODERATE', goals: ['QUICK_COOKING', 'WASTE_REDUCTION'], dietPreference: 'EAT_CLEAN', allergies: ['NO_ALLERGIES'] };
+  const saved = { ...payload, dailyCalorieTarget: 1850, dailyProteinTarget: 70, weightLossAllowed: false, healthWarning: 'Server warning' };
+  const { profileApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return saved; } } })('@/api/profile');
+  assert.equal(await profileApi.getCurrent(), saved);
+  assert.equal(await profileApi.saveCurrent(payload), saved);
+  assert.equal(calls.every(([route, options]) => route === '/api/me/profile/v2' && options.auth), true);
+  assert.equal(calls[1][1].method, 'PUT');
+  assert.deepEqual(JSON.parse(calls[1][1].body), payload);
+});
+
+test('birth dates reject calendar rollover/future dates and keep date-only values without UTC drift', () => {
+  const { parseBirthDate, formatBirthDate } = load('@/utils/userProfile');
+  const today = new Date(2024, 2, 1, 0, 0);
+  for (const value of ['', '2024-2-1', '2023-02-29', '2024-02-30', '2024-03-02', '2024-13-01']) {
+    assert.equal(parseBirthDate(value, today), null, value);
+  }
+  assert.equal(formatBirthDate(parseBirthDate('2024-02-29', today)), '2024-02-29');
+  assert.equal(formatBirthDate(parseBirthDate('2024-03-01', today)), '2024-03-01');
+});
+
+test('personalized suggestions send documented profile-only filters and preserve empty results', async () => {
+  const calls = [];
+  const { recommendationsApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return { items: [] }; } } })('@/api/recommendations');
+  assert.deepEqual(await recommendationsApi.personalized(5, { mode: 'PROFILE_BASED', mealType: 'DINNER', servings: 2, maxCookTimeMinutes: 30 }), { recommendations: [] });
+  assert.deepEqual(JSON.parse(calls[0][1].body), { topK: 5, mode: 'PROFILE_BASED', mealType: 'DINNER', servings: 2, maxCookTimeMinutes: 30 });
+  assert.equal(calls[0][0], '/api/recommendations/v2/meals');
+  assert.equal(calls[0][1].auth, true);
 });
 
 test('image upload distinguishes unavailable services, oversized images and network errors', () => {
@@ -454,4 +709,43 @@ test('imported pantry items without expiry do not become expired today', async (
   const { pantryApi } = loader({ '@/api/client': { apiRequest: async () => [{ id, ingredientId: id, expiredAt: null, quantity: 1 }] } })('@/api/pantry');
   const [item] = await pantryApi.list();
   assert.equal(item.expiredAt, '');
+});
+
+
+test('expiry days cross months and leap years and reject invalid input', () => {
+  const { expiryDateFromDays, remainingExpiryDays } = loader()('@/utils/expiryDays');
+  const today = new Date(2026, 11, 29, 23, 45);
+  assert.equal(expiryDateFromDays('7', today), '2027-01-05');
+  assert.equal(expiryDateFromDays('0', today), '2026-12-29');
+  assert.equal(expiryDateFromDays('', today), null);
+  assert.equal(expiryDateFromDays('2', new Date(2028, 1, 28)), '2028-03-01');
+  assert.equal(remainingExpiryDays('2027-01-05T00:00:00Z', today), '7');
+  assert.equal(remainingExpiryDays('2026-12-28', today), '-1');
+  assert.equal(remainingExpiryDays(null, today), '');
+  for (const invalid of ['-1', '1.5', 'abc', '36501']) assert.throws(() => expiryDateFromDays(invalid, today));
+});
+
+test('display name uses FullName and never email fallback', () => {
+  const { userDisplayName } = loader()('@/utils/userProfile');
+  assert.equal(userDisplayName({ fullName: '  Nguyễn Minh Khang  ', email: 'khang@example.invalid' }), 'Nguyễn Minh Khang');
+  assert.equal(userDisplayName({ fullName: 'khang@example.invalid', email: 'khang@example.invalid' }), 'bạn');
+  assert.equal(userDisplayName({ email: 'khang@example.invalid' }), 'bạn');
+});
+
+
+test('batch pantry sends one items request with canonical units and normalized dates', async () => {
+  const calls = [];
+  const { pantryApi } = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return JSON.parse(args[1].body).items; } } })('@/api/pantry');
+  const first = { ingredientId: 'a', quantity: 200, unit: 'g', expiredAt: '2027-01-05', storageLocation: 'fridge', note: '' };
+  const second = { ...first, ingredientId: 'b', quantity: 300, unit: 'ml', expiredAt: null };
+  const saved = await pantryApi.saveItems([first, second]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], '/api/me/pantry/items/batch');
+  assert.equal(calls[0][1].auth, true);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { items: [{ ...first, expiredAt: '2027-01-05T00:00:00.000Z' }, second] });
+  assert.equal(saved.length, 2);
+  for (const invalid of [[], [first, first], [{ ...first, unit: '' }], [{ ...first, quantity: 0 }]]) {
+    await assert.rejects(pantryApi.saveItems(invalid));
+  }
+  assert.equal(calls.length, 1);
 });

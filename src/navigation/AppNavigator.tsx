@@ -1,9 +1,14 @@
+import FixedBackHeader from "@/components/FixedBackHeader";
+import AiChefChat from "@/components/AiChefChat";
+import FigmaAsset from '@/components/FigmaAsset';
+import { homeAssets, pantryAssets, exploreAssets, profileAssets, loginAssets } from '@/constants/figmaAssets';
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, useWindowDimensions, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
@@ -13,6 +18,7 @@ import AdminUserFormScreen from "@/screens/AdminUserFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
@@ -39,180 +45,54 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const tabMeta = {
-  Home: { label: "Hôm nay", icon: "home-outline", activeIcon: "home", family: "ion" },
-  Pantry: { label: "Tủ", icon: "fridge-outline", activeIcon: "fridge", family: "mci" },
-  MealSuggestion: { label: "Công thức", icon: "silverware-fork-knife", activeIcon: "silverware-fork-knife", family: "mci" },
+  Home: { label: "Trang chủ", icon: "home-outline", activeIcon: "home", family: "ion" },
+  Pantry: { label: "Kho thực phẩm", icon: "fridge-outline", activeIcon: "fridge", family: "mci" },
+  MealSuggestion: { label: "Khám phá", icon: "silverware-fork-knife", activeIcon: "silverware-fork-knife", family: "mci" },
   Plan: { label: "Thực đơn", icon: "calendar-outline", activeIcon: "calendar", family: "ion" },
   Profile: { label: "Cá nhân", icon: "person-outline", activeIcon: "person", family: "ion" }
 } as const;
 
-function TabIcon({ routeName, focused }: { routeName: keyof typeof tabMeta; focused: boolean }) {
-  const meta = tabMeta[routeName];
-  const name = focused ? meta.activeIcon : meta.icon;
-  const color = focused ? colors.primary : colors.tabText;
-  if (meta.family === "mci") {
-    return <MaterialCommunityIcons name={name as never} size={22} color={color} />;
-  }
-  return <Ionicons name={name as never} size={22} color={color} />;
-}
-
-function AnimatedTabButton({
-  routeName,
-  focused,
-  label,
-  onPress,
-  onLongPress
-}: {
-  routeName: keyof typeof tabMeta;
-  focused: boolean;
-  label: string;
-  onPress: () => void;
-  onLongPress: () => void;
-}) {
-  const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(progress, {
-      toValue: focused ? 1 : 0,
-      useNativeDriver: true,
-      damping: 13,
-      stiffness: 180,
-      mass: 0.65
-    }).start();
-  }, [focused, progress]);
-
-  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
-  const labelOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] });
-
-  return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Animated.View
-        style={{
-          width: 52,
-          height: 46,
-          borderRadius: 23,
-          alignItems: "center",
-          justifyContent: "center",
-          transform: [{ scale }]
-        }}
-      >
-        <TabIcon routeName={routeName} focused={focused} />
-      </Animated.View>
-      <Animated.Text
-        numberOfLines={1}
-        style={{
-          marginTop: -4,
-          color: focused ? colors.primary : colors.tabText,
-          fontSize: 10,
-          fontWeight: "900",
-          opacity: labelOpacity
-        }}
-      >
-        {label}
-      </Animated.Text>
-    </Pressable>
-  );
-}
-
-function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const bottomSpace = Math.max(insets.bottom, 12);
   const { width } = useWindowDimensions();
-  const indicator = useRef(new Animated.Value(state.index)).current;
-  const tabWidth = useMemo(() => (width - 36 - 16) / state.routes.length, [state.routes.length, width]);
-  const translateX = Animated.multiply(indicator, tabWidth);
-
-  useEffect(() => {
-    Animated.spring(indicator, {
-      toValue: state.index,
-      useNativeDriver: true,
-      damping: 16,
-      stiffness: 170,
-      mass: 0.8
-    }).start();
-  }, [indicator, state.index]);
-
-  return (
-    <View testID="bottom-tab-bar" style={{ height: 72 + bottomSpace, backgroundColor: colors.background }}>
-    <View
-      pointerEvents="box-none"
-      style={{
-        position: "absolute",
-        left: 18,
-        right: 18,
-        bottom: bottomSpace,
-        height: 60,
-        borderRadius: 28,
-        borderCurve: "continuous",
-        backgroundColor: "rgba(255,255,255,0.30)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.45)",
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 8,
-        boxShadow: "0 -8px 28px rgba(0,0,0,0.28)",
-        overflow: "visible"
-      }}
-    >
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          left: 8,
-          top: 4,
-          width: tabWidth,
-          alignItems: "center",
-          transform: [{ translateX }]
-        }}
-      >
-        <View
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: 27,
-            backgroundColor: "rgba(244,162,28,0.22)",
-            borderWidth: 1,
-            borderColor: "rgba(244,162,28,0.86)",
-            boxShadow: "0 8px 22px rgba(244,162,28,0.34)"
-          }}
-        />
-      </Animated.View>
-
+  const desktop = width >= 900;
+  return <View testID="bottom-tab-bar" style={{ backgroundColor: colors.surface, borderTopWidth: desktop ? 0 : 1,
+    borderBottomWidth: desktop ? 1 : 0, borderColor: colors.line, paddingBottom: desktop ? 0 : Math.max(insets.bottom, 8),
+    paddingTop: desktop ? 0 : 6 }}>
+    <View style={{ width: "100%", maxWidth: 1200, alignSelf: "center", minHeight: desktop ? 76 : 58,
+      flexDirection: "row", alignItems: "center", paddingHorizontal: desktop ? 32 : 4, gap: desktop ? 24 : 0 }}>
+      {desktop ? <FigmaAsset asset={loginAssets.imgLogoZPantryVer61} style={{ width: 138, height: 35.28, marginRight: "auto" }} label="Z Pantry" /> : null}
       {state.routes.map((route, index) => {
         const focused = state.index === index;
-        const options = descriptors[route.key].options;
-        const label = typeof options.title === "string" ? options.title : tabMeta[route.name as keyof typeof tabMeta].label;
-
-        const onPress = () => {
-          const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        return (
-          <AnimatedTabButton
-            key={route.key}
-            routeName={route.name as keyof typeof tabMeta}
-            focused={focused}
-            label={label}
-            onPress={onPress}
-            onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
-          />
-        );
+        const meta = tabMeta[route.name as keyof typeof tabMeta];
+        const color = focused ? '#EF9D1F' : colors.tabText;
+        const iconAssets = focused ? { Home: homeAssets.imgContainer13, Pantry: pantryAssets.imgContainer15, MealSuggestion: exploreAssets.imgContainer28, Profile: profileAssets.imgContainer17 } : { Home: pantryAssets.imgContainer14, Pantry: homeAssets.imgContainer14, MealSuggestion: homeAssets.imgContainer15, Profile: homeAssets.imgContainer16 };
+        const designIcon = iconAssets[route.name as keyof typeof iconAssets];
+        return <Pressable key={route.key} accessibilityRole="tab" accessibilityLabel={meta.label}
+          accessibilityState={{ selected: focused }}
+          onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
+          onPress={() => {
+            const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+          }} style={({ pressed }) => ({ flex: desktop ? undefined : 1, minHeight: 52,
+            paddingHorizontal: desktop ? 12 : 2, alignItems: "center", justifyContent: "center", gap: 5,
+            flexDirection: desktop ? "row" : "column", opacity: pressed ? 0.6 : 1,
+            borderBottomWidth: desktop && focused ? 2 : 0, borderColor: colors.primary })}>
+          {designIcon ? <FigmaAsset asset={designIcon} /> : <Ionicons name="calendar-outline" size={21} color={color} />}
+          <Text numberOfLines={1} style={{ color, fontSize: desktop ? 13 : width < 360 ? 10 : 11, fontWeight: focused ? "700" : "500" }}>{meta.label}</Text>
+        </Pressable>;
       })}
     </View>
-    </View>
-  );
+  </View>;
 }
 
 function Tabs() {
+  const { width } = useWindowDimensions();
   return (
-    <Tab.Navigator tabBar={(props) => <GlassTabBar {...props} />} screenOptions={{ headerShown: false }}>
+    <Tab.Navigator tabBar={(props) => <BrandTabBar {...props} />} screenOptions={{ headerShown: false, tabBarPosition: width >= 900 ? "top" : "bottom" }}>
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Hôm nay" }} />
       <Tab.Screen name="Pantry" component={PantryScreen} options={{ title: "Tủ" }} />
       <Tab.Screen name="MealSuggestion" component={MealSuggestionScreen} options={{ title: "Công thức" }} />
-      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: "Thực đơn" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Cá nhân" }} />
     </Tab.Navigator>
   );
@@ -261,7 +141,8 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <View style={{ flex: 1 }}>
+    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={({ route }) => ({ headerShown: !['Tabs', 'Login', 'AdminManagement'].includes(route.name), header: props => <FixedBackHeader {...props} />, contentStyle: { backgroundColor: colors.background } })}>
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
@@ -274,6 +155,7 @@ export default function AppNavigator() {
         <>
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
+          <Stack.Screen name="Plan" component={PlanScreen} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
           <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
           <Stack.Screen name="ManualMealSuggestion" component={ManualMealSuggestionScreen} />
@@ -288,8 +170,13 @@ export default function AppNavigator() {
           <Stack.Screen name="TodayMenuItemDetail" component={TodayMenuItemDetailScreen} />
         </>
       ) : (
+        <>
         <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        </>
       )}
     </Stack.Navigator>
+    {isAuthenticated && !isAdmin ? <AiChefChat /> : null}
+    </View>
   );
 }
