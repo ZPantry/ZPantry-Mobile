@@ -1,5 +1,10 @@
 import type { AdminUser, UpdateUserPayload } from "@/api/users";
 
+export function userDisplayName(user: { fullName?: string | null; email?: string | null } | null | undefined) {
+  const name = user?.fullName?.trim();
+  return name && !name.includes('@') && name.toLowerCase() !== user?.email?.trim().toLowerCase() ? name : 'bạn';
+}
+
 export function formatBirthDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

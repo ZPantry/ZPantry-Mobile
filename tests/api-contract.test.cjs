@@ -710,3 +710,24 @@ test('imported pantry items without expiry do not become expired today', async (
   const [item] = await pantryApi.list();
   assert.equal(item.expiredAt, '');
 });
+
+
+test('expiry days cross months and leap years and reject invalid input', () => {
+  const { expiryDateFromDays, remainingExpiryDays } = loader()('@/utils/expiryDays');
+  const today = new Date(2026, 11, 29, 23, 45);
+  assert.equal(expiryDateFromDays('7', today), '2027-01-05');
+  assert.equal(expiryDateFromDays('0', today), '2026-12-29');
+  assert.equal(expiryDateFromDays('', today), null);
+  assert.equal(expiryDateFromDays('2', new Date(2028, 1, 28)), '2028-03-01');
+  assert.equal(remainingExpiryDays('2027-01-05T00:00:00Z', today), '7');
+  assert.equal(remainingExpiryDays('2026-12-28', today), '-1');
+  assert.equal(remainingExpiryDays(null, today), '');
+  for (const invalid of ['-1', '1.5', 'abc', '36501']) assert.throws(() => expiryDateFromDays(invalid, today));
+});
+
+test('display name uses FullName and never email fallback', () => {
+  const { userDisplayName } = loader()('@/utils/userProfile');
+  assert.equal(userDisplayName({ fullName: '  Nguyễn Minh Khang  ', email: 'khang@example.invalid' }), 'Nguyễn Minh Khang');
+  assert.equal(userDisplayName({ fullName: 'khang@example.invalid', email: 'khang@example.invalid' }), 'bạn');
+  assert.equal(userDisplayName({ email: 'khang@example.invalid' }), 'bạn');
+});

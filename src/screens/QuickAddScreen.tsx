@@ -22,7 +22,6 @@ export default function QuickAddScreen() {
       </View>
       <AddMethod title="Thêm thủ công" description="Tìm trong danh mục, nhập lượng và hạn sử dụng." icon="plus" onPress={() => navigation.navigate("AddIngredient")} />
       <AddMethod title="Ảnh thực phẩm / hóa đơn" description="Tự nhận diện loại ảnh, kiểm tra kết quả trước khi lưu." icon="camera-outline" badge="Nhận diện tự động" onPress={() => navigation.navigate("PantryImport", { method: "FOOD_IMAGE" })} />
-      <AddMethod title="Thêm bằng văn bản" description="Nhập như bạn nói: 2 củ cà rốt, 200 g thịt bò." icon="text" onPress={() => navigation.navigate("PantryImport", { method: "TEXT" })} />
       <AddMethod title="Thêm bằng thực đơn" description="Lấy nguyên liệu từ các món đã lên lịch, theo đúng khẩu phần." icon="silverware-fork-knife" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
     </ScrollView>
   </SafeAreaView>;

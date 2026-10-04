@@ -1,5 +1,6 @@
 import AppInput from "@/components/AppInput";
-import DateField from "@/components/DateField";
+import ExpiryDaysField from "@/components/ExpiryDaysField";
+import { expiryDateFromDays, remainingExpiryDays } from "@/utils/expiryDays";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -19,12 +20,6 @@ import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image"
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
-function toInputDate(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
-  return date.toISOString().slice(0, 10);
-}
 
 function normalizeStorageLocation(label: string) {
   if (label === "Ngăn đông") return "freezer";
@@ -79,7 +74,8 @@ export default function PantryItemDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(String(initialItem?.quantity ?? 1));
   const [unit, setUnit] = useState(initialItem?.unit ?? ingredient?.unit ?? "phần");
-  const [expiredAt, setExpiredAt] = useState(toInputDate(initialItem?.expiredAt ?? ""));
+  const [expiryDays, setExpiryDays] = useState(remainingExpiryDays(initialItem?.expiredAt));
+  const [expiryChanged, setExpiryChanged] = useState(false);
   const [storageLocation, setStorageLocation] = useState(displayStorageLocation(initialItem?.storageLocation ?? "Ngan mat"));
   const [note, setNote] = useState(initialItem?.note ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +97,9 @@ export default function PantryItemDetailScreen() {
     if (!item?.id || !item.ingredientId) return "Không tìm thấy nguyên liệu cần cập nhật.";
     if (!Number.isFinite(amount) || amount <= 0) return "Số lượng phải lớn hơn 0.";
     if (!unit.trim()) return "Đơn vị không được để trống.";
-    if (expiredAt && (!/^\d{4}-\d{2}-\d{2}$/.test(expiredAt) || Number.isNaN(new Date(expiredAt).getTime()))) return "Vui lòng chọn đủ ngày, tháng và năm cho hạn dùng.";
+    if (expiryChanged) {
+      try { expiryDateFromDays(expiryDays); } catch (e) { return (e as Error).message; }
+    }
     return "";
   };
 
@@ -119,12 +117,14 @@ export default function PantryItemDetailScreen() {
         ingredientId: item!.ingredientId,
         quantity: Number(quantity.replace(",", ".")),
         unit: unit.trim(),
-          expiredAt: expiredAt ? new Date(expiredAt).toISOString() : null,
+        expiredAt: expiryChanged ? expiryDateFromDays(expiryDays) : item!.expiredAt || null,
         storageLocation: normalizeStorageLocation(storageLocation),
         note: note.trim()
       };
       const updated = await pantryApi.updateItem(item!.id, payload);
       setItem(updated);
+      setExpiryDays(remainingExpiryDays(updated.expiredAt));
+      setExpiryChanged(false);
       setIsEditing(false);
       toast.show(`Đã cập nhật ${title}.`);
     } catch (error) {
@@ -273,7 +273,7 @@ export default function PantryItemDetailScreen() {
                 <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="quả" />
               </View>
             </View>
-            <DateField label="Hạn dùng" value={expiredAt} onChange={setExpiredAt} optional disabled={isSaving} />
+            <ExpiryDaysField value={expiryDays} onChange={value => { setExpiryDays(value); setExpiryChanged(true); }} disabled={isSaving} />
             <View style={{ gap: 8 }}>
               <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
                 Nơi cất

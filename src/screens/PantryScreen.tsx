@@ -1,3 +1,4 @@
+import { userDisplayName } from '@/utils/userProfile';
 import FigmaAsset from '@/components/FigmaAsset';
 import { pantryAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -96,7 +97,7 @@ export default function PantryScreen() {
   const quantityLock = useRef(false);
   const navigation = useNavigation<any>();
   const { user, onboardingStep } = useAuth();
-  const displayName = user?.fullName || "bạn";
+  const displayName = userDisplayName(user);
   const [showExpiry, setShowExpiry] = useState(false);
   const notified = useRef("");
 
@@ -196,7 +197,6 @@ export default function PantryScreen() {
           <SectionHeading title="Bộ công cụ thêm món" />
           <ActionRow icon="playlist-edit" asset={assets.imgContainer6} title="Thêm nhanh" subtitle="Tìm và chọn nhiều nguyên liệu cùng lúc" onPress={() => navigation.navigate("QuickAdd")} />
           <ActionRow icon="camera-outline" asset={assets.imgContainer10} title="Thêm từ ảnh / hóa đơn" onPress={() => navigation.navigate("PantryImport")} />
-          <ActionRow icon="text" title="Thêm bằng văn bản" onPress={() => navigation.navigate("PantryImport", { method: "TEXT" })} />
           <ActionRow icon="silverware-fork-knife" title="Thêm bằng thực đơn" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
         </View>
       </ScrollView>

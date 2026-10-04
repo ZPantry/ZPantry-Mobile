@@ -1,3 +1,4 @@
+import { userDisplayName } from '@/utils/userProfile';
 import FigmaAsset from '@/components/FigmaAsset';
 import { profileAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -20,7 +21,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const displayName = user?.fullName || "Bạn";
+  const displayName = userDisplayName(user);
   const displayEmail = user?.email || "Chưa có email";
 
   const confirmSignOut = async () => {

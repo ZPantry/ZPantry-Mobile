@@ -10,8 +10,8 @@ import { useAuth } from "@/context/AuthContext";
 
 const steps = [
   { title: "Chào mừng đến Z-Pantry", description: "Bạn có thể xem từng bước, chọn một bước bất kỳ hoặc kết thúc hướng dẫn bất cứ lúc nào." },
-  { title: "Thêm nguyên liệu", description: "Mở Thêm nhanh để chọn nhập thủ công, bằng văn bản, bằng thực đơn hoặc từ ảnh. Bạn không cần nhập thử để xem bước kế tiếp." },
-  { title: "Kiểm tra trước khi lưu", description: "Với văn bản và ảnh, hãy kiểm tra nguyên liệu nhận diện được. Bạn có thể sửa số lượng, đơn vị, chọn lại nguyên liệu hoặc bỏ dòng chưa phù hợp." },
+  { title: "Thêm nguyên liệu", description: "Mở Thêm nhanh để chọn nhập thủ công, bằng thực đơn hoặc từ ảnh. Bạn không cần nhập thử để xem bước kế tiếp." },
+  { title: "Kiểm tra trước khi lưu", description: "Với ảnh, hãy kiểm tra nguyên liệu nhận diện được. Bạn có thể sửa số lượng, đơn vị, chọn lại nguyên liệu hoặc bỏ dòng chưa phù hợp." },
   { title: "Thêm bằng thực đơn", description: "Chọn ngày và các món trong thực đơn. Ứng dụng tổng hợp nguyên liệu theo khẩu phần để bạn kiểm tra trước khi lưu vào tủ." },
   { title: "Lưu vào tủ", description: "Chọn nguyên liệu, nhập số lượng và nơi cất. Hạn dùng có thể để trống. Chỉ khi bấm xác nhận thì dữ liệu mới được lưu." },
   { title: "Theo dõi hạn dùng", description: "Biểu tượng chuông trong Kho thực phẩm mở danh sách nguyên liệu cần chú ý. Bạn có thể đóng thông báo để tiếp tục sử dụng." },

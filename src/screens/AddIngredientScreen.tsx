@@ -1,5 +1,6 @@
 import AppInput from "@/components/AppInput";
-import DateField from "@/components/DateField";
+import ExpiryDaysField from "@/components/ExpiryDaysField";
+import { expiryDateFromDays } from "@/utils/expiryDays";
 import Text from "@/components/AppText";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -28,7 +29,7 @@ export default function AddIngredientScreen() {
   const [selectedId, setSelectedId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("");
-  const [expiredAt, setExpiredAt] = useState("");
+  const [expiryDays, setExpiryDays] = useState("");
   const [storageLocation, setStorageLocation] = useState("fridge");
   const [note, setNote] = useState("");
   const [search, setSearch] = useState("");
@@ -56,9 +57,9 @@ export default function AddIngredientScreen() {
     if (!selected) return setError("Vui lòng chọn nguyên liệu trong danh mục.");
     if (!Number.isFinite(amount) || amount <= 0) return setError("Số lượng phải lớn hơn 0.");
     if (!unit.trim()) return setError("Vui lòng nhập đơn vị.");
-    const date = expiredAt.trim();
-    if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date))
-      return setError("Vui lòng chọn đủ ngày, tháng và năm cho hạn dùng.");
+    let date: string | null;
+    try { date = expiryDateFromDays(expiryDays); }
+    catch (e) { return setError((e as Error).message); }
     lock.current = true; setSaving(true); setError("");
     try {
       await pantryApi.saveItem({ ingredientId: selected.id, quantity: amount, unit: unit.trim(), expiredAt: date || null, storageLocation, note: note.trim() });
@@ -85,7 +86,7 @@ export default function AddIngredientScreen() {
         <View style={{ flex: 1 }}><Field label="Số lượng" value={quantity} onChangeText={setQuantity} numeric disabled={saving} /></View>
         <View style={{ flex: 1 }}><Field label="Đơn vị" value={unit} onChangeText={setUnit} disabled={saving} /></View>
       </View>
-      <DateField label="Hạn dùng" value={expiredAt} onChange={setExpiredAt} optional disabled={saving} />
+      <ExpiryDaysField value={expiryDays} onChange={setExpiryDays} disabled={saving} />
       <Text style={{ color: colors.text, fontWeight: "600" }}>Nơi cất</Text>
       <View pointerEvents={saving ? "none" : "auto"} style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         {storageOptions.map(item => <CategoryChip key={item.value} label={item.label} active={storageLocation === item.value} onPress={() => setStorageLocation(item.value)} />)}

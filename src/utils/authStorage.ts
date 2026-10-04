@@ -100,7 +100,7 @@ function userFromToken(token?: string | null): StoredUser | null {
 
   return {
     userId: payload.userId,
-    fullName: payload.fullName || payload.email,
+    fullName: payload.fullName || "",
     email: payload.email,
     role: payload.role || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
     expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : ""
@@ -241,10 +241,10 @@ export const authStorage = {
     });
   },
 
-  async updateUser(values: Partial<Pick<StoredUser, "fullName">>) {
+  async updateUser(values: Partial<Pick<StoredUser, "fullName">>, expectedUserId?: string) {
     await mutate(async () => {
       const user = await this.getUser();
-      if (user) await setStoredValue(USER_KEY, JSON.stringify({ ...user, ...values }));
+      if (user && (!expectedUserId || user.userId === expectedUserId)) await setStoredValue(USER_KEY, JSON.stringify({ ...user, ...values }));
     });
     listeners.forEach(listener => listener());
   },

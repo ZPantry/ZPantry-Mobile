@@ -67,6 +67,9 @@ const server = http.createServer((req, res) => {
         completed = true;
         return ok({ cookingLog: { id: 'log-1', mealName: recipe.name, cookedAt: '2026-10-04T10:00:00Z' }, consumedIngredients: [], updatedPantryItems: [], warnings: [] });
       }
+      if (p === `/api/users/${uid}`) return ok({ id: uid, fullName: 'Nguyễn Minh Khang', email: 'fixture@example.invalid', role });
+      if (p === '/api/me/pantry/items' && method === 'POST') return ok({ id: iid, ...body });
+      if (p === `/api/me/pantry/items/${iid}` && method === 'PUT') return ok({ id: iid, ...body });
       if (p === '/api/users') return paged([{ id: targetid, fullName: 'Người dùng thử', email: 'target@example.invalid', role: 'USER', createdAt: '2026-10-01', isActive: true }]);
       if (p === `/api/admin/users/${targetid}/role`) return ok(null);
       if (p === '/api/me/profile/v2' && method === 'PUT') return ok(body);
@@ -75,7 +78,7 @@ const server = http.createServer((req, res) => {
     });
     if (role) await page.addInitScript(({ uid, role, step }) => {
       localStorage.setItem('zpantry.accessToken', 'synthetic-token'); localStorage.setItem('zpantry.refreshToken', 'synthetic-refresh');
-      localStorage.setItem('zpantry.user', JSON.stringify({ userId: uid, fullName: 'Test', email: 'fixture@example.invalid', role, expiresAt: '2099-01-01T00:00:00Z' }));
+      localStorage.setItem('zpantry.user', JSON.stringify({ userId: uid, fullName: 'fixture@example.invalid', email: 'fixture@example.invalid', role, expiresAt: '2099-01-01T00:00:00Z' }));
       if (step && !sessionStorage.getItem('fixture-step-initialized')) { localStorage.setItem('onboarding_step_' + uid, step); sessionStorage.setItem('fixture-step-initialized', 'true'); }
     }, { uid, role, step });
     await page.goto(`http://127.0.0.1:${server.address().port}`); return page;
@@ -211,9 +214,12 @@ const server = http.createServer((req, res) => {
     assert.equal(await firstVisit.getByText('Bỏ qua hướng dẫn', { exact: true }).count(), 0);
     await firstVisit.reload(); await firstVisit.getByRole('tab', { name: 'Trang chủ', exact: true }).waitFor();
     assert.equal(await firstVisit.getByText('Khẩu vị & Thể trạng của bạn', { exact: true }).count(), 0);
+    await firstVisit.getByText('Kho nguyên liệu của Nguyễn Minh Khang', { exact: true }).waitFor();
+    await firstVisit.getByText('Chào Nguyễn Minh Khang! ✨', { exact: true }).waitFor();
     await firstVisit.getByRole('button', { name: 'Thêm nguyên liệu', exact: true }).click();
     await firstVisit.setViewportSize({ width: 375, height: 667 });
     await firstVisit.getByRole('button', { name: 'Nhập tay nguyên liệu', exact: true }).click();
+    assert.equal(await firstVisit.getByRole('button', { name: 'Thêm bằng văn bản', exact: true }).count(), 0);
     const quickBack = await firstVisit.getByTestId('fixed-back-header').last().boundingBox();
     await firstVisit.getByRole('button', { name: 'Thêm bằng thực đơn', exact: true }).scrollIntoViewIfNeeded();
     assert.equal((await firstVisit.getByTestId('fixed-back-header').last().boundingBox()).y, quickBack.y);
@@ -226,7 +232,34 @@ const server = http.createServer((req, res) => {
     assert.equal(await quantity.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)');
     assert.equal(await quantity.evaluate(el => getComputedStyle(el).color), 'rgb(26, 28, 27)');
     assert.equal(await firstVisit.getByText('Bỏ qua hướng dẫn', { exact: true }).count(), 0);
+    const expiry = firstVisit.getByLabel('Hạn dùng (số ngày còn lại)', { exact: true });
+    await expiry.fill('7');
+    assert.equal(await firstVisit.locator('select:visible').count(), 0);
+    const date = await firstVisit.evaluate(() => {
+      const d = new Date(); d.setDate(d.getDate() + 7);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    });
+    await firstVisit.getByText('Hết hạn ngày ' + date.split('-').reverse().join('/'), { exact: true }).waitFor();
     await firstVisit.screenshot({ path: path.join(out, 'ingredient-inputs-mobile.png'), animations: 'disabled' });
+    await firstVisit.getByRole('button', { name: 'Xác nhận lưu vào tủ', exact: true }).click();
+    await firstVisit.getByRole('tab', { name: 'Kho thực phẩm', exact: true }).waitFor();
+    const pantrySave = calls.filter(c => c.p === '/api/me/pantry/items' && c.method === 'POST').at(-1);
+    assert.equal(pantrySave.body.expiredAt, new Date(date).toISOString());
+    assert.equal(calls.filter(c => c.p === '/api/me/pantry/parse').length, 0);
+    await firstVisit.getByRole('tab', { name: 'Kho thực phẩm', exact: true }).click();
+    assert.equal(await firstVisit.getByRole('button', { name: 'Thêm bằng văn bản', exact: true }).count(), 0);
+    await firstVisit.getByText('Cà rốt', { exact: true }).last().click();
+    await firstVisit.getByText('Chỉnh sửa', { exact: true }).click();
+    const editExpiry = firstVisit.getByLabel('Hạn dùng (số ngày còn lại)', { exact: true });
+    await editExpiry.fill('7');
+    await firstVisit.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+    await firstVisit.getByText('Đã cập nhật Cà rốt.', { exact: true }).waitFor();
+    assert.equal(calls.filter(c => c.p === `/api/me/pantry/items/${iid}` && c.method === 'PUT').at(-1).body.expiredAt, new Date(date).toISOString());
+    await firstVisit.getByText('Chỉnh sửa', { exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Xóa hạn dùng', exact: true }).click();
+    await firstVisit.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+    await firstVisit.getByText('Chưa cung cấp', { exact: true }).waitFor();
+    assert.equal(calls.filter(c => c.p === `/api/me/pantry/items/${iid}` && c.method === 'PUT').at(-1).body.expiredAt, null);
     await firstVisit.close();
 
     const admin = await open('ADMIN', 1280);

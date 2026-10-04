@@ -1,3 +1,4 @@
+import { userDisplayName } from '@/utils/userProfile';
 import FigmaAsset from '@/components/FigmaAsset';
 import { homeAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -62,7 +63,7 @@ export default function HomeScreen() {
   const showUnavailable = useUnavailableFeature();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
-  const displayName = user?.fullName || "bạn";
+  const displayName = userDisplayName(user);
   const { width } = useWindowDimensions();
   const wide = width >= 900;
   const [showAddMethods, setShowAddMethods] = useState(false);

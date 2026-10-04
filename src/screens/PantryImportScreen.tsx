@@ -19,11 +19,11 @@ type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: 
 export default function PantryImportScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const method: ImportMethod = route.params?.method || "FOOD_IMAGE";
+  // Text import is temporarily unavailable, including older navigation links.
+  const method: ImportMethod = route.params?.method === "TEXT" ? "FOOD_IMAGE" : route.params?.method || "FOOD_IMAGE";
   const imageMethod = method === "FOOD_IMAGE" || method === "RECEIPT";
   const toast = useToast();
   const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "AUTO");
-  const [text, setText] = useState("");
   const [menuDate, setMenuDate] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -68,7 +68,7 @@ export default function PantryImportScreen() {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(""); setEditing(null);
     try {
-      showPreview(method === "TEXT" ? await pantryImportApi.parseText(text) : await pantryImportApi.fromMenu(meals.filter(meal => selectedMeals.includes(meal.id))));
+      showPreview(await pantryImportApi.fromMenu(meals.filter(meal => selectedMeals.includes(meal.id))));
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tạo được danh sách nguyên liệu. Vui lòng thử lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
@@ -125,12 +125,8 @@ export default function PantryImportScreen() {
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 22, paddingBottom: 48, gap: 18, maxWidth: 720, width: "100%", alignSelf: "center" }}>
-      <Text style={{ color: colors.text, fontWeight: "700", fontSize: 26 }}>{method === "TEXT" ? "Thêm bằng văn bản" : method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
-      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "TEXT" ? "Nhập thực phẩm" : method === "MENU" ? "Chọn món" : "Chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
-      {method === "TEXT" ? <>
-        <AppInput accessibilityLabel="Danh sách thực phẩm" multiline value={text} onChangeText={setText} editable={!busy && rows === null} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={[inputStyle, { minHeight: 100, textAlignVertical: "top" }]} />
-        {rows === null ? <Action label={busy ? "Đang phân tích…" : "Phân tích văn bản"} disabled={busy || !text.trim()} onPress={prepare} /> : null}
-      </> : null}
+      <Text style={{ color: colors.text, fontWeight: "700", fontSize: 26 }}>{method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
+      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "MENU" ? "Chọn món" : "Chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
       {method === "MENU" ? <>
         <Text style={{ color: colors.text }}>Ngày thực đơn</Text>
         <DateField label="Ngày thực đơn" value={menuDate} onChange={setMenuDate} disabled={busy || rows !== null} />

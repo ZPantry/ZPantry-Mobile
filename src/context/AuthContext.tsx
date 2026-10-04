@@ -4,6 +4,7 @@ import type { LoginResponse } from "@/api/auth";
 import { logoutStoredSession } from "@/utils/authSession";
 import { authStorage, type StoredUser } from "@/utils/authStorage";
 import { restoreSession } from "@/api/client";
+import { usersApi } from "@/api/users";
 
 type AuthContextValue = {
   isLoading: boolean;
@@ -21,6 +22,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "interactive_guide" | "done">("done");
+
+  const userId = user?.userId;
+  useEffect(() => {
+    if (!userId || isLoading) return;
+    let active = true;
+    // Stored login data may be stale or contain email in fullName.
+    void usersApi.get(userId).then(async profile => {
+      if (active && typeof profile.fullName === 'string') {
+        await authStorage.updateUser({ fullName: profile.fullName.trim() }, userId);
+      }
+    }).catch(() => { /* Keep the existing name while the profile is unavailable. */ });
+    return () => { active = false; };
+  }, [userId, isLoading]);
 
   useEffect(() => {
     let isMounted = true;

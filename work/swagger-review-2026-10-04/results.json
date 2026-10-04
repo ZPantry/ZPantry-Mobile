@@ -154,6 +154,42 @@
       }
     },
     {
+      "p": "/api/me/pantry/items",
+      "method": "POST",
+      "body": {
+        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+        "quantity": 250,
+        "unit": "g",
+        "expiredAt": "2026-10-11T00:00:00.000Z",
+        "storageLocation": "fridge",
+        "note": ""
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/11f2f378-692a-4268-924e-e8c648190e32",
+      "method": "PUT",
+      "body": {
+        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+        "quantity": 0.1,
+        "unit": "kg",
+        "expiredAt": "2026-10-11T00:00:00.000Z",
+        "storageLocation": "fridge",
+        "note": ""
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/11f2f378-692a-4268-924e-e8c648190e32",
+      "method": "PUT",
+      "body": {
+        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+        "quantity": 0.1,
+        "unit": "kg",
+        "expiredAt": null,
+        "storageLocation": "fridge",
+        "note": ""
+      }
+    },
+    {
       "p": "/api/admin/users/44f2f378-692a-4268-924e-e8c648190e32/role",
       "method": "PATCH",
       "body": {
