@@ -9,7 +9,6 @@ import { useAuth } from "@/context/AuthContext";
 import { authStorage } from "@/utils/authStorage";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import { colors } from "@/constants/colors";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 
 export default function AccountSettingsScreen() {
@@ -35,8 +34,8 @@ export default function AccountSettingsScreen() {
     } catch(e) {setMessage(getFriendlyErrorMessage(e,"Chưa lưu được tài khoản."));}
     finally {setBusy(false);}
   }
-  return <SafeAreaView style={{flex:1,backgroundColor:colors.background}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:22,gap:18}}>
-    <AppBackButton onPress={()=>navigation.goBack()}/><Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Thông tin tài khoản</Text>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{flex:1,backgroundColor:colors.background}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:22,gap:18}}>
+    <Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Thông tin tài khoản</Text>
     <Text style={{color:colors.muted}}>{user?.email}</Text>
     {[
       {label:"Tên hiển thị",value:name,onChange:setName,secure:false},

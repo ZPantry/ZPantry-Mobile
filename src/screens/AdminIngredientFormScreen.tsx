@@ -1,8 +1,9 @@
+import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useState } from "react";
-import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient, IngredientPayload } from "@/api/ingredients";
@@ -160,9 +161,9 @@ export default function AdminIngredientFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
-        <AdminFormHeader title={form.id ? "Sửa nguyên liệu" : "Tạo nguyên liệu"} subtitle="Quản lý nutrition, unit và ảnh hiển thị" onBack={() => navigation.goBack()} />
+        <AdminFormHeader title={form.id ? "Sửa nguyên liệu" : "Tạo nguyên liệu"} subtitle="Quản lý nutrition, unit và ảnh hiển thị" />
 
         {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
 
@@ -222,12 +223,10 @@ export default function AdminIngredientFormScreen() {
   );
 }
 
-function AdminFormHeader({ title, subtitle, onBack }: { title: string; subtitle: string; onBack: () => void }) {
+function AdminFormHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <Pressable onPress={onBack} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
-        <Ionicons name="chevron-back" size={25} color={colors.primary} />
-      </Pressable>
+
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }} selectable>
           {title}
@@ -251,7 +250,7 @@ function FormInput({ label, value, onChangeText, placeholder, keyboardType }: { 
       <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} keyboardType={keyboardType} style={{ minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
+      <AppInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} keyboardType={keyboardType} style={{ minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
     </View>
   );
 }

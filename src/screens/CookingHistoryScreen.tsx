@@ -4,7 +4,6 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { todayMenuApi, type CookingLog } from "@/api/todayMenu";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { getFriendlyErrorMessage } from "@/utils/localize";
@@ -29,9 +28,9 @@ export default function CookingHistoryScreen() {
     finally { busy.current = false; setLoading(false); }
   }, []);
   useFocusEffect(useCallback(() => { void load(1); }, [load]));
-  return <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{flex:1,backgroundColor:colors.background}}>
     <FlatList data={items} keyExtractor={item=>item.id} refreshing={loading} onRefresh={()=>load(1)} contentContainerStyle={{padding:22,gap:16,paddingBottom:40}}
-      ListHeaderComponent={<View style={{gap:16}}><AppBackButton onPress={()=>navigation.goBack()}/><Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Lịch sử nấu ăn</Text>{error ? <><Text style={{color:colors.danger}}>{error}</Text><PrimaryButton title="Thử lại" onPress={()=>load(1)} disabled={loading}/></> : null}</View>}
+      ListHeaderComponent={<View style={{gap:16}}><Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Lịch sử nấu ăn</Text>{error ? <><Text style={{color:colors.danger}}>{error}</Text><PrimaryButton title="Thử lại" onPress={()=>load(1)} disabled={loading}/></> : null}</View>}
       ListEmptyComponent={<Text style={{color:colors.muted}}>{loading ? "Đang tải lịch sử…" : loaded && !error ? "Chưa có món đã hoàn thành. Nhật ký sẽ xuất hiện sau khi bạn hoàn thành món trong thực đơn." : ""}</Text>}
       renderItem={({item})=><View style={{backgroundColor:colors.card,padding:16,borderRadius:14,gap:8}}>
         <Text style={{color:colors.text,fontSize:18,fontWeight:"600"}}>{item.mealName}</Text>

@@ -1,15 +1,15 @@
+import AppInput from "@/components/AppInput";
 import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useMemo, useState } from "react";
-import { Image, Modal, Pressable, TextInput, View } from "react-native";
+import { Image, Modal, Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
-import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -168,8 +168,8 @@ export default function PantryItemDetailScreen() {
 
   if (!item) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["top"]}>
-        <AppBackButton variant="icon" onPress={() => navigation.goBack()} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["left", "right", "bottom"]}>
+
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10 }}>
           <MaterialCommunityIcons name="fridge-alert-outline" size={42} color={colors.primary} />
           <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700", textAlign: "center" }} selectable>
@@ -184,7 +184,7 @@ export default function PantryItemDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 42 }}>
         <View style={{ height: 312, backgroundColor: colors.surface }}>
           <Image source={{ uri: imageUrl }} resizeMode="cover" style={{ width: "100%", height: "100%" }} />
@@ -192,7 +192,7 @@ export default function PantryItemDetailScreen() {
           <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 132, backgroundColor: "rgba(0,59,30,0.42)" }} />
 
           <View style={{ position: "absolute", left: 22, right: 22, top: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <AppBackButton variant="floating" onPress={() => navigation.goBack()} />
+
             <Pressable
               onPress={() => setIsEditing((current) => !current)}
               style={({ pressed }) => ({
@@ -339,7 +339,7 @@ export default function PantryItemDetailScreen() {
                 Xóa khỏi tủ lạnh?
               </Text>
               <Text style={{ color: colors.mutedDark, fontSize: 14, fontWeight: "700", lineHeight: 21 }} selectable>
-                {title} sẽ bị xóa khỏi tủ lạnh của bạn. 
+                {title} sẽ bị xóa khỏi tủ lạnh của bạn.
               </Text>
             </View>
 
@@ -414,7 +414,7 @@ function FormInput({
         {label}
       </Text>
       <View style={{ minHeight: multiline ? 78 : 46, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: multiline ? "flex-start" : "center", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0 }}>
-        <TextInput
+        <AppInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

@@ -6,15 +6,14 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppBackButton from "@/components/AppBackButton";
 import { colors } from "@/constants/colors";
 import type { RootStackParamList } from "@/types";
 
 export default function QuickAddScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView contentContainerStyle={{ padding: 20, gap: 16, maxWidth: 640, width: "100%", alignSelf: "center" }}>
-      <AppBackButton onPress={() => navigation.goBack()} />
+
       <Text style={{ color: colors.text, fontSize: 26, fontWeight: "700" }}>Thêm nhanh</Text>
       <Text style={{ color: colors.muted, lineHeight: 22 }}>Chọn cách nhập thực phẩm. Bạn luôn được kiểm tra thông tin trước khi lưu vào tủ.</Text>
       <View style={{ backgroundColor: colors.dark, padding: 20, borderRadius: 20, gap: 10 }}>

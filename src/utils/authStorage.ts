@@ -16,6 +16,7 @@ function mutate<T>(action: () => Promise<T>): Promise<T> {
   writes = next.catch(() => undefined);
   return next;
 }
+const newAccountKey = (email: string) => `new_account_${Array.from(email.trim().toLowerCase()).map(c => c.charCodeAt(0).toString(16)).join('_')}`;
 const sessionKeys = [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY];
 
 // The login DTO omits userId; saveSession resolves it from the JWT for storage.
@@ -168,8 +169,17 @@ export const authStorage = {
       user
     });
     });
+    // Only a successfully verified registration can request the first survey.
+    const pendingKey = newAccountKey(user.email);
+    if (await getStoredValue(pendingKey) === 'true') {
+      const current = await getStoredValue(`onboarding_step_${user.userId}`);
+      if (!current) await setStoredValue(`onboarding_step_${user.userId}`, 'profile_setup');
+      await deleteStoredValue(pendingKey);
+    }
     listeners.forEach(listener => listener());
   },
+
+  async markNewAccount(email: string) { await setStoredValue(newAccountKey(email), 'true'); },
 
   async getAccessToken() {
     return (await getStoredValue(ACCESS_TOKEN_KEY)) ?? readSessionFile().accessToken ?? null;
@@ -252,14 +262,13 @@ export const authStorage = {
     listeners.forEach(listener => listener());
   },
 
-  async getOnboardingStep(userId: string): Promise<"profile_setup" | "interactive_guide" | "done"> {
+  async getOnboardingStep(userId: string): Promise<"profile_setup" | "done"> {
     const val = await getStoredValue(`onboarding_step_${userId}`);
-    if (val === "interactive_guide" || val === "done") return val;
-    return "profile_setup";
+    return val === 'profile_setup' ? 'profile_setup' : 'done';
   },
 
   async setOnboardingStep(userId: string, step: "interactive_guide" | "done") {
-    await setStoredValue(`onboarding_step_${userId}`, step);
+    await setStoredValue(`onboarding_step_${userId}`, step === 'interactive_guide' ? 'done' : step);
   },
 
   async saveNutritionProfile(userId: string, profile: NutritionProfile) {

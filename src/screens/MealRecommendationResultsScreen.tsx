@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { recipesApi } from "@/api/recipes";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealRecommendation } from "@/api/recommendations";
-import AppBackButton from "@/components/AppBackButton";
 import { colors } from "@/constants/colors";
 import type { RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
@@ -42,7 +41,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
     : "Dựa trên nguyên liệu bạn đã nhập hoặc lựa chọn.";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <FlatList
         data={recommendations}
         keyExtractor={(item) => item.mealId}
@@ -51,7 +50,7 @@ export default function MealRecommendationResultsScreen({ route, navigation }: P
         ListHeaderComponent={
           <View style={{ gap: 18 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <AppBackButton label="Quay lại" onPress={() => navigation.goBack()} />
+
               <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
                 <MaterialCommunityIcons name="silverware-fork-knife" size={24} color={colors.primary} />
               </View>

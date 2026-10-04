@@ -1,9 +1,10 @@
+import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
@@ -18,7 +19,6 @@ import { getGradientPair } from "@/utils/gradients";
 import { canManageCatalog } from "@/utils/roles";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import { useToast } from "@/context/ToastContext";
-import AppBackButton from "@/components/AppBackButton";
 import AllergenChoices from "@/components/AllergenChoices";
 import type { FoodAllergen } from "@/api/profile";
 import type { RootStackParamList } from "@/types";
@@ -236,14 +236,14 @@ export default function CreateRecipeScreen() {
   }, [searchText]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshSearch} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: 20, paddingBottom: 42, gap: 16 }}
       >
-        <AppBackButton onPress={() => navigation.goBack()} />
+
         {!canCreate ? <Text accessibilityRole="alert" style={{ color: colors.warning, lineHeight: 22 }}>Tạo công thức trong danh mục hiện dành cho quản trị viên hoặc quản lý. Tài khoản của bạn chưa có quyền lưu công thức.</Text> : null}
         <View
           style={{
@@ -476,7 +476,7 @@ function Field({
           justifyContent: multiline ? "flex-start" : "center"
         }}
       >
-        <TextInput
+        <AppInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -509,7 +509,7 @@ function FieldInline({
 }) {
   return (
     <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
-      <TextInput
+      <AppInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

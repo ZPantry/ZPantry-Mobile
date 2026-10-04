@@ -83,12 +83,10 @@ export default function AdminUserFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16, maxWidth: 720 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
-            <Ionicons name="chevron-back" size={25} color={colors.primary} />
-          </Pressable>
+
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }} selectable>
               Quản lý tài khoản

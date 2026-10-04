@@ -1,3 +1,5 @@
+import FixedBackHeader from "@/components/FixedBackHeader";
+import AiChefChat from "@/components/AiChefChat";
 import FigmaAsset from '@/components/FigmaAsset';
 import { homeAssets, pantryAssets, exploreAssets, profileAssets, loginAssets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -139,7 +141,8 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <View style={{ flex: 1 }}>
+    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={({ route }) => ({ headerShown: !['Tabs', 'Login', 'AdminManagement'].includes(route.name), header: props => <FixedBackHeader {...props} />, contentStyle: { backgroundColor: colors.background } })}>
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
@@ -173,5 +176,7 @@ export default function AppNavigator() {
         </>
       )}
     </Stack.Navigator>
+    {isAuthenticated && !isAdmin ? <AiChefChat /> : null}
+    </View>
   );
 }

@@ -14,7 +14,6 @@ import { pantryApi } from "@/api/pantry";
 import { ActionRow, SectionHeading } from "@/components/BrandPanel";
 import SearchBar from "@/components/SearchBar";
 import { normalizeRemoteImageUrl, FALLBACK_FOOD_IMAGE_URL } from "@/utils/image";
-import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PantryItemCard from "@/components/PantryItemCard";
@@ -96,7 +95,7 @@ export default function PantryScreen() {
   const [quantityBusy, setQuantityBusy] = useState(false);
   const quantityLock = useRef(false);
   const navigation = useNavigation<any>();
-  const { user, onboardingStep, completeOnboardingStep } = useAuth();
+  const { user, onboardingStep } = useAuth();
   const displayName = user?.fullName || "bạn";
   const [showExpiry, setShowExpiry] = useState(false);
   const notified = useRef("");
@@ -201,11 +200,6 @@ export default function PantryScreen() {
           <ActionRow icon="silverware-fork-knife" title="Thêm bằng thực đơn" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
         </View>
       </ScrollView>
-
-      {onboardingStep === "interactive_guide" ? <View style={{ padding: 12, backgroundColor: colors.surface, gap: 8 }}>
-        <Text style={{ color: colors.text }}>Bạn có thể thêm nguyên liệu bằng nhiều cách trong Thêm nhanh.</Text>
-        <PrimaryButton title="Bỏ qua hướng dẫn" variant="soft" onPress={() => { void completeOnboardingStep("done"); }} />
-      </View> : null}
       <Modal transparent visible={showExpiry} animationType="fade" onRequestClose={() => setShowExpiry(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 }}>
           <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxHeight: "75%", maxWidth: 520, width: "100%", alignSelf: "center" }}>

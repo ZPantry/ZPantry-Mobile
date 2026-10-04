@@ -17,7 +17,6 @@ import RecommendationFeedback from "@/components/RecommendationFeedback";
 import { recipesApi } from "@/api/recipes";
 import { allergens } from "@/api/profile";
 import { todayMenuApi } from "@/api/todayMenu";
-import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -159,7 +158,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   }, [navigation, recipe, toast, plannedDate, isAddingToToday, mealType, portionCount, menuNote, route.params.mealId]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 34 }}>
         <View>
           {meal?.image ? (
@@ -169,15 +168,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
               <Ionicons name="restaurant-outline" size={54} color={colors.primary} />
             </View>
           )}
-          <AppBackButton
-            variant="floating"
-            onPress={() => navigation.goBack()}
-            style={{
-              position: "absolute",
-              top: 18,
-              left: 18
-            }}
-          />
+
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>

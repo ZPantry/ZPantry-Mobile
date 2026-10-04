@@ -1,8 +1,9 @@
+import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
@@ -230,9 +231,9 @@ export default function AdminRecipeFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
-        <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" onBack={() => navigation.goBack()} />
+        <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" />
         {!form.id ? <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CreateRecipe")} style={{ paddingVertical: 12 }}>
           <Text style={{ color: colors.primary, fontWeight: "600" }}>Tạo bằng tìm kiếm nguyên liệu ›</Text>
         </Pressable> : null}
@@ -329,10 +330,10 @@ export default function AdminRecipeFormScreen() {
                     </Pressable>
                   </View>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput value={String(item.quantity)} onChangeText={(value) => updateRecipeIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
-                    <TextInput value={item.unit} onChangeText={(unit) => updateRecipeIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
+                    <AppInput value={String(item.quantity)} onChangeText={(value) => updateRecipeIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
+                    <AppInput value={item.unit} onChangeText={(unit) => updateRecipeIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "600", paddingHorizontal: 10 }} />
                   </View>
-                  <TextInput value={item.note} onChangeText={(note) => updateRecipeIngredient(index, { note })} placeholder="Ghi chú cho nguyên liệu" placeholderTextColor={colors.mutedDark} style={{ minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "700", paddingHorizontal: 10 }} />
+                  <AppInput value={item.note} onChangeText={(note) => updateRecipeIngredient(index, { note })} placeholder="Ghi chú cho nguyên liệu" placeholderTextColor={colors.mutedDark} style={{ minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "700", paddingHorizontal: 10 }} />
                   <Pressable onPress={() => updateRecipeIngredient(index, { isRequired: !item.isRequired })} style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: item.isRequired ? colors.secondary : colors.surface2, paddingHorizontal: 10, paddingVertical: 6 }}>
                     <Text style={{ color: item.isRequired ? colors.primaryDark : colors.mutedDark, fontSize: 11, fontWeight: "700" }} selectable>
                       {item.isRequired ? "Bắt buộc" : "Tùy chọn"}
@@ -355,12 +356,10 @@ export default function AdminRecipeFormScreen() {
   );
 }
 
-function AdminFormHeader({ title, subtitle, onBack }: { title: string; subtitle: string; onBack: () => void }) {
+function AdminFormHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <Pressable onPress={onBack} style={({ pressed }) => ({ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.78 : 1 })}>
-        <Ionicons name="chevron-back" size={25} color={colors.primary} />
-      </Pressable>
+
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }} selectable>
           {title}
@@ -384,7 +383,7 @@ function FormInput({ label, value, onChangeText, placeholder, keyboardType, mult
       <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {label}
       </Text>
-      <TextInput
+      <AppInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

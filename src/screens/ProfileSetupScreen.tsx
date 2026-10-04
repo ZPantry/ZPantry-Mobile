@@ -1,3 +1,4 @@
+import { authStorage } from "@/utils/authStorage";
 import FigmaAsset, { type DesignAsset } from '@/components/FigmaAsset';
 import { surveyAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -52,11 +53,12 @@ export default function ProfileSetupScreen() {
     finally { setLoading(false); }
   }, [user?.userId]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (!editing && user?.userId) void authStorage.setOnboardingStep(user.userId, 'done').catch(() => {}); }, [editing, user?.userId]);
   const leave = async () => {
     if (busy.current) return;
     if (editing) { navigation.goBack(); return; }
     try {
-      await completeOnboardingStep("interactive_guide");
+      await completeOnboardingStep("done");
       navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch { setError("Chưa thể tiếp tục. Vui lòng thử lại."); }
   };
@@ -85,16 +87,13 @@ export default function ProfileSetupScreen() {
         return;
       }
       if (editing) navigation.goBack();
-      else { await completeOnboardingStep("interactive_guide"); navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }); }
+      else { await completeOnboardingStep("done"); navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }); }
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được hồ sơ. Các thông tin bạn nhập vẫn được giữ lại.")); }
     finally { busy.current = false; setSaving(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ padding: 16, paddingTop: 52, paddingBottom: 40, gap: 22, width: "100%", maxWidth: 680, alignSelf: "center" }}>
-      <Pressable disabled={saving} onPress={leave} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
-        <Text style={{ color: colors.primary, fontWeight: "600" }}>{editing ? "‹ Quay lại" : "Để sau"}</Text>
-      </Pressable>
+      contentContainerStyle={{ padding: 16, paddingTop: 16, paddingBottom: 40, gap: 22, width: "100%", maxWidth: 680, alignSelf: "center" }}>
       <View style={{ gap: 8 }}><Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>Khẩu vị & Thể trạng của bạn</Text>
         <Text style={{ color: colors.muted, lineHeight: 22 }}>Lưu thể trạng, sở thích và dị ứng để cá nhân hóa bữa ăn. Bạn có thể cập nhật sau hoặc chọn để sau.</Text></View>
       {loading ? <ActivityIndicator size="large" color={colors.primary} /> : null}

@@ -5,7 +5,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { authApi } from "@/api/auth";
 import Text from "@/components/AppText";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 import ScrollView from "@/components/ScreenScrollView";
 import { colors } from "@/constants/colors";
@@ -66,10 +65,10 @@ export default function ForgotPasswordScreen({ navigation }: NativeStackScreenPr
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa đặt lại được mật khẩu. Kiểm tra mã OTP rồi thử lại.", "auth")); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, maxWidth: 480, padding: 24, paddingBottom: 48, gap: 24 }}>
-        <AppBackButton onPress={() => { if (!busy) navigation.goBack(); }} />
+
         <View style={{ gap: 12, paddingTop: 12 }}>
           <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: step === "done" ? colors.successSoft : colors.secondary, justifyContent: "center", alignItems: "center" }}>
             <Ionicons name={step === "done" ? "checkmark-circle-outline" : "lock-closed-outline"} size={32} color={step === "done" ? colors.success : colors.primaryDark} />

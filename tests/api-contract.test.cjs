@@ -267,6 +267,29 @@ test('native secure storage persists remembered sessions and forgets non-remembe
   await storage.clearSession();assert.equal(await storage.getSession(),null);
 });
 
+test('survey is reserved for verified new accounts and does not repeat after its first display', async () => {
+  const persisted = new Map();
+  const mocks = { 'react-native': { Platform: { OS: 'android' } }, 'expo-secure-store': {
+    getItemAsync: async k => persisted.get(k) ?? null, setItemAsync: async (k, v) => { persisted.set(k, v); }, deleteItemAsync: async k => { persisted.delete(k); }
+  } };
+  const storage = loader(mocks)('@/utils/authStorage').authStorage;
+  const session = { accessToken: 'x.' + Buffer.from(JSON.stringify({ userId: id, email: 'fixture@example.invalid' })).toString('base64url') + '.x', refreshToken: 'fixture-refresh', fullName: 'Fixture', email: 'fixture@example.invalid', role: 'USER', expiresAt: '2099-01-01' };
+  assert.equal(await storage.getOnboardingStep(id), 'done'); // Existing account / new device.
+  await storage.markNewAccount(' Fixture@Example.Invalid ');
+  await storage.saveSession(session, false);
+  assert.equal(await storage.getOnboardingStep(id), 'profile_setup');
+  await storage.setOnboardingStep(id, 'done'); // Marked when the first survey is displayed.
+  await storage.clearSession();
+  const reopened = loader(mocks)('@/utils/authStorage').authStorage;
+  await reopened.saveSession(session, true);
+  assert.equal(await reopened.getOnboardingStep(id), 'done');
+  persisted.set(`onboarding_step_${id}`, 'interactive_guide');
+  assert.equal(await reopened.getOnboardingStep(id), 'done'); // Migrate obsolete guide state.
+  await reopened.markNewAccount(session.email);
+  await reopened.saveSession(session);
+  assert.equal(await reopened.getOnboardingStep(id), 'done'); // Never re-open a completed survey.
+});
+
 test('menu detail composes recipe and matching pantry, excluding unrelated ingredients', async () => {
   const mockLoad=loader({'@/api/client':{apiRequest:async()=>({id,recipeId:'recipe'})},'@/api/recipes':{recipesApi:{get:async()=>({id:'recipe',ingredients:[{ingredientId:'a',ingredientName:'Carrot',quantity:2,unit:'g'}]})}},'@/api/pantry':{pantryApi:{all:async()=>[{id:'row',ingredientId:'a',quantity:3,unit:'g'},{id:'other',ingredientId:'b',quantity:4,unit:'g'}]}}});
   const detail=await mockLoad('@/api/todayMenu').todayMenuApi.get(id);

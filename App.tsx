@@ -1,3 +1,4 @@
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -16,6 +17,7 @@ export default function App() {
     BeVietnamPro_600SemiBold, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, Inter_500Medium, Inter_700Bold });
   if (!fontsLoaded && !fontError) return null;
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <WebFormStyles />
       <AuthProvider>
@@ -27,5 +29,6 @@ export default function App() {
         </ToastProvider>
       </AuthProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

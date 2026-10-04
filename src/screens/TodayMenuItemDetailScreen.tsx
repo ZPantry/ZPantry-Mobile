@@ -8,7 +8,6 @@ import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CompleteTodayMenuItemResponse, TodayMenuItemDetail } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
@@ -105,7 +104,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadDetail} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
@@ -113,15 +112,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       >
         <View>
           <Image source={{ uri: normalizeRemoteImageUrl(heroImage) }} style={{ width: "100%", height: 268, backgroundColor: colors.secondary }} />
-          <AppBackButton
-            variant="floating"
-            onPress={() => navigation.goBack()}
-            style={{
-              position: "absolute",
-              top: 18,
-              left: 18
-            }}
-          />
+
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>

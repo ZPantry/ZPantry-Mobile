@@ -1,4 +1,3 @@
-import AiChefChat from "@/components/AiChefChat";
 import FigmaAsset from '@/components/FigmaAsset';
 import { homeAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -62,7 +61,7 @@ function getPantryName(item: PantryApiItem, ingredient?: Ingredient) {
 export default function HomeScreen() {
   const showUnavailable = useUnavailableFeature();
   const navigation = useNavigation<any>();
-  const { user, onboardingStep, completeOnboardingStep } = useAuth();
+  const { user } = useAuth();
   const displayName = user?.fullName || "bạn";
   const { width } = useWindowDimensions();
   const wide = width >= 900;
@@ -160,7 +159,6 @@ export default function HomeScreen() {
         </View>
         <View style={{ position: 'relative', marginTop: 2 }}>
           <ActionRow asset={assets.imgContainer1} icon="silverware-fork-knife" title="Hôm nay nấu gì?" subtitle={isLoading ? 'Đang kiểm tra tủ của bạn…' : pantryItems.length + ' nguyên liệu trong tủ · khám phá món phù hợp'} onPress={() => navigation.navigate('MealSuggestion')} />
-          <AiChefChat style={{ position: 'absolute', left: 0, top: -42, zIndex: 2 }} />
         </View>
         <View style={{ gap: 12 }}>
           <SectionHeading title="Món ngon tuần này 🔥" action="Khám phá" onPress={() => navigation.navigate("MealSuggestion")} />
@@ -177,10 +175,6 @@ export default function HomeScreen() {
             : !errorMessage ? <ActionRow icon="fridge-outline" title={hasSearch ? "Không tìm thấy nguyên liệu" : "Bắt đầu với tủ thực phẩm của bạn"} subtitle="Thêm những nguyên liệu đang có để tìm món phù hợp." onPress={() => navigation.navigate("AddIngredient")} /> : null}
         </View>
         <ActionRow icon="calendar-outline" title="Lên thực đơn hôm nay" subtitle="Sắp xếp bữa ăn và theo dõi những món đã nấu." onPress={() => navigation.navigate("Plan")} />
-        {onboardingStep === "interactive_guide" ? <View style={{ gap: 10 }}>
-          <PrimaryButton title="Khám phá cách dùng Z-Pantry" variant="soft" onPress={() => navigation.navigate("InteractiveGuide")} />
-          <PrimaryButton title="Bỏ qua hướng dẫn" variant="outline" onPress={() => { void completeOnboardingStep("done"); }} />
-        </View> : null}
       </ScrollView>
     </SafeAreaView>
   );

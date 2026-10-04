@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from './AppText';
 import FigmaAsset from './FigmaAsset';
 import { homeAssets } from '@/constants/figmaAssets';
@@ -14,9 +16,19 @@ import { ingredientsApi } from '@/api/ingredients';
 import { getFriendlyErrorMessage } from '@/utils/localize';
 
 type Message = { id: number; role: 'user' | 'assistant'; text: string; recipes?: MealRecommendation[]; failedPrompt?: string };
-export default function AiChefChat({ style }: { style?: StyleProp<ViewStyle> }) {
+export default function AiChefChat() {
   const navigation = useNavigation<any>();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const minY = insets.top + 68, maxY = Math.max(minY, height - insets.bottom - 120), maxX = Math.max(8, width - 64);
+  const x = useSharedValue(Math.max(8, width - 68)), y = useSharedValue(maxY);
+  const startX = useSharedValue(0), startY = useSharedValue(0), dragged = useSharedValue(false);
+  useEffect(() => { x.set(Math.max(8, Math.min(maxX, x.get()))); y.set(Math.max(minY, Math.min(maxY, y.get()))); }, [maxX, maxY, minY, x, y]);
+  const drag = Gesture.Pan().minDistance(6)
+    .onBegin(() => { dragged.set(false); })
+    .onStart(() => { startX.set(x.get()); startY.set(y.get()); dragged.set(true); })
+    .onUpdate(e => { x.set(Math.max(8, Math.min(maxX, startX.get() + e.translationX))); y.set(Math.max(minY, Math.min(maxY, startY.get() + e.translationY))); });
+  const position = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }, { translateY: y.get() }] }));
   const [open, setOpen] = useState(false), [input, setInput] = useState(''), [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([{ id: 0, role: 'assistant', text: 'Hôm nay bạn muốn ăn gì? Cho mình biết món muốn nấu hoặc nguyên liệu bạn đang có nhé.' }]);
   const lock = useRef(false), sequence = useRef(1), scroll = useRef<ScrollView>(null);
@@ -40,7 +52,15 @@ export default function AiChefChat({ style }: { style?: StyleProp<ViewStyle> }) 
     } finally { lock.current = false; setBusy(false); }
   };
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel="Mở chat đầu bếp AI" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={style}><FigmaAsset asset={homeAssets.imgProperty1Default} label="Đầu bếp AI" /></Pressable>
+    <GestureDetector gesture={drag}>
+      <Animated.View collapsable={false} testID="draggable-ai" style={[{ position: 'absolute', top: 0, left: 0, width: 56, height: 54, zIndex: 20 }, position]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Mở chat đầu bếp AI" accessibilityHint="Kéo để di chuyển; chạm để mở chat" accessibilityState={{ expanded: open }}
+          onPress={() => { if (!dragged.get()) setOpen(true); }}
+          style={{ width: 56, height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.secondary, boxShadow: '0 3px 12px rgba(0,48,20,0.18)' }}>
+          <View pointerEvents="none"><FigmaAsset asset={homeAssets.imgProperty1Default} label="Đầu bếp AI" style={{ width: 50, height: 46 }} /></View>
+        </Pressable>
+      </Animated.View>
+    </GestureDetector>
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
       <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0,20,10,0.35)' }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center', padding: 16 }}>

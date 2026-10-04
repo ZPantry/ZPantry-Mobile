@@ -1,9 +1,10 @@
+import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
@@ -211,7 +212,7 @@ export default function ManualMealSuggestionScreen() {
   const recommendationCount = recommendations.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <FlatList
         data={recommendations}
         keyboardShouldPersistTaps="handled"
@@ -221,15 +222,7 @@ export default function ManualMealSuggestionScreen() {
         ListHeaderComponent={
           <View style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <Pressable
-                onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Tabs", { screen: "MealSuggestion" }))}
-                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-              >
-                <Ionicons name="chevron-back" size={28} color={colors.primary} />
-                <Text style={{ color: colors.text, fontSize: 15, fontWeight: "600" }} selectable>
-                  Quay lại
-                </Text>
-              </Pressable>
+
 
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <PrimaryButton title="Tạo công thức" icon="notebook-edit-outline" variant="soft" onPress={() => navigation.navigate("CreateRecipe")} style={{ minHeight: 42 }} />
@@ -264,7 +257,7 @@ export default function ManualMealSuggestionScreen() {
                 }}
               >
                 <Ionicons name="search" size={20} color={colors.primary} />
-                <TextInput
+                <AppInput
                   value={searchText}
                   onChangeText={(value) => {
                     setSearchText(value);
@@ -323,7 +316,7 @@ export default function ManualMealSuggestionScreen() {
                 </View>
               ) : null}
 
-              <TextInput
+              <AppInput
                 value={freeText}
                 onChangeText={setFreeText}
                 placeholder="Nhập tên nguyên liệu, cách nhau bằng dấu phẩy"
@@ -535,7 +528,7 @@ function MiniField({
 }) {
   return (
     <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
-      <TextInput
+      <AppInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

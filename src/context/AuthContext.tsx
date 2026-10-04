@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
-  const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "interactive_guide" | "done">("profile_setup");
+  const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "interactive_guide" | "done">("done");
 
   useEffect(() => {
     let isMounted = true;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = authStorage.subscribe(() => {
       authStorage.getUser().then(async value => {
-        const step = value ? await authStorage.getOnboardingStep(value.userId) : "profile_setup";
+        const step = value ? await authStorage.getOnboardingStep(value.userId) : "done";
         if (isMounted) { setOnboardingStep(step); setUser(value); }
       }).catch(() => { if (isMounted) setUser(null); });
     });
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         setUser(null);
-        setOnboardingStep("profile_setup"); // Reset onboarding step for next login
+        setOnboardingStep("done");
         try {
           await logoutStoredSession();
         } catch {

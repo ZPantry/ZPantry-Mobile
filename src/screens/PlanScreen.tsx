@@ -102,7 +102,7 @@ export default function PlanScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTodayMenu} tintColor={colors.primary} />}

@@ -1,3 +1,4 @@
+import { authStorage } from "@/utils/authStorage";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -203,6 +204,7 @@ export default function LoginScreen() {
     setSuccessMessage("");
     try {
       const response = await authApi.verifyOtp({ email: verificationEmail, otpCode: otpCode.trim() });
+      await authStorage.markNewAccount(verificationEmail);
       setEmail(verificationEmail);
       setOtpCode("");
       setSuccessMessage(response.message);

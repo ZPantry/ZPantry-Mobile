@@ -39,7 +39,7 @@ export default function InteractiveGuideScreen() {
     } catch { setError("Chưa lưu được trạng thái hướng dẫn. Vui lòng thử lại."); }
     finally { lock.current = false; setLeaving(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <View style={{ paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700", flex: 1 }}>Hướng dẫn sử dụng</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Bỏ qua hướng dẫn" disabled={leaving} onPress={finish} style={{ minHeight: 44, justifyContent: "center" }}>

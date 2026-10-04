@@ -19,8 +19,8 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         minHeight: 48,
         borderRadius: 8,
         backgroundColor: colors.card,
-        borderWidth: 1,
-        borderColor: colors.line,
+        borderWidth: 1.5,
+        borderColor: "#B7C2B9",
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
@@ -30,6 +30,7 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
     >
       <Ionicons name="search" size={19} color={colors.muted} />
       <TextInput
+        accessibilityLabel={placeholder}
         value={value}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmit}

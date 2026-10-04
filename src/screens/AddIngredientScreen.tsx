@@ -1,20 +1,18 @@
+import AppInput from "@/components/AppInput";
 import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ingredientsApi, type Ingredient } from "@/api/ingredients";
 import { pantryApi } from "@/api/pantry";
-import AppBackButton from "@/components/AppBackButton";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import { authStorage } from "@/utils/authStorage";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
 const storageOptions = [
@@ -22,13 +20,10 @@ const storageOptions = [
   { label: "Ngăn đông", value: "freezer" },
   { label: "Kệ bếp", value: "pantry" }
 ];
-const tips = ["Tìm nguyên liệu trong danh mục. Bạn có thể bỏ qua hướng dẫn bất cứ lúc nào.", "Chọn một nguyên liệu để điền số lượng và đơn vị. Không cần chọn để xem bước tiếp.", "Kiểm tra thông tin rồi xác nhận lưu. Hạn dùng có thể để trống."];
 
 export default function AddIngredientScreen() {
   const navigation = useNavigation<any>();
   const toast = useToast();
-  const { user } = useAuth();
-  const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -49,17 +44,6 @@ export default function AddIngredientScreen() {
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    let active = true;
-    if (user?.userId) void authStorage.getHasSeenAddIngredientTooltip(user.userId).then(seen => {
-      if (active && !seen) setTutorialStep(0);
-    }).catch(() => {});
-    return () => { active = false; };
-  }, [user?.userId]);
-  const dismissGuide = () => {
-    setTutorialStep(null);
-    if (user?.userId) void authStorage.setHasSeenAddIngredientTooltip(user.userId).catch(() => {});
-  };
   const selected = ingredients.find(item => item.id === selectedId);
   const filtered = useMemo(() => {
     const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -78,25 +62,15 @@ export default function AddIngredientScreen() {
     lock.current = true; setSaving(true); setError("");
     try {
       await pantryApi.saveItem({ ingredientId: selected.id, quantity: amount, unit: unit.trim(), expiredAt: date || null, storageLocation, note: note.trim() });
-      dismissGuide();
       toast.show("Đã lưu " + selected.name + " vào tủ.");
       navigation.popTo("Tabs", { screen: "Pantry" });
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được nguyên liệu. Thông tin vẫn được giữ lại.")); }
     finally { lock.current = false; setSaving(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />} contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 32, maxWidth: 720, width: "100%", alignSelf: "center" }}>
-      <AppBackButton onPress={() => navigation.goBack()} />
+
       <Text style={{ color: colors.text, fontSize: 26, fontWeight: "700" }}>Thêm thực phẩm</Text>
-      {tutorialStep !== null ? <View style={{ gap: 10, padding: 14, borderRadius: 12, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.primary, fontWeight: "600" }}>Hướng dẫn {tutorialStep + 1}/3</Text>
-        <Text style={{ color: colors.text, lineHeight: 21 }}>{tips[tutorialStep]}</Text>
-        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-          <PrimaryButton title="Bước trước" variant="soft" disabled={tutorialStep === 0} onPress={() => setTutorialStep(tutorialStep - 1)} />
-          <PrimaryButton title={tutorialStep === 2 ? "Hoàn tất" : "Bước tiếp"} onPress={tutorialStep === 2 ? dismissGuide : () => setTutorialStep(tutorialStep + 1)} />
-          <PrimaryButton title="Bỏ qua hướng dẫn" variant="outline" onPress={dismissGuide} />
-        </View>
-      </View> : null}
       <SearchBar placeholder="Tìm nguyên liệu" value={search} onChangeText={setSearch} />
       {loading && !loaded ? <ActivityIndicator color={colors.primary} /> : null}
       {loaded && !filtered.length ? <Text style={{ color: colors.muted }}>Không tìm thấy nguyên liệu. Hãy thử từ khóa khác.</Text> : null}
@@ -128,6 +102,6 @@ export default function AddIngredientScreen() {
 function Field({ label, value, onChangeText, placeholder, numeric, disabled }: { label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; numeric?: boolean; disabled?: boolean }) {
   return <View style={{ gap: 7 }}>
     <Text style={{ color: colors.text, fontWeight: "700" }}>{label}</Text>
-    <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} editable={!disabled} keyboardType={numeric ? "decimal-pad" : "default"} style={{ minHeight: 44, color: colors.text, borderBottomWidth: 1, borderColor: colors.line, paddingHorizontal: 10, backgroundColor: colors.surface, borderRadius: 8 }} />
+    <AppInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} editable={!disabled} keyboardType={numeric ? "decimal-pad" : "default"} style={{ minHeight: 44, color: colors.text, borderBottomWidth: 1, borderColor: colors.line, paddingHorizontal: 10, backgroundColor: colors.surface, borderRadius: 8 }} />
   </View>;
 }

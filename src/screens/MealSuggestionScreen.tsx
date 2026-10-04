@@ -1,4 +1,3 @@
-import AiChefChat from "@/components/AiChefChat";
 import FigmaAsset from '@/components/FigmaAsset';
 import { exploreAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -84,7 +83,6 @@ export default function MealSuggestionScreen() {
           disabled={suggesting || (requiresPantry && (loading || !loaded || !pantry.length))} onPress={suggest} />
         {loaded && !pantry.length ? <Text style={{ color: colors.onDarkMuted, fontSize: 12 }}>{requiresPantry ? "Thêm nguyên liệu vào kho hoặc chọn gợi ý theo hồ sơ." : "Tủ đang trống. Bạn vẫn có thể tìm món theo hồ sơ đã lưu."}</Text> : null}
       </BrandPanel>
-      <View style={{ height: 0, zIndex: 2 }}><AiChefChat style={{ position: "absolute", top: -48, left: 0 }} /></View>
       {error ? <><ExpiryAlertCard title={error} tone="danger" /><PrimaryButton title="Tải lại tủ thực phẩm" variant="outline" onPress={load} disabled={loading || suggesting} /></> : null}
       <View style={{ gap: 12 }}>
         <SectionHeading title="Gợi ý cho bữa ăn của bạn" />

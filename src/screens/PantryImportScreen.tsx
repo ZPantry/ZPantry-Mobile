@@ -1,8 +1,9 @@
+import AppInput from "@/components/AppInput";
 import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { pantryImportApi, type ImportSource, type ImportMethod, type ImportPreview, type ImportPreviewItem } from "@/api/pantryImport";
@@ -121,14 +122,13 @@ export default function PantryImportScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được. Bản chỉnh sửa vẫn được giữ lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 22, paddingBottom: 48, gap: 18, maxWidth: 720, width: "100%", alignSelf: "center" }}>
-      <Pressable disabled={busy} onPress={() => navigation.goBack()} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primary, fontWeight: "600" }}>‹ Quay lại</Text></Pressable>
       <Text style={{ color: colors.text, fontWeight: "700", fontSize: 26 }}>{method === "TEXT" ? "Thêm bằng văn bản" : method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
       <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "TEXT" ? "Nhập thực phẩm" : method === "MENU" ? "Chọn món" : "Chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
       {method === "TEXT" ? <>
-        <TextInput accessibilityLabel="Danh sách thực phẩm" multiline value={text} onChangeText={setText} editable={!busy && rows === null} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={[inputStyle, { minHeight: 100, textAlignVertical: "top" }]} />
+        <AppInput accessibilityLabel="Danh sách thực phẩm" multiline value={text} onChangeText={setText} editable={!busy && rows === null} placeholder="Ví dụ: 2 củ cà rốt, 200 g thịt bò" placeholderTextColor={colors.muted} style={[inputStyle, { minHeight: 100, textAlignVertical: "top" }]} />
         {rows === null ? <Action label={busy ? "Đang phân tích…" : "Phân tích văn bản"} disabled={busy || !text.trim()} onPress={prepare} /> : null}
       </> : null}
       {method === "MENU" ? <>
@@ -173,7 +173,7 @@ export default function PantryImportScreen() {
           <Action soft label={editing === r.key ? "Đóng tìm kiếm" : r.ingredientId ? "Đổi nguyên liệu" : "Chọn nguyên liệu"} disabled={busy}
             onPress={() => { setEditing(editing === r.key ? null : r.key); setQuery(""); }} />
           {editing === r.key ? <View style={{ gap: 10 }}>
-            <TextInput accessibilityLabel="Tìm nguyên liệu" value={query} onChangeText={setQuery} placeholder="Tìm trong danh mục…" placeholderTextColor={colors.muted} style={inputStyle} editable={!busy} />
+            <AppInput accessibilityLabel="Tìm nguyên liệu" value={query} onChangeText={setQuery} placeholder="Tìm trong danh mục…" placeholderTextColor={colors.muted} style={inputStyle} editable={!busy} />
             {searching ? <ActivityIndicator color={colors.primary} /> : null}
             {searchError ? <Pressable onPress={() => setSearchRetry((v) => v + 1)}><Text style={{ color: colors.danger }}>{searchError} Nhấn để thử lại.</Text></Pressable> : null}
             {!searching && !searchError && !matches.length ? <Text style={{ color: colors.muted }}>Không tìm thấy. Thử tên khác hoặc bỏ dòng này.</Text> : null}
@@ -182,8 +182,8 @@ export default function PantryImportScreen() {
             </Pressable>)}
           </View> : null}
           <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1, gap: 6 }}><Text style={{ color: colors.muted }}>Số lượng</Text><TextInput accessibilityLabel={`Số lượng ${r.rawName}`} editable={!busy} value={r.quantityText} onChangeText={(v) => patchRow(r.key, { quantityText: v })} keyboardType="decimal-pad" style={inputStyle} /></View>
-            <View style={{ flex: 1, gap: 6 }}><Text style={{ color: colors.muted }}>Đơn vị</Text><TextInput accessibilityLabel={`Đơn vị ${r.rawName}`} editable={!busy} value={r.unitText} onChangeText={(v) => patchRow(r.key, { unitText: v })} maxLength={50} placeholder="g, kg, cái…" placeholderTextColor={colors.muted} style={inputStyle} /></View>
+            <View style={{ flex: 1, gap: 6 }}><Text style={{ color: colors.muted }}>Số lượng</Text><AppInput accessibilityLabel={`Số lượng ${r.rawName}`} editable={!busy} value={r.quantityText} onChangeText={(v) => patchRow(r.key, { quantityText: v })} keyboardType="decimal-pad" style={inputStyle} /></View>
+            <View style={{ flex: 1, gap: 6 }}><Text style={{ color: colors.muted }}>Đơn vị</Text><AppInput accessibilityLabel={`Đơn vị ${r.rawName}`} editable={!busy} value={r.unitText} onChangeText={(v) => patchRow(r.key, { unitText: v })} maxLength={50} placeholder="g, kg, cái…" placeholderTextColor={colors.muted} style={inputStyle} /></View>
           </View>
         </View>)}
         <Text style={{ color: colors.primary, lineHeight: 22 }}>Nếu nguyên liệu đã có trong tủ, số lượng sẽ được thay bằng số bạn xác nhận, không cộng thêm. Bạn có thể đặt hạn sử dụng trong chi tiết tủ sau khi lưu.</Text>
