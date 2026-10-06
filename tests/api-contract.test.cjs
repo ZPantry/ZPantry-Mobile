@@ -10,12 +10,13 @@ function loader(mocks = {}) {
   const cache = new Map();
   function load(name, parent = path.resolve('src')) {
     if (Object.hasOwn(mocks, name)) return mocks[name];
-    const file = name.startsWith('@/') ? path.resolve('src', name.slice(2) + '.ts') : path.resolve(parent, name + '.ts');
+    const tsFile = name.startsWith('@/') ? path.resolve('src', name.slice(2) + '.ts') : path.resolve(parent, name + '.ts');
+    const file = fs.existsSync(tsFile) ? tsFile : tsFile.replace(/\.ts$/, '.tsx');
     if (cache.has(file)) return cache.get(file).exports;
     const module = { exports: {} };
     cache.set(file, module);
     const { outputText } = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX }
     });
     new Function('require', 'module', 'exports', outputText)((dependency) => load(dependency, path.dirname(file)), module, module.exports);
     return module.exports;
@@ -748,4 +749,113 @@ test('batch pantry sends one items request with canonical units and normalized d
     await assert.rejects(pantryApi.saveItems(invalid));
   }
   assert.equal(calls.length, 1);
+});
+
+test('ingredient quantity formats base quantities and uses unit or API steps', () => {
+  const { formatIngredientQuantity, normalizeIngredientUnit, getQuantityStep, getIngredientQuantityStep } = load('@/utils/ingredientQuantity');
+  for (const [unit, cases] of [
+    ['g', [[100, '100 g'], [900, '900 g'], [1000, '1 kg'], [1100, '1.1 kg'], [1200, '1.2 kg'], [1500, '1.5 kg'], [2000, '2 kg'], [2500, '2.5 kg']]],
+    ['ml', [[100, '100 ml'], [900, '900 ml'], [1000, '1 L'], [1200, '1.2 L'], [1500, '1.5 L'], [2000, '2 L']]],
+    ['piece', [[1, '1 quả'], [2, '2 quả'], [10, '10 quả']]],
+    ['quả', [[1, '1 quả'], [2, '2 quả'], [10, '10 quả']]]
+  ]) for (const [quantity, expected] of cases) assert.equal(formatIngredientQuantity(quantity, unit), expected);
+  for (const [aliases, canonical, step] of [
+    [['g', 'gram', 'GRAM'], 'g', 100],
+    [['ml', 'milliliter', 'ML'], 'ml', 100],
+    [['piece', 'pieces', 'quả'], 'piece', 1]
+  ]) for (const alias of aliases) {
+    assert.equal(normalizeIngredientUnit(` ${alias} `), canonical);
+    assert.equal(getQuantityStep(alias), step);
+    assert.equal(getIngredientQuantityStep({}, alias), step);
+  }
+  assert.equal(getIngredientQuantityStep({ quantityStep: 10 }, 'g'), 10);
+  for (const quantityStep of [null, undefined, 0, -1, NaN, Infinity]) {
+    assert.equal(getIngredientQuantityStep({ quantityStep }, 'g'), 100);
+  }
+  assert.equal(formatIngredientQuantity(2, 'bó'), '2 bó');
+});
+
+test('Add Ingredient controls keep independent base quantities and save only on submit', async () => {
+  // Exercise the actual screen handlers with a small hook/element host, without native views.
+  const state = []; let cursor = 0; let effect; let initialized = false;
+  const react = {
+    useState(initial) {
+      const index = cursor++;
+      if (!(index in state)) state[index] = initial;
+      return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }];
+    },
+    useRef(initial) {
+      const index = cursor++;
+      return state[index] ||= { current: initial };
+    },
+    useMemo: fn => fn(), useCallback: fn => fn,
+    useEffect: fn => { if (!initialized) effect = fn; }
+  };
+  const jsx = (type, props) => ({ type, props });
+  const items = [
+    { id: 'g', name: 'Bún', unit: 'g' }, { id: 'ml', name: 'Sữa', unit: 'ml' },
+    { id: 'piece', name: 'Trứng', unit: 'quả' }, { id: 'custom', name: 'Muối', unit: 'g', quantityStep: 10 }
+  ];
+  const writes = []; const navigations = []; let failSave = true;
+  const mocks = {
+    react, 'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': Object.fromEntries(['ActivityIndicator', 'Pressable', 'RefreshControl', 'ScrollView', 'View'].map(name => [name, name])),
+    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@expo/vector-icons': { MaterialCommunityIcons: 'Icon' },
+    '@react-navigation/native': { useNavigation: () => ({ popTo: (...args) => navigations.push(args) }) },
+    '@/context/ToastContext': { useToast: () => ({ show() {} }) },
+    '@/api/ingredients': { ingredientsApi: { all: async () => items } },
+    '@/api/pantry': { pantryApi: { saveItems: async items => { writes.push(items); if (failSave) throw new Error('Network unavailable'); } } }
+  };
+  for (const name of ['AppInput', 'ExpiryDaysField', 'AppText', 'ScreenScrollView', 'CategoryChip', 'PrimaryButton', 'SearchBar']) mocks[`@/components/${name}`] = { __esModule: true, default: name };
+  const Screen = loader(mocks)('@/screens/AddIngredientScreen').default;
+  function render() { cursor = 0; const tree = Screen(); initialized = true; return tree; }
+  function nodes(tree) {
+    if (!tree || typeof tree !== 'object') return [];
+    if (Array.isArray(tree)) return tree.flatMap(nodes);
+    if (typeof tree.type === 'function') return nodes(tree.type(tree.props));
+    return [tree, ...nodes(tree.props?.children)];
+  }
+  function find(predicate) { const found = nodes(render()).find(predicate); assert.ok(found, 'Control exists'); return found; }
+  function button(label) { return find(node => node.props?.accessibilityLabel === label); }
+  function quantity(id) {
+    const card = find(node => node.props?.testID === `selected-ingredient-${id}`);
+    return nodes(card).find(node => node.props?.accessibilityLabel === `Số lượng ${items.find(item => item.id === id).name}`).props.children;
+  }
+  render(); effect(); await new Promise(resolve => setImmediate(resolve));
+  for (const item of items) button(`Chọn ${item.name}`).props.onPress();
+  assert.equal(quantity('g'), '100 g'); assert.equal(quantity('ml'), '100 ml');
+  assert.equal(quantity('piece'), '1 quả'); assert.equal(quantity('custom'), '10 g');
+  assert.equal(button('Giảm 1 quả Trứng').props.disabled, true);
+  for (let i = 0; i < 14; i++) button('Thêm 100 g Bún').props.onPress();
+  button('Thêm 1 quả Trứng').props.onPress(); button('Thêm 10 g Muối').props.onPress();
+  assert.equal(quantity('g'), '1.5 kg'); assert.equal(quantity('ml'), '100 ml');
+  assert.equal(quantity('piece'), '2 quả'); assert.equal(quantity('custom'), '20 g');
+  assert.ok(nodes(render()).some(node => node.props?.children?.join?.('') === 'Mỗi lần thêm 100 g'));
+  button('Giảm 1 quả Trứng').props.onPress(); button('Giảm 1 quả Trứng').props.onPress();
+  assert.equal(quantity('piece'), '1 quả'); assert.equal(button('Giảm 1 quả Trứng').props.accessibilityState.disabled, true);
+  let expiry = find(node => node.type === 'ExpiryDaysField');
+  for (const invalid of ['-1', '1.5', 'abc']) { expiry.props.onChange(invalid); assert.equal(find(node => node.type === 'ExpiryDaysField').props.value, ''); }
+  expiry.props.onChange('0');
+  find(node => node.type === 'CategoryChip' && node.props.label === 'Ngăn đông').props.onPress();
+  assert.equal(find(node => node.type === 'CategoryChip' && node.props.label === 'Ngăn đông').props.active, true);
+  assert.equal(find(node => node.type === 'CategoryChip' && node.props.label === 'Ngăn mát').props.active, false);
+  assert.equal(writes.length, 0);
+  await find(node => node.type === 'PrimaryButton' && node.props.title === 'Lưu 4 nguyên liệu vào tủ').props.onPress();
+  assert.equal(writes.length, 1);
+  assert.equal(navigations.length, 0);
+  assert.equal(quantity('g'), '1.5 kg');
+  assert.ok(find(node => node.props?.accessibilityRole === 'alert'));
+  failSave = false;
+  await find(node => node.type === 'PrimaryButton' && node.props.title === 'Lưu 4 nguyên liệu vào tủ').props.onPress();
+  assert.equal(writes.length, 2);
+  assert.deepEqual(writes[0].map(({ ingredientId, quantity, unit }) => ({ ingredientId, quantity, unit })), [
+    { ingredientId: 'g', quantity: 1500, unit: 'g' }, { ingredientId: 'ml', quantity: 100, unit: 'ml' },
+    { ingredientId: 'piece', quantity: 1, unit: 'quả' }, { ingredientId: 'custom', quantity: 20, unit: 'g' }
+  ]);
+  assert.equal(writes[0][0].expiredAt, load('@/utils/expiryDays').expiryDateFromDays('0'));
+  assert.equal(writes[0][1].expiredAt, null);
+  assert.equal(writes[0][0].storageLocation, 'freezer');
+  assert.ok(writes[0].slice(1).every(item => item.storageLocation === 'fridge'));
+  assert.equal(navigations.length, 1);
 });

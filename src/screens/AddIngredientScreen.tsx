@@ -1,6 +1,7 @@
 import AppInput from "@/components/AppInput";
 import ExpiryDaysField from "@/components/ExpiryDaysField";
 import { expiryDateFromDays } from "@/utils/expiryDays";
+import { formatIngredientQuantity, getIngredientQuantityStep, normalizeIngredientUnit } from "@/utils/ingredientQuantity";
 import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -9,7 +10,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView as ResultsScro
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ingredientsApi, type Ingredient } from "@/api/ingredients";
-import { pantryApi } from "@/api/pantry";
+import { pantryApi, type PantryItemPayload } from "@/api/pantry";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
@@ -50,8 +51,12 @@ export default function AddIngredientScreen() {
   const patch = (id: string, values: Partial<Omit<Draft, 'ingredient' | 'unit'>>) => {
     setDrafts(current => current.map(d => d.ingredient.id === id ? { ...d, ...values } : d)); setError("");
   };
-  const changeQuantity = (id: string, delta: number) => {
-    setDrafts(current => current.map(d => d.ingredient.id === id ? { ...d, quantity: Math.max(100, d.quantity + delta) } : d));
+  const changeQuantity = (id: string, direction: 1 | -1) => {
+    setDrafts(current => current.map(d => {
+      if (d.ingredient.id !== id) return d;
+      const step = getIngredientQuantityStep(d.ingredient, d.unit);
+      return { ...d, quantity: Math.max(step, d.quantity + direction * step) };
+    }));
     setError("");
   };
   const toggle = (ingredient: Ingredient) => {
@@ -59,12 +64,12 @@ export default function AddIngredientScreen() {
     if (!unit) return;
     setDrafts(current => current.some(d => d.ingredient.id === ingredient.id)
       ? current.filter(d => d.ingredient.id !== ingredient.id)
-      : [...current, { ingredient, unit, quantity: 100, expiryDays: "", storageLocation: "fridge", note: "" }]);
+      : [...current, { ingredient, unit, quantity: getIngredientQuantityStep(ingredient, unit), expiryDays: "", storageLocation: "fridge", note: "" }]);
     setError("");
   };
   const save = async () => {
     if (lock.current || !drafts.length) return;
-    let items;
+    let items: PantryItemPayload[];
     try {
       items = drafts.map(d => ({ ingredientId: d.ingredient.id, quantity: d.quantity, unit: d.unit,
         expiredAt: expiryDateFromDays(d.expiryDays), storageLocation: d.storageLocation, note: d.note.trim() }));
@@ -107,7 +112,11 @@ export default function AddIngredientScreen() {
         <MaterialCommunityIcons name="basket-plus-outline" size={32} color={colors.primary} />
         <Text style={{ color: colors.muted, textAlign: "center", lineHeight: 22 }}>Chọn nguyên liệu ở trên để thêm vào danh sách.</Text>
       </View> : null}
-      {drafts.map(d => <View key={d.ingredient.id} testID={`selected-ingredient-${d.ingredient.id}`} style={{ gap: 14, padding: 16, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+      {drafts.map(d => {
+        const step = getIngredientQuantityStep(d.ingredient, d.unit);
+        const stepUnit = normalizeIngredientUnit(d.unit);
+        const stepLabel = `${step} ${stepUnit === 'piece' ? 'quả' : stepUnit}`;
+        return <View key={d.ingredient.id} testID={`selected-ingredient-${d.ingredient.id}`} style={{ gap: 14, padding: 16, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700' }}>{d.ingredient.name}</Text>
@@ -119,20 +128,23 @@ export default function AddIngredientScreen() {
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.secondary, borderRadius: 12, padding: 8 }}>
-          <QuantityButton name="minus" label={`Giảm 100 ${d.unit} ${d.ingredient.name}`} disabled={saving || d.quantity <= 100} onPress={() => changeQuantity(d.ingredient.id, -100)} />
-          <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
-            <Text accessibilityLabel={`Số lượng ${d.ingredient.name}`} style={{ color: colors.primaryDark, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{d.quantity} {d.unit}</Text>
-            <Text style={{ color: colors.primaryDark, fontSize: 12 }}>Mỗi lần thêm 100 {d.unit}</Text>
+          <QuantityButton name="minus" label={`Giảm ${stepLabel} ${d.ingredient.name}`} disabled={saving || d.quantity <= step} onPress={() => changeQuantity(d.ingredient.id, -1)} />
+          <View style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: 3 }}>
+            <Text accessibilityLabel={`Số lượng ${d.ingredient.name}`} style={{ color: colors.primaryDark, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'], textAlign: 'center', flexShrink: 1 }}>{formatIngredientQuantity(d.quantity, d.unit)}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12, textAlign: 'center' }}>Mỗi lần thêm {stepLabel}</Text>
           </View>
-          <QuantityButton name="plus" label={`Thêm 100 ${d.unit} ${d.ingredient.name}`} disabled={saving} onPress={() => changeQuantity(d.ingredient.id, 100)} />
+          <QuantityButton name="plus" label={`Thêm ${stepLabel} ${d.ingredient.name}`} disabled={saving} onPress={() => changeQuantity(d.ingredient.id, 1)} />
         </View>
-        <ExpiryDaysField value={d.expiryDays} onChange={value => patch(d.ingredient.id, { expiryDays: value })} disabled={saving} />
+        <ExpiryDaysField value={d.expiryDays} onChange={value => {
+          if (/^\d*$/.test(value)) patch(d.ingredient.id, { expiryDays: value });
+        }} disabled={saving} />
         <Text style={{ color: colors.text, fontWeight: '600' }}>Nơi cất</Text>
         <View pointerEvents={saving ? 'none' : 'auto'} style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {storageOptions.map(option => <CategoryChip key={option.value} label={option.label} active={d.storageLocation === option.value} onPress={() => patch(d.ingredient.id, { storageLocation: option.value })} />)}
         </View>
         <AppInput accessibilityLabel={`Ghi chú ${d.ingredient.name}`} placeholder="Ghi chú (không bắt buộc)" placeholderTextColor={colors.muted} value={d.note} onChangeText={note => patch(d.ingredient.id, { note })} editable={!saving} />
-      </View>)}
+      </View>;
+      })}
       {drafts.length ? <Text style={{ color: colors.muted, lineHeight: 21 }}>Nếu nguyên liệu đã có trong tủ, số lượng này sẽ thay thế số lượng hiện tại.</Text> : null}
       {!loaded && !loading ? <PrimaryButton title="Tải lại danh mục" onPress={load} variant="soft" /> : null}
     </ScrollView>
@@ -146,8 +158,8 @@ export default function AddIngredientScreen() {
 }
 
 function QuantityButton({ name, label, disabled, onPress }: { name: 'plus' | 'minus'; label: string; disabled: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => ({ width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 12,
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
+    style={({ pressed }) => ({ width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: 12,
       backgroundColor: name === 'plus' ? colors.primary : colors.surface, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
     <MaterialCommunityIcons name={name} size={24} color={name === 'plus' ? colors.textDark : colors.primaryDark} />
   </Pressable>;

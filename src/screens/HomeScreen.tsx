@@ -13,7 +13,7 @@ import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PrimaryButton from "@/components/PrimaryButton";
 import MealCard from "@/components/MealCard";
 import SearchBar from "@/components/SearchBar";
-import { colors } from "@/constants/colors";
+import { colors, radius, shadows, spacing } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
 import type { Meal } from "@/types";
@@ -141,21 +141,22 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         {errorMessage ? <><ExpiryAlertCard title={errorMessage} tone="danger" /><PrimaryButton title="Thử tải lại" variant="outline" onPress={loadHome} /></> : null}
-        <View style={{ backgroundColor: '#0D2818', borderRadius: 12, padding: 16, gap: 16, boxShadow: '0 4px 6px rgba(0,0,0,0.08)' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}><FigmaAsset asset={assets.imgContainer10} /></View>
-            <View style={{ flex: 1, gap: 4 }}><Text style={{ color: '#FFE0B5', fontSize: 11, fontWeight: '600' }}>QUẢN LÝ THỰC PHẨM</Text>
-              <Text style={{ color: colors.white, fontSize: 21, fontWeight: '700' }}>Kho nguyên liệu của {displayName}</Text>
-              <Text style={{ color: colors.onDarkMuted, fontSize: 12, lineHeight: 18 }}>Cập nhật nguyên liệu nhanh chóng để nhận gợi ý món ngon thông minh.</Text>
+        <View style={{ backgroundColor: colors.secondary, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.lg, borderWidth: 1, borderColor: colors.surface, boxShadow: shadows.card }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
+            <View style={{ width: 56, height: 56, flexShrink: 0, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialCommunityIcons name="fridge-outline" size={30} color={colors.primaryDark} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}><Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: '600' }}>QUẢN LÝ THỰC PHẨM</Text>
+              <Text style={{ color: colors.text, fontSize: 21, fontWeight: '700' }}>Kho nguyên liệu của {displayName}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>Cập nhật nguyên liệu nhanh chóng để nhận gợi ý món ngon thông minh.</Text>
             </View>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Thêm nguyên liệu" accessibilityState={{ expanded: showAddMethods }} onPress={() => setShowAddMethods(v => !v)} style={{ backgroundColor: colors.primary, minHeight: 60, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <FigmaAsset asset={assets.imgContainer11} /><Text style={{ color: '#642F00', fontSize: 20, fontWeight: '700' }}>Thêm nguyên liệu</Text><FigmaAsset asset={assets.imgContainer12} style={{ transform: [{ rotate: showAddMethods ? '180deg' : '0deg' }] }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Thêm nguyên liệu" accessibilityState={{ expanded: showAddMethods }} onPress={() => setShowAddMethods(v => !v)} style={({ pressed }) => ({ backgroundColor: colors.primary, minHeight: 60, padding: spacing.md, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, opacity: pressed ? 0.76 : 1 })}>
+            <FigmaAsset asset={assets.imgContainer11} /><Text style={{ color: colors.textDark, fontSize: 20, fontWeight: '700', flexShrink: 1, textAlign: 'center' }}>Thêm nguyên liệu</Text><FigmaAsset asset={assets.imgContainer12} style={{ transform: [{ rotate: showAddMethods ? '180deg' : '0deg' }] }} />
           </Pressable>
-          {showAddMethods ? <View style={{ gap: 8 }}>
+          {showAddMethods ? <View style={{ gap: spacing.sm }}>
             <PrimaryButton title="Chọn ảnh / quét thực phẩm" icon="camera-outline" onPress={() => navigation.navigate('PantryImport', { method: 'FOOD_IMAGE' })} />
-            <PrimaryButton title="Nhập tay nguyên liệu" variant="soft" onPress={() => navigation.navigate('QuickAdd')} />
-            <PrimaryButton title="Chọn nguyên liệu thủ công" variant="outline" onPress={() => navigation.navigate('AddIngredient')} />
+            <PrimaryButton title="Chọn nguyên liệu thủ công" icon="basket-plus-outline" variant="outline" onPress={() => navigation.navigate('AddIngredient')} />
           </View> : null}
         </View>
         <View style={{ position: 'relative', marginTop: 2 }}>

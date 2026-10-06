@@ -13,6 +13,7 @@ export type Ingredient = {
   category: string;
   unit: string;
   defaultUnit?: string;
+  quantityStep?: number | null;
   caloriesPerUnit: number;
   proteinPerUnit: number;
   fatPerUnit: number;
