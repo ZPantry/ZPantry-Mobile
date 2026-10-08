@@ -5,7 +5,7 @@
   "main": "expo/AppEntry",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test:api": "node --test tests/api-contract.test.cjs",
+    "test:api": "node --test tests/api-contract.test.cjs tests/chat-contract.test.cjs",
     "start": "expo start",
     "build": "expo export -p web --clear",
     "android": "node scripts/run-android.cjs",

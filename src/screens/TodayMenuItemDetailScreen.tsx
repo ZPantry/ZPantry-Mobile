@@ -50,7 +50,6 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       setNote(detail.note || "");
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
-      setItem(null);
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +92,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
         note
       });
       setCompletedResult(result);
+      setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
+        imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       await loadDetail();
     } catch (error) {
@@ -235,7 +236,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 )}
               </Section>
 
-              {completedResult?.warnings.length ? (
+              {completedResult?.warnings?.length ? (
                 <Section title="Cảnh báo pantry">
                   {completedResult.warnings.map((warning) => (
                     <InfoRow key={warning} icon="warning-outline" color={colors.warning} text={translatePantryWarning(warning)} />
@@ -243,7 +244,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 </Section>
               ) : null}
 
-              {completedResult?.consumedIngredients.length ? (
+              {completedResult?.consumedIngredients?.length ? (
                 <Section title="Nguyên liệu đã trừ">
                   {completedResult.consumedIngredients.map((log) => (
                     <InfoRow key={log.id} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />

@@ -1,9 +1,9 @@
 import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, Pressable, RefreshControl, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -50,6 +50,7 @@ export default function PlanScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const navigation = useNavigation<Navigation>();
+  const route = useRoute<RouteProp<RootStackParamList, "Plan">>();
   const [today, setToday] = useState(() => new Date());
   const requestId = useRef(0);
   const [loaded, setLoaded] = useState(false);
@@ -57,6 +58,17 @@ export default function PlanScreen() {
   const [items, setItems] = useState<TodayMenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const date = route.params?.date;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const selected = new Date(`${date}T12:00:00`);
+    if (Number.isNaN(selected.getTime()) || formatDateKey(selected) !== date) return;
+    requestId.current++;
+    setItems([]);
+    setLoaded(false);
+    setToday(selected);
+  }, [route.params?.date, route.params?.refreshKey]);
 
   const loadTodayMenu = useCallback(async () => {
     const current = ++requestId.current;

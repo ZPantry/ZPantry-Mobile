@@ -149,7 +149,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       });
 
       toast.show("Đã thêm món vào thực đơn.");
-      navigation.navigate("TodayMenuItemDetail", { itemId: item.id });
+      navigation.navigate("Plan", { date: item.plannedDate || plannedDate, refreshKey: Date.now() });
     } catch (error) {
       toast.show(getFriendlyErrorMessage(error, "Chưa thêm được món vào thực đơn."), "danger");
     } finally {

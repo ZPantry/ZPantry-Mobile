@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
   const errors = [], calls = [], aliases = [];
   let failBatch = true;
   let failReset = true, failAlias = true, failMenu = true, failComplete = true, completed = false;
-  const out = path.resolve('work/swagger-review-2026-10-04'); fs.mkdirSync(out, { recursive: true });
+  const out = path.resolve(process.env.LOGIC_FIXES_ONLY ? 'work/logic-fixes-2026-10-07' : 'work/swagger-review-2026-10-04'); fs.mkdirSync(out, { recursive: true });
   async function open(role, width = 390, step) {
     const page = await browser.newPage({ viewport: { width, height: 844 } });
     page.setDefaultTimeout(15000); page.on('pageerror', e => errors.push(e.message));
@@ -52,6 +52,7 @@ const server = http.createServer((req, res) => {
       if (p === `/api/recipes/${rid}`) return ok(recipe);
       if (p === '/api/me/pantry') return paged([{ id: iid, ingredientId: iid, ingredientName: ingredient.name, quantity: 0.1, unit: 'kg', expiredAt: null }]);
       if (p === '/api/recommendations/meals') return ok({ items: [{ recipeId: rid, recipeName: recipe.name, score: 0.8 }] });
+      if (p === '/api/recommendations/chat') return ok({ answer: 'Bạn có thể nấu canh cà rốt.', recommendations: [{ recipeId: rid, recipeName: recipe.name, score: 80, matchingIngredients: ['Cà rốt'] }] });
       if (p === '/api/recommendations/v2/meals') return ok({ recommendationId: recid, items: [{ recipeId: rid, recipeName: recipe.name, score: 0.8 }] });
       if (p === `/api/recommendations/${recid}/feedback`) return ok(null);
       if (p === '/api/recommendations/missing-ingredients') return ok({ missingIngredients: [] });
@@ -62,6 +63,7 @@ const server = http.createServer((req, res) => {
         return ok({ id: 'menu-1', ...body, status: 'PLANNED' });
       }
       if (p === '/api/me/today-menu/items/menu-1') return ok({ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' });
+      if (p === '/api/me/today-menu') return paged(url.searchParams.get('date') === '2026-10-05' ? [{ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' }] : []);
       if (p === '/api/me/today-menu/items/menu-1/complete') {
         assert.match(req.headers()['content-type'], /multipart\/form-data/);
         assert.match(req.postData(), /name="imageFile"/);
@@ -115,6 +117,7 @@ const server = http.createServer((req, res) => {
 
     const user = await open('USER');
     await user.getByText('Khám phá', { exact: true }).last().click();
+    assert.equal(await user.getByRole('button', { name: 'Tạo công thức', exact: true }).count(), 0);
     await user.getByRole('button', { name: 'Tìm món cho tôi', exact: true }).click();
     await user.getByRole('button', { name: 'Xem Canh cà rốt', exact: true }).click();
     await user.getByText('Cà rốt - cần 100 g', { exact: true }).waitFor();
@@ -139,6 +142,11 @@ const server = http.createServer((req, res) => {
     await user.getByRole('button', { name: 'Thêm vào thực đơn', exact: true }).click();
     assert.equal(await user.getByLabel('Ghi chú thực đơn', { exact: true }).inputValue(), 'Ít muối');
     await user.getByRole('button', { name: 'Thêm vào thực đơn', exact: true }).click();
+    await user.getByText('Món đã hoàn thành', { exact: true }).waitFor();
+    assert.equal(await user.getByLabel('Ngày xem thực đơn · Ngày', { exact: true }).inputValue(), '05');
+    await user.getByText('Canh cà rốt', { exact: true }).last().waitFor();
+    assert.ok(calls.some(c => c.p === '/api/me/today-menu'));
+    await user.getByText('Canh cà rốt', { exact: true }).last().click();
     await user.getByText('Hoàn thành món', { exact: true }).waitFor();
     await user.getByText('Cà rốt: 400 g', { exact: true }).waitFor();
     const completionChooser = user.waitForEvent('filechooser');
@@ -183,9 +191,15 @@ const server = http.createServer((req, res) => {
     await ux.getByLabel('Tin nhắn cho đầu bếp AI').fill('Tôi có cà rốt, hãy gợi ý món');
     await ux.getByRole('button', { name: 'Gửi tin nhắn AI', exact: true }).click();
     await ux.getByRole('button', { name: 'Xem công thức Canh cà rốt', exact: true }).waitFor();
-    assert.equal(calls.filter(c => c.p === '/api/recommendations/meals').at(-1).body.inputIngredientText, 'Tôi có cà rốt, hãy gợi ý món');
+    assert.equal(calls.filter(c => c.p === '/api/recommendations/chat').at(-1).body.message, 'Tôi có cà rốt, hãy gợi ý món');
     await ux.screenshot({ path: path.join(out, 'chat-mobile.png'), animations: 'disabled' });
     await ux.getByRole('button', { name: 'Đóng chat AI', exact: true }).click();
+    if (process.env.LOGIC_FIXES_ONLY) {
+      assert.deepEqual(errors, []);
+      fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ status: 'passed', scope: 'USER permissions, selected menu date, completion upload failure/retry, AI chat', errors }, null, 2));
+      console.log('PASS: USER cannot create recipes; menu opens the selected date; upload keeps drafts on failure and succeeds on retry; AI chat uses the new endpoint; no browser runtime errors.');
+      return;
+    }
     await ux.getByRole('tab', { name: 'Cá nhân', exact: true }).click();
     await ux.getByText('Cài đặt khẩu vị & Dị ứng', { exact: true }).click();
     await ux.getByLabel('Ngày sinh · Năm').selectOption('2000');
@@ -304,7 +318,7 @@ const server = http.createServer((req, res) => {
     assert.equal(calls.filter(c => c.p === `/api/admin/users/${targetid}/role`)[0].body.role, 'MANAGER');
     await admin.screenshot({ path: path.join(out, 'role-desktop.png') });
     await admin.close();
-    const catalog = await open('MANAGER');
+    const catalog = await open('ADMIN');
     await catalog.getByText('Nguyên liệu', { exact: true }).last().click();
     await catalog.getByRole('button', { name: 'Chỉnh sửa', exact: true }).first().click();
     await catalog.getByLabel('Tên gọi khác', { exact: true }).fill('Cà rốt Đà Lạt');

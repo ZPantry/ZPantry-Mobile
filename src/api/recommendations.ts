@@ -97,6 +97,7 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
   matchedIngredients?: RawIngredientName[];
   missingIngredients?: RawIngredientName[];
   matchingIngredientNames?: RawIngredientName[];
+  matchingIngredients?: RawIngredientName[];
   missingIngredientNames?: RawIngredientName[];
   matching?: RawIngredientName[];
   missing?: RawIngredientName[];
@@ -147,7 +148,7 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
     reasons: reasons.map(translateRecommendationText),
     cookTimeMinutes: typeof item.cookTimeMinutes === "number" ? item.cookTimeMinutes : undefined,
     missingIngredientCount: Number(item.missingIngredientCount ?? item.missingIngredientNames?.length ?? item.missingIngredients?.length ?? 0),
-    matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredientNames || item.matching),
+    matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredients || item.matchingIngredientNames || item.matching),
     missingIngredients: normalizeIngredientNames(item.missingIngredients || item.missingIngredientNames || item.missing),
     expiringSoonIngredients: normalizeIngredientNames(item.expiringSoonIngredients)
   };
@@ -195,6 +196,17 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
+  async chat(message: string) {
+    const text = message.trim();
+    if (!text || text.length > 2000) throw new ApiError("Vui lòng nhập câu hỏi từ 1 đến 2000 ký tự.", 400);
+    const response = await apiRequest<unknown>("/api/recommendations/chat", {
+      method: "POST", auth: true, body: JSON.stringify({ message: text }), timeoutMs: 60000
+    });
+    const body = unwrapEnvelope<{ answer?: string; recommendations?: RawMealRecommendation[] }>(response);
+    if (!body || typeof body.answer !== "string" || !body.answer.trim() || !Array.isArray(body.recommendations))
+      throw new ApiError("Phản hồi đầu bếp AI chưa đầy đủ. Vui lòng thử lại.", 502);
+    return { answer: body.answer, recommendations: body.recommendations.map(normalizeRecommendation) };
+  },
   get(id: string) { return apiRequest<RecommendationRecord>(endpoints.recommendations.item(id), { auth: true }); },
   feedback(id: string, payload: RecommendationFeedback) {
     if (!id || payload.mealRecommendationId !== id || !Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 5)

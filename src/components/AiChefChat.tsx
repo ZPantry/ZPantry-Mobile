@@ -10,9 +10,6 @@ import FigmaAsset from './FigmaAsset';
 import { homeAssets } from '@/constants/figmaAssets';
 import { colors } from '@/constants/colors';
 import { recommendationsApi, type MealRecommendation } from '@/api/recommendations';
-import { recipesApi } from '@/api/recipes';
-import { pantryApi } from '@/api/pantry';
-import { ingredientsApi } from '@/api/ingredients';
 import { getFriendlyErrorMessage } from '@/utils/localize';
 
 type Message = { id: number; role: 'user' | 'assistant'; text: string; recipes?: MealRecommendation[]; failedPrompt?: string };
@@ -38,15 +35,8 @@ export default function AiChefChat() {
     lock.current = true; setBusy(true);
     if (!retry) { setInput(''); setMessages(v => [...v, { id: sequence.current++, role: 'user', text: prompt }]); }
     try {
-      const [recipes, pantry, ingredients] = await Promise.all([recipesApi.all(), pantryApi.all(), ingredientsApi.all()]);
-      const names = new Map(ingredients.map(i => [i.id, i.name]));
-      const today = Date.now();
-      const available = pantry.filter(i => i.quantity > 0 && (!i.expiredAt || new Date(i.expiredAt).getTime() >= today));
-      const result = await recommendationsApi.suggestMeals({ inputIngredientText: prompt, topK: 3,
-        selectedIngredients: available.map(i => ({ ingredientId: i.ingredientId, name: i.ingredientName || names.get(i.ingredientId) || '', quantity: i.quantity, unit: i.unit })).filter(i => i.name),
-        candidateRecipes: recipes.map(r => ({ recipeId: r.id, recipeName: r.name, ingredientNames: (r.ingredients || []).map(i => i.ingredientName).filter(Boolean), instructionText: r.instructionText })) });
-      const resolved = result.recommendations.map(r => ({ ...r, name: recipes.find(recipe => recipe.id === r.recipeId)?.name || r.name }));
-      setMessages(v => [...v, { id: sequence.current++, role: 'assistant', text: resolved.length ? 'Mình tìm được các công thức này. Chạm vào món để xem nguyên liệu và cách nấu.' : 'Chưa tìm được món phù hợp. Thử mô tả nguyên liệu hoặc món ăn khác nhé.', recipes: resolved }]);
+      const result = await recommendationsApi.chat(prompt);
+      setMessages(v => [...v, { id: sequence.current++, role: 'assistant', text: result.answer, recipes: result.recommendations }]);
     } catch (e) {
       setMessages(v => [...v, { id: sequence.current++, role: 'assistant', text: getFriendlyErrorMessage(e, 'Chưa nhận được gợi ý. Bạn có thể thử gửi lại.'), failedPrompt: prompt }]);
     } finally { lock.current = false; setBusy(false); }

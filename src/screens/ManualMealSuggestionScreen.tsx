@@ -224,9 +224,6 @@ export default function ManualMealSuggestionScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
 
 
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <PrimaryButton title="Tạo công thức" icon="notebook-edit-outline" variant="soft" onPress={() => navigation.navigate("CreateRecipe")} style={{ minHeight: 42 }} />
-              </View>
             </View>
 
             <View style={{ gap: 8 }}>

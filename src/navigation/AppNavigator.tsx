@@ -160,7 +160,6 @@ export default function AppNavigator() {
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
           <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
           <Stack.Screen name="ManualMealSuggestion" component={ManualMealSuggestionScreen} />
-          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
           <Stack.Screen name="PantryImport" component={PantryImportScreen} />
           <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} />
           <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />

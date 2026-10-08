@@ -122,7 +122,6 @@ export default function MealSuggestionScreen() {
         <PrimaryButton title="Thêm nguyên liệu thủ công" variant="outline" onPress={() => navigation.navigate("AddIngredient")} />
       </View> : null}
       <PrimaryButton title="Tự chọn / nhập nguyên liệu" icon="pencil-outline" variant="soft" onPress={() => navigation.navigate("ManualMealSuggestion")} />
-      <PrimaryButton title="Tạo công thức" icon="notebook-edit-outline" variant="outline" onPress={() => navigation.navigate("CreateRecipe")} />
     </ScrollView>
   </SafeAreaView>;
 }

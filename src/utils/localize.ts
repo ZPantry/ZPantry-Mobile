@@ -72,6 +72,9 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
   const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
   const lower = rawMessage.toLowerCase();
 
+  if (lower.includes("media storage is not configured")) return "Máy chủ chưa cấu hình lưu ảnh thành phẩm. Vui lòng liên hệ quản trị viên.";
+  if (status === 503 && lower.includes("ai service")) return "Đầu bếp AI hiện chưa kết nối được dịch vụ trả lời. Vui lòng thử lại sau.";
+
   if (status >= 500 && context === "imageUpload") return "Dịch vụ tải ảnh đang gặp sự cố. Vui lòng giữ lại thông tin và thử lại sau.";
   if (context === "imageUpload") {
     if (status === 413) return "Ảnh của bạn quá lớn. Vui lòng chọn ảnh nhẹ hơn rồi thử lại.";

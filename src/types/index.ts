@@ -56,7 +56,7 @@ export type UserProfile = {
 };
 
 export type RootStackParamList = {
-  Plan: undefined;
+  Plan: { date?: string; refreshKey?: number } | undefined;
   Login: undefined;
   ForgotPassword: undefined;
   Onboarding: undefined;
@@ -100,6 +100,5 @@ export type TabParamList = {
   Home: undefined;
   Pantry: undefined;
   MealSuggestion: undefined;
-  Plan: undefined;
   Profile: undefined;
 };
