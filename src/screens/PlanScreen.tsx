@@ -1,8 +1,11 @@
+import DateField from "@/components/DateField";
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Image, Pressable, RefreshControl, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { TodayMenuItem } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
@@ -47,23 +50,41 @@ export default function PlanScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const navigation = useNavigation<Navigation>();
-  const today = useMemo(() => new Date(), []);
+  const route = useRoute<RouteProp<RootStackParamList, "Plan">>();
+  const [today, setToday] = useState(() => new Date());
+  const requestId = useRef(0);
+  const [loaded, setLoaded] = useState(false);
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const [items, setItems] = useState<TodayMenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    const date = route.params?.date;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const selected = new Date(`${date}T12:00:00`);
+    if (Number.isNaN(selected.getTime()) || formatDateKey(selected) !== date) return;
+    requestId.current++;
+    setItems([]);
+    setLoaded(false);
+    setToday(selected);
+  }, [route.params?.date, route.params?.refreshKey]);
+
   const loadTodayMenu = useCallback(async () => {
+    const current = ++requestId.current;
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const page = await todayMenuApi.list(todayKey, 1, 20);
-      setItems(page.data);
+      const data = await todayMenuApi.all(todayKey);
+      if (current !== requestId.current) return;
+      setItems(data);
+      setLoaded(true);
     } catch (error) {
+      if (current !== requestId.current) return;
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được thực đơn hôm nay."));
-      setItems([]);
+
     } finally {
-      setIsLoading(false);
+      if (current === requestId.current) setIsLoading(false);
     }
   }, [todayKey]);
 
@@ -72,6 +93,10 @@ export default function PlanScreen() {
       loadTodayMenu();
     }, [loadTodayMenu])
   );
+
+  const changeDay = (delta: number) => {
+    requestId.current++; setItems([]); setLoaded(false); setToday(date => { const next = new Date(date); next.setDate(next.getDate() + delta); return next; });
+  };
 
   const cookedCount = items.filter((item) => ["cooked", "completed"].includes(item.status.toLowerCase())).length;
 
@@ -89,18 +114,19 @@ export default function PlanScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTodayMenu} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
-              Thực đơn hôm nay
+            <Text style={{ color: colors.text, fontSize: 28, fontWeight: "700" }} selectable>
+              Thực đơn
             </Text>
-            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "900", marginTop: 4 }} selectable>
+            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "700", marginTop: 4 }} selectable>
               {formatDateLabel(today)}
             </Text>
           </View>
@@ -109,8 +135,11 @@ export default function PlanScreen() {
           </View>
         </View>
 
+        <View style={{flexDirection:"row",gap:8}}><PrimaryButton title="Ngày trước" variant="outline" onPress={()=>changeDay(-1)} style={{flex:1}}/><PrimaryButton title="Ngày sau" variant="outline" onPress={()=>changeDay(1)} style={{flex:1}}/></View>
+        <DateField label="Ngày xem thực đơn" value={todayKey} onChange={v => { if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { const [y, m, d] = v.split('-').map(Number); requestId.current++; setItems([]); setLoaded(false); setToday(new Date(y, m - 1, d)); } }} />
+        <PrimaryButton title="Lịch sử nấu ăn" variant="soft" onPress={()=>navigation.navigate("CookingHistory")}/>
         <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 12 }}>
-          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700" }} selectable>
             Xin chào {user?.fullName || "bạn"}
           </Text>
           <View style={{ flexDirection: "row", gap: 12 }}>
@@ -121,21 +150,21 @@ export default function PlanScreen() {
 
         {errorMessage ? (
           <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16 }}>
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", textAlign: "center" }} selectable>
               {errorMessage}
             </Text>
           </View>
         ) : null}
 
         <View style={{ gap: 14 }}>
-          {items.length === 0 ? (
+          {!loaded && isLoading ? <Text style={{color:colors.muted}}>Đang tải thực đơn…</Text> : errorMessage && !items.length ? <PrimaryButton title="Thử lại" onPress={loadTodayMenu}/> : items.length === 0 ? (
             <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 18, gap: 12, alignItems: "center" }}>
               <Ionicons name="calendar-outline" size={34} color={colors.primary} />
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "center" }} selectable>
-                Chưa có món trong thực đơn hôm nay
+              <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700", textAlign: "center" }} selectable>
+                Chưa có món trong ngày đã chọn
               </Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20, textAlign: "center" }} selectable>
-                Mở một công thức rồi nhấn Thêm vào thực đơn hôm nay để bắt đầu.
+                Mở một công thức và chọn ngày muốn lên thực đơn.
               </Text>
             </View>
           ) : (
@@ -157,10 +186,10 @@ export default function PlanScreen() {
 function Metric({ value, label, alignRight = false }: { value: string; label: string; alignRight?: boolean }) {
   return (
     <View style={{ flex: 1, alignItems: alignRight ? "flex-end" : "flex-start", gap: 4 }}>
-      <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }} selectable>
+      <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "700", fontVariant: ["tabular-nums"] }} selectable>
         {value}
       </Text>
-      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", textAlign: alignRight ? "right" : "left" }} selectable>
+      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", textAlign: alignRight ? "right" : "left" }} selectable>
         {label}
       </Text>
     </View>
@@ -180,23 +209,23 @@ function TodayMenuCard({ item, onPress, onRemove }: { item: TodayMenuItem; onPre
         overflow: "hidden",
         opacity: pressed ? 0.88 : 1,
         transform: [{ scale: pressed ? 0.99 : 1 }],
-        boxShadow: "0 12px 24px rgba(0,0,0,0.20)"
+        boxShadow: "0 2px 8px rgba(0,48,20,0.06)"
       })}
     >
       <Image source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: "100%", height: 142, backgroundColor: colors.secondary }} />
       <View style={{ padding: 14, gap: 11 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.textDark, fontSize: 20, lineHeight: 25, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.textDark, fontSize: 20, lineHeight: 25, fontWeight: "700" }} selectable>
               {item.mealName}
             </Text>
-            <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800", marginTop: 3 }} selectable>
+            <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "600", marginTop: 3 }} selectable>
               {translateMealType(item.mealType)} · {item.servingSize || 1} phần
             </Text>
           </View>
           <View style={{ borderRadius: 999, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: `${meta.color}24`, flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name={meta.icon} size={14} color={meta.color} />
-            <Text style={{ color: colors.textDark, fontSize: 11, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.textDark, fontSize: 11, fontWeight: "700" }} selectable>
               {meta.label}
             </Text>
           </View>
@@ -209,7 +238,7 @@ function TodayMenuCard({ item, onPress, onRemove }: { item: TodayMenuItem; onPre
         ) : null}
 
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }} selectable>
+          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>
             Mở chi tiết
           </Text>
           {isCooked ? null : <PrimaryButton title="Xóa" icon="trash-can-outline" variant="outline" onPress={onRemove} style={{ minHeight: 38, paddingHorizontal: 12 }} />}

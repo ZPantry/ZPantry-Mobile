@@ -1,7 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
-import type { MealRecommendation } from "@/api/recommendations";
+import type { MealRecommendation, PersonalizedRecommendationOptions } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
 import type { AdminUser } from "@/api/users";
 
@@ -11,9 +11,9 @@ export type Meal = {
   id: string;
   name: string;
   image: string;
-  calories: number;
+  calories: number | null;
   time: string;
-  matchPercent: number;
+  matchPercent: number | null;
   difficulty: string;
   availableIngredients: string[];
   missingIngredients: string[];
@@ -24,7 +24,7 @@ export type PantryItem = {
   id: string;
   name: string;
   quantity: string;
-  location: "Ngan mat" | "Ngan dong";
+  location: "Ngan mat" | "Ngan dong" | "Ke bep";
   expiryLabel: string;
   status: PantryStatus;
   icon: string;
@@ -56,8 +56,18 @@ export type UserProfile = {
 };
 
 export type RootStackParamList = {
+  Plan: { date?: string; refreshKey?: number } | undefined;
   Login: undefined;
+  ForgotPassword: undefined;
   Onboarding: undefined;
+  ProfileSetup: { editing?: boolean } | undefined;
+  PantryImport: { method?: "TEXT" | "MENU" | "FOOD_IMAGE" | "RECEIPT" } | undefined;
+  QuickAdd: undefined;
+  ManualMealSuggestion: undefined;
+  CreateRecipe: undefined;
+  CookingHistory: undefined;
+  AccountSettings: undefined;
+  InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
   AdminUserForm: { user: AdminUser };
@@ -67,6 +77,7 @@ export type RootStackParamList = {
   PantryItemDetail: { pantryItem: PantryApiItem; ingredient?: Ingredient };
   MealRecommendationResults: {
     recommendations: MealRecommendation[];
+    mode?: PersonalizedRecommendationOptions["mode"];
     pantryItems: Array<{
       id: string;
       ingredientId: string;
@@ -77,7 +88,11 @@ export type RootStackParamList = {
       source?: "pantry" | "extra";
     }>;
   };
-  RecipeDetail: { mealId: string };
+  RecommendationAnalysisSample: {
+    recommendations: MealRecommendation[];
+    mode?: PersonalizedRecommendationOptions["mode"];
+  };
+  RecipeDetail: { mealId?: string; recipeId: string; recommendationId?: string };
   TodayMenuItemDetail: { itemId: string };
 };
 
@@ -85,6 +100,5 @@ export type TabParamList = {
   Home: undefined;
   Pantry: undefined;
   MealSuggestion: undefined;
-  Plan: undefined;
   Profile: undefined;
 };

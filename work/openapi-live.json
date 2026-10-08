@@ -1,0 +1,4261 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ZPantry API",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "https://zpantry-java-backend.onrender.com",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v2/recipes/{id}": {
+      "put": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "updateV2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ingredients/{id}": {
+      "put": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "updateV2_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseIngredientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{userId}/profile": {
+      "get": {
+        "tags": [
+          "user-profile-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseUserProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "user-profile-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseUserProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": [
+          "user-controller"
+        ],
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "user-controller"
+        ],
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "user-controller"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{id}": {
+      "get": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/profile/v2": {
+      "get": {
+        "tags": [
+          "profile-v-2-controller"
+        ],
+        "operationId": "get_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "profile-v-2-controller"
+        ],
+        "operationId": "put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry/items/{itemId}": {
+      "put": {
+        "tags": [
+          "pantry-controller"
+        ],
+        "operationId": "update_3",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonNode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePantryItemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pantry-controller"
+        ],
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ingredients/{id}": {
+      "put": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "update_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIngredientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseIngredientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "delete_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/recipes": {
+      "post": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "createV2",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ingredients": {
+      "post": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "createV2_1",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseIngredientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ingredients/analyze-image": {
+      "post": {
+        "tags": [
+          "ingredient-image-v-2-controller"
+        ],
+        "operationId": "analyze",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedImageAnalysisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/{id}/feedback": {
+      "post": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "feedback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/v2/meals": {
+      "post": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "personalized",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonalizedRecommendationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/missing-ingredients": {
+      "post": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "missing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/meals": {
+      "post": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "meals",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendMealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes": {
+      "get": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "recipe-controller"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRecipeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/upload": {
+      "post": {
+        "tags": [
+          "media-controller"
+        ],
+        "operationId": "upload",
+        "parameters": [
+          {
+            "name": "recipeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ingredientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/today-menu/items": {
+      "post": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTodayMenuItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTodayMenuItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/today-menu/items/{itemId}/complete": {
+      "post": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "complete",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteTodayMenuItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTodayMenuCompletionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry/parse": {
+      "post": {
+        "tags": [
+          "natural-language-pantry-controller"
+        ],
+        "operationId": "parse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListPantryImportPreviewItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry/items": {
+      "get": {
+        "tags": [
+          "pantry-controller"
+        ],
+        "operationId": "items",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponsePantryItemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pantry-controller"
+        ],
+        "operationId": "upsert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertPantryItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePantryItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry-import/receipt/analyze": {
+      "post": {
+        "tags": [
+          "pantry-import-controller"
+        ],
+        "operationId": "receipt",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryImportPreviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry-import/food-image/analyze": {
+      "post": {
+        "tags": [
+          "pantry-import-controller"
+        ],
+        "operationId": "food",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryImportPreviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry-import/confirm": {
+      "post": {
+        "tags": [
+          "pantry-import-controller"
+        ],
+        "operationId": "confirm",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPantryImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ingredients": {
+      "get": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseIngredientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIngredientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseIngredientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ingredients/{id}/aliases": {
+      "get": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "aliases",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListIngredientAliasResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "createAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIngredientAliasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseIngredientAliasResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/verify-otp": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "verify",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/reset-password": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/register": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/refresh-token": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/logout": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/login": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/google": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "authenticateGoogle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Auth/forgot-password": {
+      "post": {
+        "tags": [
+          "authentication-controller"
+        ],
+        "operationId": "forgotPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/role": {
+      "patch": {
+        "tags": [
+          "account-administration-controller"
+        ],
+        "operationId": "changeRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "user-controller"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/{id}": {
+      "get": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "get_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/meals/{mealId}/missing-ingredients": {
+      "get": {
+        "tags": [
+          "recommendation-controller"
+        ],
+        "operationId": "check",
+        "parameters": [
+          {
+            "name": "mealId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/today-menu": {
+      "get": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "list_3",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseTodayMenuItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/today-menu/items/{itemId}": {
+      "get": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "get_5",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTodayMenuItemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "delete_4",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/pantry": {
+      "get": {
+        "tags": [
+          "pantry-controller"
+        ],
+        "operationId": "get_6",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponsePantryItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/cooking-logs": {
+      "get": {
+        "tags": [
+          "today-menu-controller"
+        ],
+        "operationId": "logs",
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseCookingLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media": {
+      "delete": {
+        "tags": [
+          "media-controller"
+        ],
+        "operationId": "delete_5",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ingredients/{id}/aliases/{aliasId}": {
+      "delete": {
+        "tags": [
+          "ingredient-controller"
+        ],
+        "operationId": "deleteAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RecipeFormRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cookingTimeMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "servingSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "instructionText": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "ingredientsJson": {
+            "type": "string"
+          },
+          "imageFile": {
+            "type": "string",
+            "format": "binary"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "ApiErrorDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseRecipeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RecipeResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecipeIngredientResponse": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ingredientName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "RecipeResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cookingTimeMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "servingSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "instructionText": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientResponse"
+            }
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "IngredientFormRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "caloriesPerUnit": {
+            "type": "number"
+          },
+          "proteinPerUnit": {
+            "type": "number"
+          },
+          "fatPerUnit": {
+            "type": "number"
+          },
+          "carbPerUnit": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "imageFile": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "ApiResponseIngredientResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/IngredientResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IngredientResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "normalizedName": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "caloriesPerUnit": {
+            "type": "number"
+          },
+          "proteinPerUnit": {
+            "type": "number"
+          },
+          "fatPerUnit": {
+            "type": "number"
+          },
+          "carbPerUnit": {
+            "type": "number"
+          },
+          "defaultQuantity": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "UserProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "goal": {
+            "type": "string",
+            "enum": [
+              "WEIGHT_LOSS",
+              "WEIGHT_GAIN",
+              "MUSCLE_GAIN",
+              "MAINTAIN_WEIGHT",
+              "HEALTHY_EATING",
+              "HIGH_PROTEIN",
+              "VITAMIN_BALANCE",
+              "QUICK_COOKING",
+              "WASTE_REDUCTION"
+            ]
+          },
+          "dietPreference": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "VEGETARIAN",
+              "VEGAN",
+              "KETO",
+              "LOW_CARB",
+              "HIGH_PROTEIN",
+              "EAT_CLEAN",
+              "DIVERSE"
+            ]
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "ApiResponseUserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfileResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "age": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "goal": {
+            "type": "string",
+            "enum": [
+              "WEIGHT_LOSS",
+              "WEIGHT_GAIN",
+              "MUSCLE_GAIN",
+              "MAINTAIN_WEIGHT",
+              "HEALTHY_EATING",
+              "HIGH_PROTEIN",
+              "VITAMIN_BALANCE",
+              "QUICK_COOKING",
+              "WASTE_REDUCTION"
+            ]
+          },
+          "dietPreference": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "VEGETARIAN",
+              "VEGAN",
+              "KETO",
+              "LOW_CARB",
+              "HIGH_PROTEIN",
+              "EAT_CLEAN",
+              "DIVERSE"
+            ]
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseUserResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "isEmailConfirmed": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "role": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecipeIngredientRequest": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ingredientName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "RecipeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cookingTimeMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "servingSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "instructionText": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientRequest"
+            }
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "UpdateRequest": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "heightCm": {
+            "type": "number",
+            "maximum": 300,
+            "minimum": 50
+          },
+          "weightKg": {
+            "type": "number",
+            "maximum": 500,
+            "minimum": 20
+          },
+          "activityLevel": {
+            "type": "string",
+            "enum": [
+              "SEDENTARY",
+              "LIGHT",
+              "MODERATE",
+              "HIGH"
+            ]
+          },
+          "goals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "WEIGHT_LOSS",
+                "WEIGHT_GAIN",
+                "MUSCLE_GAIN",
+                "MAINTAIN_WEIGHT",
+                "HEALTHY_EATING",
+                "HIGH_PROTEIN",
+                "VITAMIN_BALANCE",
+                "QUICK_COOKING",
+                "WASTE_REDUCTION"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "dietPreference": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "VEGETARIAN",
+              "VEGAN",
+              "KETO",
+              "LOW_CARB",
+              "HIGH_PROTEIN",
+              "EAT_CLEAN",
+              "DIVERSE"
+            ]
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "activityLevel",
+          "birthDate",
+          "dietPreference",
+          "gender",
+          "heightCm",
+          "weightKg"
+        ]
+      },
+      "ApiResponseResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Response": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "heightCm": {
+            "type": "number"
+          },
+          "weightKg": {
+            "type": "number"
+          },
+          "activityLevel": {
+            "type": "string",
+            "enum": [
+              "SEDENTARY",
+              "LIGHT",
+              "MODERATE",
+              "HIGH"
+            ]
+          },
+          "goals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "WEIGHT_LOSS",
+                "WEIGHT_GAIN",
+                "MUSCLE_GAIN",
+                "MAINTAIN_WEIGHT",
+                "HEALTHY_EATING",
+                "HIGH_PROTEIN",
+                "VITAMIN_BALANCE",
+                "QUICK_COOKING",
+                "WASTE_REDUCTION"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "dietPreference": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "VEGETARIAN",
+              "VEGAN",
+              "KETO",
+              "LOW_CARB",
+              "HIGH_PROTEIN",
+              "EAT_CLEAN",
+              "DIVERSE"
+            ]
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "bmi": {
+            "type": "number"
+          },
+          "bmr": {
+            "type": "number"
+          },
+          "tdee": {
+            "type": "number"
+          },
+          "dailyCalorieTarget": {
+            "type": "number"
+          },
+          "dailyProteinTarget": {
+            "type": "number"
+          },
+          "perMealCalorieTarget": {
+            "type": "number"
+          },
+          "perMealProteinTarget": {
+            "type": "number"
+          },
+          "weightLossAllowed": {
+            "type": "boolean"
+          },
+          "healthWarning": {
+            "type": "string"
+          }
+        }
+      },
+      "JsonNode": {},
+      "ApiResponsePantryItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PantryItemResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PantryItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ingredientName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "expiredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "storageLocation": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateIngredientRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "caloriesPerUnit": {
+            "type": "number"
+          },
+          "proteinPerUnit": {
+            "type": "number"
+          },
+          "fatPerUnit": {
+            "type": "number"
+          },
+          "carbPerUnit": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "PantryImportPreviewItem": {
+        "type": "object",
+        "properties": {
+          "rawName": {
+            "type": "string"
+          },
+          "normalizedName": {
+            "type": "string"
+          },
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "canonicalIngredientName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "resolverStatus": {
+            "type": "string",
+            "enum": [
+              "RESOLVED",
+              "AMBIGUOUS",
+              "UNRESOLVED"
+            ]
+          },
+          "ingredient": {
+            "$ref": "#/components/schemas/IngredientResponse"
+          },
+          "reviewRequired": {
+            "type": "boolean"
+          },
+          "sourceUnit": {
+            "type": "string"
+          }
+        }
+      },
+      "UnifiedImageAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "imageType": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "FOOD_IMAGE",
+              "UNKNOWN"
+            ]
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryImportPreviewItem"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RecommendationFeedbackRequest": {
+        "type": "object",
+        "properties": {
+          "mealRecommendationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feedbackType": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseObject": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {},
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PersonalizedRecommendationRequest": {
+        "type": "object",
+        "properties": {
+          "topK": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "AUTO",
+              "PANTRY_BASED",
+              "PROFILE_BASED"
+            ]
+          },
+          "mealType": {
+            "type": "string"
+          },
+          "maxCookTimeMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "servings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "includeIngredients": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseMapStringObject": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecommendMealCandidateRecipeRequest": {
+        "type": "object",
+        "properties": {
+          "recipeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipeName": {
+            "type": "string"
+          },
+          "ingredientNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "instructionText": {
+            "type": "string"
+          }
+        }
+      },
+      "RecommendMealIngredientRequest": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "RecommendMealRequest": {
+        "type": "object",
+        "properties": {
+          "inputIngredientText": {
+            "type": "string"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectedIngredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendMealIngredientRequest"
+            }
+          },
+          "candidateRecipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendMealCandidateRecipeRequest"
+            }
+          },
+          "topK": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseString": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateTodayMenuItemRequest": {
+        "type": "object",
+        "properties": {
+          "mealId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mealName": {
+            "type": "string"
+          },
+          "mealType": {
+            "type": "string"
+          },
+          "servingSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plannedDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseTodayMenuItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TodayMenuItemResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TodayMenuItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mealId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mealName": {
+            "type": "string"
+          },
+          "mealType": {
+            "type": "string"
+          },
+          "servingSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plannedDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "cookedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "imagePublicId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CompleteTodayMenuItemRequest": {
+        "type": "object",
+        "properties": {
+          "imageFile": {
+            "type": "string",
+            "format": "binary"
+          },
+          "cookedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseTodayMenuCompletionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TodayMenuCompletionResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CookingLogResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "todayMenuItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mealId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mealName": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "imagePublicId": {
+            "type": "string"
+          },
+          "cookedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string"
+          },
+          "pantryUsageLogs": {
+            "type": "array",
+            "items": {}
+          }
+        }
+      },
+      "TodayMenuCompletionResponse": {
+        "type": "object",
+        "properties": {
+          "cookingLog": {
+            "$ref": "#/components/schemas/CookingLogResponse"
+          },
+          "consumedIngredients": {
+            "type": "array",
+            "items": {}
+          },
+          "updatedPantryItems": {
+            "type": "array",
+            "items": {}
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ParseRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "ApiResponseListPantryImportPreviewItem": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryImportPreviewItem"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpsertPantryItemRequest": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "expiredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "storageLocation": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "PantryImportPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "RECEIPT",
+              "FOOD_IMAGE"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryImportPreviewItem"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConfirmPantryImportItem": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0.0001
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "ingredientId",
+          "quantity",
+          "unit"
+        ]
+      },
+      "ConfirmPantryImportRequest": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmPantryImportItem"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {},
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateIngredientRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "caloriesPerUnit": {
+            "type": "number"
+          },
+          "protenPerUnit": {
+            "type": "number"
+          },
+          "fatPerUnit": {
+            "type": "number"
+          },
+          "carbPerUnit": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "gradientFrom": {
+            "type": "string"
+          },
+          "gradientTo": {
+            "type": "string"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NO_ALLERGIES",
+                "PEANUT",
+                "TREE_NUT",
+                "MILK",
+                "EGG",
+                "SOY",
+                "WHEAT",
+                "GLUTEN",
+                "FISH",
+                "SHELLFISH",
+                "SESAME"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "CreateIngredientAliasRequest": {
+        "type": "object",
+        "properties": {
+          "aliasName": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "aliasName"
+        ]
+      },
+      "ApiResponseIngredientAliasResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/IngredientAliasResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IngredientAliasResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ingredientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "aliasName": {
+            "type": "string"
+          },
+          "normalizedAliasName": {
+            "type": "string"
+          }
+        }
+      },
+      "VerifyOtpRequest": {
+        "type": "object",
+        "properties": {
+          "otpCode": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "otpCode": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\d{6}"
+          },
+          "newPassword": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 8
+          },
+          "confirmPassword": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "confirmPassword",
+          "email",
+          "newPassword",
+          "otpCode"
+        ]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseAuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "GoogleLoginRequest": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgotPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "RoleChangeRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "PagedResponseUserResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedResponseRecipeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedResponseTodayMenuItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayMenuItemResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedResponsePantryItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryItemResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedResponseCookingLogResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CookingLogResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedResponseIngredientResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseListIngredientAliasResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientAliasResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "name": "bearerAuth",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

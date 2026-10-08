@@ -1,12 +1,13 @@
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Image, Pressable, RefreshControl, TextInput, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CompleteTodayMenuItemResponse, TodayMenuItemDetail } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
@@ -37,6 +38,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const completionLock = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadDetail = useCallback(async () => {
@@ -48,7 +50,6 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       setNote(detail.note || "");
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
-      setItem(null);
     } finally {
       setIsLoading(false);
     }
@@ -74,13 +75,14 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [toast]);
 
   const completeMeal = useCallback(async () => {
-    if (!item || isCooked) return;
+    if (!item || isCooked || completionLock.current) return;
 
     if (!pickedImage) {
       toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
       return;
     }
 
+    completionLock.current = true;
     setIsCompleting(true);
     try {
       const result = await todayMenuApi.complete(item.id, {
@@ -90,17 +92,20 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
         note
       });
       setCompletedResult(result);
+      setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
+        imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       await loadDetail();
     } catch (error) {
       toast.show(getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default"), "danger");
     } finally {
+      completionLock.current = false;
       setIsCompleting(false);
     }
   }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadDetail} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
@@ -108,26 +113,18 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       >
         <View>
           <Image source={{ uri: normalizeRemoteImageUrl(heroImage) }} style={{ width: "100%", height: 268, backgroundColor: colors.secondary }} />
-          <AppBackButton
-            variant="floating"
-            onPress={() => navigation.goBack()}
-            style={{
-              position: "absolute",
-              top: 18,
-              left: 18
-            }}
-          />
+
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
           {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", textAlign: "center" }} selectable>
               {errorMessage}
             </Text>
           ) : null}
 
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 30, lineHeight: 37, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 30, lineHeight: 37, fontWeight: "700" }} selectable>
               {item?.mealName || "Chi tiết thực đơn"}
             </Text>
             {item ? (
@@ -166,7 +163,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                   {steps.map((step, index) => (
                     <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12 }}>
                       <View style={{ width: 30, height: 30, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
+                        <Text style={{ color: colors.white, fontWeight: "700" }} selectable>
                           {index + 1}
                         </Text>
                       </View>
@@ -179,17 +176,20 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : null}
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
-                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" onPress={chooseImage} />
+                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
                 {pickedImage ? <Image source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
                 <View style={{ gap: 10 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "900" }} selectable>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "700" }} selectable>
                     Đánh giá
                   </Text>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     {[1, 2, 3, 4, 5].map((value) => (
                       <Pressable
                         key={value}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Đánh giá món ${value} sao`}
+                        disabled={isCompleting || isCooked}
                         onPress={() => setRating(value)}
                         style={{
                           width: 42,
@@ -210,6 +210,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
                 <TextInput
                   value={note}
+                  accessibilityLabel="Ghi chú sau khi nấu"
+                  editable={!isCompleting && !isCooked}
                   onChangeText={setNote}
                   placeholder="Ghi chú sau khi nấu"
                   placeholderTextColor={colors.muted}
@@ -223,18 +225,18 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                     padding: 14,
                     textAlignVertical: "top",
                     fontWeight: "700",
-                    backgroundColor: "rgba(255,255,255,0.08)"
+                    backgroundColor: colors.surface2
                   }}
                 />
 
                 {isCooked ? (
                   <InfoRow icon="checkmark-circle" color={colors.success} text="Món này đã hoàn thành. Pantry đã được xử lý ở lần xác nhận hoàn thành." />
                 ) : (
-                  <PrimaryButton title={isCompleting ? "Đang lưu..." : "Hoàn thành và ghi log"} icon="check-circle" onPress={completeMeal} />
+                  <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting} onPress={completeMeal} />
                 )}
               </Section>
 
-              {completedResult?.warnings.length ? (
+              {completedResult?.warnings?.length ? (
                 <Section title="Cảnh báo pantry">
                   {completedResult.warnings.map((warning) => (
                     <InfoRow key={warning} icon="warning-outline" color={colors.warning} text={translatePantryWarning(warning)} />
@@ -242,7 +244,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 </Section>
               ) : null}
 
-              {completedResult?.consumedIngredients.length ? (
+              {completedResult?.consumedIngredients?.length ? (
                 <Section title="Nguyên liệu đã trừ">
                   {completedResult.consumedIngredients.map((log) => (
                     <InfoRow key={log.id} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />
@@ -253,7 +255,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
           ) : (
             <View style={{ alignItems: "center", gap: 12, paddingVertical: 28 }}>
               <MaterialCommunityIcons name="silverware-fork-knife" size={38} color={colors.primary} />
-              <Text style={{ color: colors.muted, fontWeight: "800", textAlign: "center" }} selectable>
+              <Text style={{ color: colors.muted, fontWeight: "600", textAlign: "center" }} selectable>
                 Kéo xuống để thử tải lại chi tiết món.
               </Text>
             </View>
@@ -268,7 +270,7 @@ function Pill({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: stri
   return (
     <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 5 }}>
       <Ionicons name={icon} size={14} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {text}
       </Text>
     </View>
@@ -278,7 +280,7 @@ function Pill({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: stri
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 18, gap: 14, borderWidth: 1, borderColor: colors.line }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
         {title}
       </Text>
       {children}
@@ -290,7 +292,7 @@ function InfoRow({ icon, color, text }: { icon: keyof typeof Ionicons.glyphMap; 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <Ionicons name={icon} size={22} color={color} />
-      <Text style={{ color: colors.text, fontWeight: "800", flex: 1, lineHeight: 21 }} selectable>
+      <Text style={{ color: colors.text, fontWeight: "600", flex: 1, lineHeight: 21 }} selectable>
         {text}
       </Text>
     </View>

@@ -1,303 +1,166 @@
+import AppInput from "@/components/AppInput";
+import ExpiryDaysField from "@/components/ExpiryDaysField";
+import { expiryDateFromDays } from "@/utils/expiryDays";
+import { formatIngredientQuantity, getIngredientQuantityStep, normalizeIngredientUnit } from "@/utils/ingredientQuantity";
+import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView as ResultsScrollView, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Ingredient } from "@/api/ingredients";
-import { ingredientsApi } from "@/api/ingredients";
-import { pantryApi } from "@/api/pantry";
+import { ingredientsApi, type Ingredient } from "@/api/ingredients";
+import { pantryApi, type PantryItemPayload } from "@/api/pantry";
 import CategoryChip from "@/components/CategoryChip";
 import PrimaryButton from "@/components/PrimaryButton";
 import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
-import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 
-const storageOptions = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
-
-function toInputDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function normalizeStorageLocation(label: string) {
-  if (label === "Kệ bếp") return "pantry";
-  return "fridge";
-}
+const storageOptions = [
+  { label: "Ngăn mát", value: "fridge" },
+  { label: "Ngăn đông", value: "freezer" },
+  { label: "Kệ bếp", value: "pantry" }
+];
+type Draft = { ingredient: Ingredient; quantity: number; unit: string; expiryDays: string; storageLocation: string; note: string };
+const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
 
 export default function AddIngredientScreen() {
   const navigation = useNavigation<any>();
   const toast = useToast();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [pantryIngredientIds, setPantryIngredientIds] = useState<Set<string>>(new Set());
-  const [selectedIngredientId, setSelectedIngredientId] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [unit, setUnit] = useState("piece");
-  const [expiredAt, setExpiredAt] = useState(toInputDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)));
-  const [storageLocation, setStorageLocation] = useState(storageOptions[0]);
-  const [note, setNote] = useState("");
-  const [searchText, setSearchText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const loadIngredients = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
-      setIngredients(ingredientPage.data);
-      setPantryIngredientIds(new Set(pantryItems.map((item) => item.ingredientId)));
-    } catch (error) {
-      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được danh sách nguyên liệu."));
-      setIngredients([]);
-      setPantryIngredientIds(new Set());
-    } finally {
-      setIsLoading(false);
-    }
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const lock = useRef(false);
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try { setIngredients(await ingredientsApi.all()); setLoaded(true); }
+    catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tải được danh mục.")); }
+    finally { setLoading(false); }
   }, []);
-
-  useEffect(() => {
-    loadIngredients();
-  }, [loadIngredients]);
-
-  const availableIngredients = useMemo(() => ingredients.filter((ingredient) => !pantryIngredientIds.has(ingredient.id)), [ingredients, pantryIngredientIds]);
-  const selectedIngredient = ingredients.find((ingredient) => ingredient.id === selectedIngredientId);
-  const filteredIngredients = useMemo(() => {
-    const keyword = searchText.trim().toLowerCase();
-    if (!keyword) return availableIngredients;
-    return availableIngredients.filter((ingredient) => `${ingredient.name} ${ingredient.normalizedName} ${ingredient.category}`.toLowerCase().includes(keyword));
-  }, [availableIngredients, searchText]);
-
-  const resetSelection = () => {
-    setSelectedIngredientId("");
-    setQuantity("1");
-    setUnit("piece");
-    setExpiredAt(toInputDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)));
-    setStorageLocation(storageOptions[0]);
-    setNote("");
+  useEffect(() => { void load(); }, [load]);
+  const filtered = useMemo(() => {
+    const keyword = normalize(search.trim());
+    return ingredients.filter(item => normalize([item.name, item.normalizedName, item.category].filter(Boolean).join(" ")).includes(keyword));
+  }, [ingredients, search]);
+  const patch = (id: string, values: Partial<Omit<Draft, 'ingredient' | 'unit'>>) => {
+    setDrafts(current => current.map(d => d.ingredient.id === id ? { ...d, ...values } : d)); setError("");
   };
-
-  const selectIngredient = (ingredient: Ingredient) => {
-    if (selectedIngredientId === ingredient.id) {
-      resetSelection();
-      setErrorMessage("");
-      return;
-    }
-
-    setSelectedIngredientId(ingredient.id);
-    setUnit(ingredient.defaultUnit || ingredient.unit || "piece");
-    setErrorMessage("");
+  const changeQuantity = (id: string, direction: 1 | -1) => {
+    setDrafts(current => current.map(d => {
+      if (d.ingredient.id !== id) return d;
+      const step = getIngredientQuantityStep(d.ingredient, d.unit);
+      return { ...d, quantity: Math.max(step, d.quantity + direction * step) };
+    }));
+    setError("");
   };
-
-  const saveIngredient = async () => {
-    const amount = Number(quantity.replace(",", "."));
-
-    if (!selectedIngredient) {
-      setErrorMessage("Vui lòng chọn nguyên liệu có sẵn trong hệ thống.");
-      return;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setErrorMessage("Số lượng cần lớn hơn 0.");
-      return;
-    }
-    if (!unit.trim()) {
-      setErrorMessage("Vui lòng nhập đơn vị, ví dụ: g, cái, trái, hộp.");
-      return;
-    }
-    if (Number.isNaN(new Date(expiredAt).getTime())) {
-      setErrorMessage("Hạn dùng cần có dạng năm-tháng-ngày, ví dụ 2026-07-05.");
-      return;
-    }
-
-    setIsSaving(true);
-    setErrorMessage("");
+  const toggle = (ingredient: Ingredient) => {
+    const unit = ingredient.unit?.trim() || ingredient.defaultUnit?.trim();
+    if (!unit) return;
+    setDrafts(current => current.some(d => d.ingredient.id === ingredient.id)
+      ? current.filter(d => d.ingredient.id !== ingredient.id)
+      : [...current, { ingredient, unit, quantity: getIngredientQuantityStep(ingredient, unit), expiryDays: "", storageLocation: "fridge", note: "" }]);
+    setError("");
+  };
+  const save = async () => {
+    if (lock.current || !drafts.length) return;
+    let items: PantryItemPayload[];
     try {
-      await pantryApi.saveItem({
-        ingredientId: selectedIngredient.id,
-        quantity: amount,
-        unit: unit.trim(),
-        expiredAt,
-        storageLocation: normalizeStorageLocation(storageLocation),
-        note: note.trim()
-      });
-
-      toast.show(`Đã lưu ${selectedIngredient.name} vào tủ.`);
-      navigation.goBack();
-    } catch (error) {
-      setErrorMessage(getFriendlyErrorMessage(error, "Chưa lưu được nguyên liệu vào tủ."));
-    } finally {
-      setIsSaving(false);
-    }
+      items = drafts.map(d => ({ ingredientId: d.ingredient.id, quantity: d.quantity, unit: d.unit,
+        expiredAt: expiryDateFromDays(d.expiryDays), storageLocation: d.storageLocation, note: d.note.trim() }));
+    } catch (e) { return setError((e as Error).message); }
+    lock.current = true; setSaving(true); setError("");
+    try {
+      await pantryApi.saveItems(items);
+      toast.show(`Đã lưu ${drafts.length} nguyên liệu vào tủ.`);
+      navigation.popTo("Tabs", { screen: "Pantry" });
+    } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được nguyên liệu. Danh sách đã chọn vẫn được giữ lại.")); }
+    finally { lock.current = false; setSaving(false); }
   };
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadIngredients} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 18 }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View>
-            <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
-              Thêm vào tủ
-            </Text>
-            <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "900", marginTop: 3 }} selectable>
-              {filteredIngredients.length} nguyên liệu chưa có trong tủ
-            </Text>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
+      contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 24, maxWidth: 720, width: "100%", alignSelf: "center" }}>
+      <View style={{ gap: 6 }}>
+        <Text style={{ color: colors.text, fontSize: 26, fontWeight: "700" }}>Thêm thực phẩm</Text>
+        <Text style={{ color: colors.muted, lineHeight: 22 }}>Chọn nhiều nguyên liệu, điều chỉnh lượng rồi lưu một lần.</Text>
+      </View>
+      <SearchBar placeholder="Tìm nguyên liệu" value={search} onChangeText={setSearch} />
+      {loading && !loaded ? <ActivityIndicator color={colors.primary} /> : null}
+      {loaded && !filtered.length ? <Text style={{ color: colors.muted }}>Không tìm thấy nguyên liệu. Hãy thử từ khóa khác.</Text> : null}
+      {filtered.length ? <ResultsScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{ maxHeight: 240 }} contentContainerStyle={{ gap: 8 }}>
+        {filtered.slice(0, 30).map(item => {
+          const active = drafts.some(d => d.ingredient.id === item.id);
+          const unit = item.unit?.trim() || item.defaultUnit?.trim();
+          return <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={"Chọn " + item.name} accessibilityState={{ selected: active, disabled: saving || !unit }}
+            disabled={saving || !unit} onPress={() => toggle(item)} style={{ minHeight: 56, padding: 12, borderRadius: 12,
+              backgroundColor: active ? colors.secondary : colors.surface, borderWidth: 1, borderColor: active ? colors.primary : colors.line,
+              flexDirection: "row", alignItems: "center", gap: 10, opacity: unit ? 1 : 0.6 }}>
+            <MaterialCommunityIcons name={active ? "checkbox-marked" : "checkbox-blank-outline"} size={23} color={active ? colors.primary : colors.muted} />
+            <Text style={{ flex: 1, color: colors.text, fontWeight: "600" }}>{item.name}</Text>
+            <Text style={{ color: active ? colors.primaryDark : colors.muted }}>{unit || "Chưa có đơn vị"}</Text>
+          </Pressable>;
+        })}
+      </ResultsScrollView> : null}
+      {filtered.length > 30 ? <Text style={{ color: colors.muted }}>Đang hiện 30/{filtered.length} nguyên liệu. Nhập tên để tìm chính xác hơn.</Text> : null}
+      <Text style={{ color: colors.text, fontSize: 19, fontWeight: "700" }}>Đã chọn ({drafts.length})</Text>
+      {!drafts.length ? <View style={{ padding: 22, gap: 8, alignItems: "center", backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.line }}>
+        <MaterialCommunityIcons name="basket-plus-outline" size={32} color={colors.primary} />
+        <Text style={{ color: colors.muted, textAlign: "center", lineHeight: 22 }}>Chọn nguyên liệu ở trên để thêm vào danh sách.</Text>
+      </View> : null}
+      {drafts.map(d => {
+        const step = getIngredientQuantityStep(d.ingredient, d.unit);
+        const stepUnit = normalizeIngredientUnit(d.unit);
+        const stepLabel = `${step} ${stepUnit === 'piece' ? 'quả' : stepUnit}`;
+        return <View key={d.ingredient.id} testID={`selected-ingredient-${d.ingredient.id}`} style={{ gap: 14, padding: 16, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700' }}>{d.ingredient.name}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12 }}>Đơn vị có sẵn: {d.unit}</Text>
           </View>
-          <PrimaryButton title="" icon="close" variant="soft" onPress={() => navigation.goBack()} style={{ width: 48, minHeight: 48, paddingHorizontal: 0 }} />
+          <Pressable accessibilityRole="button" accessibilityLabel={`Bỏ ${d.ingredient.name}`} disabled={saving} onPress={() => toggle(d.ingredient)}
+            style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialCommunityIcons name="close" size={22} color={colors.muted} />
+          </Pressable>
         </View>
-
-        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Chọn nguyên liệu có sẵn
-          </Text>
-          <SearchBar placeholder="Tìm nguyên liệu chưa có trong tủ" value={searchText} onChangeText={setSearchText} />
-          {filteredIngredients.length === 0 ? (
-            <EmptyState icon="check-circle-outline" text={availableIngredients.length === 0 ? "Tất cả nguyên liệu hệ thống đã có trong tủ của bạn." : "Không có nguyên liệu phù hợp với từ khóa này."} />
-          ) : (
-            <View style={{ gap: 10 }}>
-              {filteredIngredients.map((item) => (
-                <IngredientRow key={item.id} ingredient={item} selected={item.id === selectedIngredientId} onPress={() => selectIngredient(item)} />
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-            Thông tin lưu trữ
-          </Text>
-
-          {selectedIngredient ? (
-            <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: colors.white, borderRadius: 14, padding: 12 }}>
-              <Image source={{ uri: normalizeRemoteImageUrl(selectedIngredient.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 58, height: 58, borderRadius: 14, backgroundColor: colors.secondary }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textDark, fontSize: 18, fontWeight: "900" }} selectable>
-                  {selectedIngredient.name}
-                </Text>
-                <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800", marginTop: 2 }} selectable>
-                  {selectedIngredient.category || "Nguyên liệu hệ thống"}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <FormInput label="Số lượng" value={quantity} onChangeText={setQuantity} placeholder="1" keyboardType="decimal-pad" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <FormInput label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="g" />
-            </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.secondary, borderRadius: 12, padding: 8 }}>
+          <QuantityButton name="minus" label={`Giảm ${stepLabel} ${d.ingredient.name}`} disabled={saving || d.quantity <= step} onPress={() => changeQuantity(d.ingredient.id, -1)} />
+          <View style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: 3 }}>
+            <Text accessibilityLabel={`Số lượng ${d.ingredient.name}`} style={{ color: colors.primaryDark, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'], textAlign: 'center', flexShrink: 1 }}>{formatIngredientQuantity(d.quantity, d.unit)}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12, textAlign: 'center' }}>Mỗi lần thêm {stepLabel}</Text>
           </View>
-
-          <FormInput label="Hạn dùng" value={expiredAt} onChangeText={setExpiredAt} placeholder="2026-07-05" />
-
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
-              Nơi cất
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {storageOptions.map((option) => (
-                <CategoryChip key={option} label={option} active={storageLocation === option} icon={option === "Ngăn đông" ? "snowflake" : "fridge-outline"} onPress={() => setStorageLocation(option)} />
-              ))}
-            </View>
-          </View>
-
-          <FormInput label="Ghi chú" value={note} onChangeText={setNote} placeholder="Ví dụ: mua ở chợ sáng nay" multiline />
-
-          {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
-              {errorMessage}
-            </Text>
-          ) : null}
-
-          <PrimaryButton title={isSaving ? "Đang lưu..." : "Xác nhận lưu vào tủ"} icon="content-save" onPress={saveIngredient} />
+          <QuantityButton name="plus" label={`Thêm ${stepLabel} ${d.ingredient.name}`} disabled={saving} onPress={() => changeQuantity(d.ingredient.id, 1)} />
         </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function IngredientRow({ ingredient, selected, onPress }: { ingredient: Ingredient; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        minHeight: 78,
-        borderRadius: 14,
-        backgroundColor: colors.white,
-        borderWidth: 2,
-        borderColor: selected ? colors.primary : "transparent",
-        padding: 10,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        opacity: pressed ? 0.86 : 1,
-        boxShadow: selected ? "0 10px 22px rgba(244,162,28,0.22)" : "0 8px 18px rgba(0,0,0,0.14)"
+        <ExpiryDaysField value={d.expiryDays} onChange={value => {
+          if (/^\d*$/.test(value)) patch(d.ingredient.id, { expiryDays: value });
+        }} disabled={saving} />
+        <Text style={{ color: colors.text, fontWeight: '600' }}>Nơi cất</Text>
+        <View pointerEvents={saving ? 'none' : 'auto'} style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {storageOptions.map(option => <CategoryChip key={option.value} label={option.label} active={d.storageLocation === option.value} onPress={() => patch(d.ingredient.id, { storageLocation: option.value })} />)}
+        </View>
+        <AppInput accessibilityLabel={`Ghi chú ${d.ingredient.name}`} placeholder="Ghi chú (không bắt buộc)" placeholderTextColor={colors.muted} value={d.note} onChangeText={note => patch(d.ingredient.id, { note })} editable={!saving} />
+      </View>;
       })}
-    >
-      <Image source={{ uri: normalizeRemoteImageUrl(ingredient.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 58, height: 58, borderRadius: 12, backgroundColor: colors.secondary }} />
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "900" }} selectable>
-          {ingredient.name}
-        </Text>
-        <Text numberOfLines={1} style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "800", marginTop: 4 }} selectable>
-          {ingredient.category || "Nguyên liệu"} · {ingredient.defaultUnit || ingredient.unit || "piece"}
-        </Text>
-      </View>
-      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: selected ? colors.primary : colors.secondary, alignItems: "center", justifyContent: "center" }}>
-        <MaterialCommunityIcons name={selected ? "check" : "plus"} size={19} color={selected ? colors.white : colors.primaryDark} />
-      </View>
-    </Pressable>
-  );
-}
-
-function FormInput({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType,
-  multiline = false
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  keyboardType?: "default" | "decimal-pad";
-  multiline?: boolean;
-}) {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
-        {label}
-      </Text>
-      <View style={{ minHeight: multiline ? 78 : 46, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: multiline ? "flex-start" : "center", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0 }}>
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={colors.muted}
-          keyboardType={keyboardType}
-          multiline={multiline}
-          style={{ flex: 1, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0, minHeight: multiline ? 56 : undefined, textAlignVertical: multiline ? "top" : "center" }}
-        />
+      {drafts.length ? <Text style={{ color: colors.muted, lineHeight: 21 }}>Nếu nguyên liệu đã có trong tủ, số lượng này sẽ thay thế số lượng hiện tại.</Text> : null}
+      {!loaded && !loading ? <PrimaryButton title="Tải lại danh mục" onPress={load} variant="soft" /> : null}
+    </ScrollView>
+    <View style={{ paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line, backgroundColor: colors.surface }}>
+      <View style={{ maxWidth: 680, width: '100%', alignSelf: 'center', gap: 8 }}>
+        {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, lineHeight: 20 }}>{error}</Text> : null}
+        <PrimaryButton title={saving ? "Đang lưu…" : drafts.length ? `Lưu ${drafts.length} nguyên liệu vào tủ` : "Chọn nguyên liệu để lưu"} disabled={saving || !drafts.length} onPress={save} />
       </View>
     </View>
-  );
+  </SafeAreaView>;
 }
 
-function EmptyState({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string }) {
-  return (
-    <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
-      <Text style={{ flex: 1, color: colors.text, fontWeight: "800", lineHeight: 21 }} selectable>
-        {text}
-      </Text>
-    </View>
-  );
+function QuantityButton({ name, label, disabled, onPress }: { name: 'plus' | 'minus'; label: string; disabled: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
+    style={({ pressed }) => ({ width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: 12,
+      backgroundColor: name === 'plus' ? colors.primary : colors.surface, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
+    <MaterialCommunityIcons name={name} size={24} color={name === 'plus' ? colors.textDark : colors.primaryDark} />
+  </Pressable>;
 }

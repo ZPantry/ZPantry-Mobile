@@ -33,9 +33,14 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+.android.local.json
 
 # typescript
 *.tsbuildinfo
+
+# Local integration diagnostics (backend dev logs may contain test OTPs).
+/work/*integration.log
+/work/openapi-current.json
 
 example
 

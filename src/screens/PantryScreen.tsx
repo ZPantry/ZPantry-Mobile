@@ -1,13 +1,20 @@
+import { userDisplayName } from '@/utils/userProfile';
+import FigmaAsset from '@/components/FigmaAsset';
+import { pantryAssets as assets } from '@/constants/figmaAssets';
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Image, Modal, Pressable, RefreshControl, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
-import AppBackButton from "@/components/AppBackButton";
+import { ActionRow, SectionHeading } from "@/components/BrandPanel";
+import SearchBar from "@/components/SearchBar";
+import { normalizeRemoteImageUrl, FALLBACK_FOOD_IMAGE_URL } from "@/utils/image";
 import CategoryChip from "@/components/CategoryChip";
 import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PantryItemCard from "@/components/PantryItemCard";
@@ -15,8 +22,9 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import type { PantryItem, PantryStatus } from "@/types";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import PrimaryButton from "@/components/PrimaryButton";
 
-const pantryCategories = ["Ngăn mát", "Ngăn đông", "Kệ bếp"];
+const pantryCategories = ["Tất cả", "Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
 type PantryListItem = PantryItem & {
   apiItem: PantryApiItem;
@@ -26,10 +34,12 @@ type PantryListItem = PantryItem & {
 function normalizeLocation(location: string): PantryItem["location"] {
   const lower = location.toLowerCase();
   if (lower.includes("đông") || lower.includes("dong") || lower.includes("freeze")) return "Ngan dong";
+  if (lower === "pantry" || lower.includes("kệ") || lower.includes("bep") || lower.includes("shelf")) return "Ke bep";
   return "Ngan mat";
 }
 
 function statusFromDate(expiredAt: string): PantryStatus {
+  if (!expiredAt) return "safe";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft <= 1) return "danger";
   if (daysLeft <= 5) return "warning";
@@ -37,6 +47,7 @@ function statusFromDate(expiredAt: string): PantryStatus {
 }
 
 function expiryLabel(expiredAt: string) {
+  if (!expiredAt) return "Chưa có hạn sử dụng";
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (daysLeft < 0) return `Đã hết hạn ${Math.abs(daysLeft)} ngày`;
   if (daysLeft === 0) return "Hết hạn hôm nay";
@@ -45,6 +56,7 @@ function expiryLabel(expiredAt: string) {
 }
 
 function progressFromDate(expiredAt: string) {
+  if (!expiredAt) return 0;
   const daysLeft = Math.ceil((new Date(expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   return Math.max(8, Math.min(100, daysLeft * 12));
 }
@@ -76,24 +88,29 @@ function mapPantryItem(item: PantryApiItem, ingredient?: Ingredient): PantryList
 }
 
 export default function PantryScreen() {
-  const [active, setActive] = useState("Ngăn mát");
+  const [active, setActive] = useState("Tất cả");
+  const [search, setSearch] = useState("");
   const [items, setItems] = useState<PantryListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [quantityBusy, setQuantityBusy] = useState(false);
+  const quantityLock = useRef(false);
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
-  const displayName = user?.fullName || "bạn";
+  const { user, onboardingStep } = useAuth();
+  const displayName = userDisplayName(user);
+  const [showExpiry, setShowExpiry] = useState(false);
+  const notified = useRef("");
 
   const loadPantry = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.list(1, 100), pantryApi.list()]);
+      const [ingredientPage, pantryItems] = await Promise.all([ingredientsApi.all().then(data => ({ data })), pantryApi.all()]);
       const ingredientById = new Map(ingredientPage.data.map((ingredient) => [ingredient.id, ingredient]));
       setItems(pantryItems.map((item) => mapPantryItem(item, ingredientById.get(item.ingredientId))));
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được tủ lạnh."));
-      setItems([]);
+
     } finally {
       setIsLoading(false);
     }
@@ -105,115 +122,98 @@ export default function PantryScreen() {
     }, [loadPantry])
   );
 
-  const filtered = useMemo(() => {
-    if (active === "Ngăn đông") return items.filter((item) => item.location === "Ngan dong");
-    if (active === "Kệ bếp") return items.filter((item) => item.location === "Ngan mat" && item.name.toLowerCase().includes("gạo"));
-    return items.filter((item) => item.location === "Ngan mat");
-  }, [active, items]);
+  const changeQuantity = async (item: PantryListItem, quantity: number) => {
+    if (quantityLock.current || !Number.isFinite(quantity) || quantity <= 0) return;
+    quantityLock.current = true;
+    setQuantityBusy(true);
+    setErrorMessage("");
+    try {
+      const current = item.apiItem;
+      await pantryApi.updateItem(current.id, { ingredientId: current.ingredientId, quantity,
+        unit: current.unit, expiredAt: current.expiredAt || null, storageLocation: current.storageLocation, note: current.note });
+      await loadPantry();
+    } catch (error) {
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa lưu được số lượng. Vui lòng thử lại."));
+    } finally {
+      quantityLock.current = false;
+      setQuantityBusy(false);
+    }
+  };
 
-  const expiringItem = items.find((item) => item.status === "danger" || item.status === "warning");
+  const filtered = useMemo(() => {
+    const normalize = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+    return items.filter(item => (active === "Tất cả" || item.location === (active === "Ngăn đông" ? "Ngan dong" : active === "Kệ bếp" ? "Ke bep" : "Ngan mat")) && normalize(item.name).includes(normalize(search)));
+  }, [active, items, search]);
+
+  const expiringItems = items.filter((item) => item.status === "danger" || item.status === "warning");
+  const expiryKey = expiringItems.map(item => item.id + item.apiItem.expiredAt).sort().join("|");
+  useEffect(() => {
+    if (expiryKey && notified.current !== expiryKey && onboardingStep === "done") {
+      notified.current = expiryKey;
+      setShowExpiry(true);
+    }
+  }, [expiryKey, onboardingStep]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
-        contentContainerStyle={{ padding: 22, paddingBottom: 118, gap: 18 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 62, paddingBottom: 24, gap: 14 }}
       >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <AppBackButton onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"))} />
-          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="notifications-outline" size={21} color={colors.text} />
-            <View style={{ position: "absolute", top: 3, right: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger }} />
-          </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1, gap: 5 }}><Text style={{ color: colors.text, fontSize: 25, fontWeight: "700" }}>Kho thực phẩm</Text>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>Quản lý nguyên liệu của {displayName}</Text></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Thông báo hạn dùng" onPress={() => setShowExpiry(true)} style={{ padding: 12 }}><FigmaAsset asset={assets.imgContainer13} /></Pressable>
         </View>
-
-        <View>
-          <Text style={{ color: colors.text, fontSize: 28, fontWeight: "900" }} selectable>
-            Tủ lạnh của {displayName}
-          </Text>
-          <Text style={{ color: colors.primary, fontSize: 15, fontWeight: "900", marginTop: 3 }} selectable>
-            {items.length} thực phẩm đang lưu trữ
-          </Text>
-        </View>
-
-        {errorMessage ? <ExpiryAlertCard title={errorMessage} tone="danger" /> : null}
-        {expiringItem ? <ExpiryAlertCard title={`${expiringItem.name} ${expiringItem.expiryLabel.toLowerCase()}. Ưu tiên dùng sớm để tránh lãng phí.`} tone={expiringItem.status === "danger" ? "danger" : "warning"} /> : null}
-
-        <Pressable
-          onPress={() => navigation.navigate("AddIngredient")}
-          style={({ pressed }) => ({
-            minHeight: 76,
-            borderRadius: 22,
-            backgroundColor: colors.primary,
-            borderWidth: 1,
-            borderColor: colors.secondary,
-            flexDirection: "row",
-            alignItems: "center",
-            padding: 10,
-            gap: 14,
-            boxShadow: "0 16px 30px rgba(244,162,28,0.30)",
-            opacity: pressed ? 0.86 : 1,
-            transform: [{ scale: pressed ? 0.99 : 1 }]
-          })}
-        >
-          <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.24)", alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="plus" size={30} color={colors.white} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.white, fontSize: 20, fontWeight: "900" }} selectable>
-              Thêm thực phẩm
-            </Text>
-            <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "800", marginTop: 3 }} selectable>
-              Chọn nguyên liệu chưa có trong tủ
-            </Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={26} color={colors.white} />
-        </Pressable>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-          {pantryCategories.map((category) => (
-            <CategoryChip key={category} label={category} active={active === category} icon={category === "Ngăn đông" ? "snowflake" : "fridge-outline"} onPress={() => setActive(category)} />
-          ))}
-        </ScrollView>
-
+        {errorMessage ? <><ExpiryAlertCard title={errorMessage} tone="danger" /><PrimaryButton title="Thử tải lại" onPress={loadPantry} variant="outline" /></> : null}
+        {expiringItems.length ? <Pressable onPress={() => setShowExpiry(true)} accessibilityRole="button"><ExpiryAlertCard title={expiringItems.length + " thực phẩm cần chú ý hạn dùng"} /></Pressable> : null}
+        {items.length ? <View style={{ gap: 12 }}><SectionHeading title="Thực phẩm thường dùng" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {items.slice(0, 8).map(item => <Pressable key={item.id} accessibilityRole="button" onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })}
+              style={{ width: 104, padding: 10, gap: 5, borderRadius: 10, backgroundColor: colors.surface, alignItems: "center" }}>
+              <Image source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 56, height: 56, borderRadius: 28 }} />
+              <Text numberOfLines={1} style={{ color: colors.text, fontSize: 12, fontWeight: "600" }}>{item.name}</Text>
+              <Text style={{ color: colors.muted, fontSize: 10 }}>{item.quantity}</Text>
+              <View style={{ backgroundColor: colors.successSoft, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 }}><Text style={{ color: colors.success, fontSize: 10 }}>{item.location === "Ngan dong" ? "Ngăn đông" : item.location === "Ke bep" ? "Kệ bếp" : "Tủ lạnh"}</Text></View>
+            </Pressable>)}
+          </ScrollView>
+        </View> : null}
         <View style={{ gap: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
-              {active}
-            </Text>
-            <View style={{ borderRadius: 999, backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.line }}>
-              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }} selectable>
-                {filtered.length} món
-              </Text>
-            </View>
-          </View>
-
-          {filtered.length === 0 ? (
-            <View style={{ backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }} selectable>
-                Chưa có thực phẩm ở mục này
-              </Text>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 20 }} selectable>
-                Bấm thêm thực phẩm để lưu nguyên liệu bạn đang có.
-              </Text>
-            </View>
-          ) : (
-            filtered.map((item) => (
-              <PantryItemCard
-                key={item.id}
-                item={item}
-                onPress={() =>
-                  navigation.navigate("PantryItemDetail", {
-                    pantryItem: item.apiItem,
-                    ingredient: item.ingredient
-                  })
-                }
-              />
-            ))
-          )}
+          <SectionHeading title="Sản phẩm trong kho" action="Thêm mới" onPress={() => navigation.navigate("AddIngredient")} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {pantryCategories.map(category => <CategoryChip key={category} label={category} active={active === category} onPress={() => setActive(category)} />)}
+          </ScrollView>
+          <SearchBar placeholder="Tìm thực phẩm trong kho" value={search} onChangeText={setSearch} onSubmit={() => setSearch(search.trim())} actionLabel="Tìm" />
+          {isLoading && !items.length ? <ActivityIndicator color={colors.primary} style={{ padding: 24 }} /> : filtered.length ? filtered.map(item =>
+            <PantryItemCard key={item.id} item={item} quantityControl={{ value: item.apiItem.quantity, unit: item.apiItem.unit, busy: quantityBusy || isLoading, onChange: quantity => changeQuantity(item, quantity) }} onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })} />)
+            : !errorMessage ? <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 24, gap: 12, alignItems: "center" }}>
+              <MaterialCommunityIcons name="fridge-outline" size={36} color={colors.muted} />
+              <Text style={{ color: colors.text, fontWeight: "600" }}>{search ? "Không tìm thấy thực phẩm" : "Chưa có thực phẩm ở mục này"}</Text>
+              <PrimaryButton title="Thêm thực phẩm" onPress={() => navigation.navigate("AddIngredient")} />
+            </View> : null}
+        </View>
+        <View style={{ gap: 10, backgroundColor: "#F4F4F2", padding: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.line }}>
+          <SectionHeading title="Bộ công cụ thêm món" />
+          <ActionRow icon="playlist-edit" asset={assets.imgContainer6} title="Thêm nhanh" subtitle="Tìm và chọn nhiều nguyên liệu cùng lúc" onPress={() => navigation.navigate("QuickAdd")} />
+          <ActionRow icon="camera-outline" asset={assets.imgContainer10} title="Thêm từ ảnh / hóa đơn" onPress={() => navigation.navigate("PantryImport")} />
+          <ActionRow icon="silverware-fork-knife" title="Thêm bằng thực đơn" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
         </View>
       </ScrollView>
+      <Modal transparent visible={showExpiry} animationType="fade" onRequestClose={() => setShowExpiry(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxHeight: "75%", maxWidth: 520, width: "100%", alignSelf: "center" }}>
+            <Text style={{ color: colors.primary, fontSize: 22, fontWeight: "700" }}>Hạn dùng cần chú ý</Text>
+            <ScrollView contentContainerStyle={{ gap: 12 }}>
+              {expiringItems.length ? expiringItems.map(item => <View key={item.id} style={{ gap: 4 }}>
+                <Text style={{ color: colors.text, fontWeight: "600" }}>{item.name}</Text>
+                <Text style={{ color: item.status === "danger" ? colors.danger : colors.muted }}>{item.expiryLabel}</Text>
+              </View>) : <Text style={{ color: colors.text }}>Chưa có thực phẩm sắp hết hạn.</Text>}
+            </ScrollView>
+            <PrimaryButton title="Đóng thông báo" onPress={() => setShowExpiry(false)} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

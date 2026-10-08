@@ -1,42 +1,50 @@
+import { endpoints } from "@/api/endpoints";
+import { collectPages } from "@/api/pagination";
 import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/api/client";
 
 export type AdminUser = {
   id: string;
-  fullName: string;
+  fullName: string | null;
   email: string;
   avatarUrl: string | null;
   isEmailConfirmed: boolean;
   isActive: boolean;
   role: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 };
 
 export type UpdateUserPayload = {
-  fullName: string;
-  avatarUrl: string;
-  password?: string;
+  fullName?: string | null;
+  avatarUrl?: string | null;
+  password?: string | null;
 };
 
 export const usersApi = {
-  list(pageIndex = 1, pageSize = 50) {
-    return apiRequest<PaginatedResponse<AdminUser>>(`/api/users?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
+  changeRole(id: string, role: string) {
+    if (!["USER", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role)) throw new Error("Vai trò không hợp lệ.");
+    return apiRequest<ApiMessageResponse>(endpoints.users.role(id), { method: "PATCH", auth: true, body: JSON.stringify({ role }) });
+  },
+  all() { return collectPages(page => usersApi.list(page, 100)); },
+  list(pageIndex = 1, pageSize = 10) {
+    return apiRequest<PaginatedResponse<AdminUser>>(`${endpoints.users.list}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
   },
 
   get(id: string) {
-    return apiRequest<AdminUser>(`/api/users/${id}`, { auth: true });
+    return apiRequest<AdminUser>(endpoints.users.item(id), { auth: true });
   },
 
   update(id: string, payload: UpdateUserPayload) {
-    return apiRequest<AdminUser>(`/api/users/${id}`, {
+    return apiRequest<AdminUser>(endpoints.users.item(id), {
       method: "PUT",
       auth: true,
-      body: JSON.stringify(payload)
+      // Only these fields belong to UserUpdateRequest; preserve null/whitespace.
+      body: JSON.stringify({ fullName: payload.fullName, avatarUrl: payload.avatarUrl, password: payload.password })
     });
   },
 
   remove(id: string) {
-    return apiRequest<ApiMessageResponse>(`/api/users/${id}`, {
+    return apiRequest<ApiMessageResponse>(endpoints.users.item(id), {
       method: "DELETE",
       auth: true
     });

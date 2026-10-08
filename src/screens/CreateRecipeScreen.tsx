@@ -1,0 +1,522 @@
+import AppInput from "@/components/AppInput";
+import Text from "@/components/AppText";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
+import ScrollView from "@/components/ScreenScrollView";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { Ingredient } from "@/api/ingredients";
+import { ingredientsApi } from "@/api/ingredients";
+import { recipesApi, type RecipeIngredientPayload, type RecipePayload } from "@/api/recipes";
+import CategoryChip from "@/components/CategoryChip";
+import PrimaryButton from "@/components/PrimaryButton";
+import SearchBar from "@/components/SearchBar";
+import { colors } from "@/constants/colors";
+import { useAuth } from "@/context/AuthContext";
+import { getGradientPair } from "@/utils/gradients";
+import { canManageCatalog } from "@/utils/roles";
+import { getFriendlyErrorMessage } from "@/utils/localize";
+import { useToast } from "@/context/ToastContext";
+import AllergenChoices from "@/components/AllergenChoices";
+import type { FoodAllergen } from "@/api/profile";
+import type { RootStackParamList } from "@/types";
+
+type DraftIngredient = RecipeIngredientPayload & {
+  ingredientName: string;
+  category?: string;
+};
+
+const difficultyOptions = ["Easy", "Medium", "Hard"] as const;
+const sourceOptions = ["Manual", "AI", "Imported"] as const;
+
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function defaultInstruction() {
+  return "";
+}
+
+export default function CreateRecipeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
+  const toast = useToast();
+  const canCreate = canManageCatalog(user?.role);
+  const saving = useRef(false);
+  const [allergens, setAllergens] = useState<FoodAllergen[]>([]);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [cookingTimeMinutes, setCookingTimeMinutes] = useState("30");
+  const [difficulty, setDifficulty] = useState<(typeof difficultyOptions)[number]>("Easy");
+  const [servingSize, setServingSize] = useState("2");
+  const [instructionText, setInstructionText] = useState(defaultInstruction());
+  const [imageUrl, setImageUrl] = useState("");
+  const [sourceType, setSourceType] = useState<(typeof sourceOptions)[number]>("Manual");
+
+  const [searchText, setSearchText] = useState("");
+  const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<DraftIngredient[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const gradient = useMemo(() => getGradientPair({ name, recipeName: name }), [name]);
+
+  useEffect(() => {
+    const keyword = searchText.trim();
+    let active = true;
+
+    if (keyword.length < 2) {
+      setIngredientResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const page = await ingredientsApi.search(keyword, 1, 12);
+        const normalizedKeyword = normalizeText(keyword);
+        const filtered = page.data.filter((item) =>
+          [item.name, item.normalizedName, item.category].some((field) => normalizeText(field || "").includes(normalizedKeyword))
+        );
+
+        if (active) {
+          setIngredientResults(filtered);
+        }
+      } catch (error) {
+        if (active) {
+          setIngredientResults([]);
+          setErrorMessage(error instanceof Error ? error.message : "Chưa tìm được nguyên liệu.");
+        }
+      } finally {
+        if (active) {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchText]);
+
+  const selectedIds = useMemo(() => new Set(selectedIngredients.map((item) => item.ingredientId)), [selectedIngredients]);
+
+  const addIngredient = useCallback((ingredient: Ingredient) => {
+    if (selectedIds.has(ingredient.id)) return;
+
+    setSelectedIngredients((current) => [
+      ...current,
+      {
+        ingredientId: ingredient.id,
+        ingredientName: ingredient.name,
+        category: ingredient.category,
+        quantity: 1,
+        unit: ingredient.defaultUnit || ingredient.unit || "g",
+        isRequired: true,
+        note: ""
+      }
+    ]);
+    setSearchText("");
+    setIngredientResults([]);
+    setErrorMessage("");
+  }, [selectedIds]);
+
+  const updateIngredient = useCallback((ingredientId: string, patch: Partial<DraftIngredient>) => {
+    setSelectedIngredients((current) => current.map((item) => (item.ingredientId === ingredientId ? { ...item, ...patch } : item)));
+  }, []);
+
+  const removeIngredient = useCallback((ingredientId: string) => {
+    setSelectedIngredients((current) => current.filter((item) => item.ingredientId !== ingredientId));
+  }, []);
+
+  const validate = useCallback(() => {
+    if (!user?.userId) return "Vui lòng đăng nhập trước.";
+    if (!canCreate) return "Tài khoản cần quyền quản lý công thức để lưu vào danh mục.";
+    if (!name.trim()) return "Vui lòng nhập tên công thức.";
+    if (selectedIngredients.length === 0) return "Thêm ít nhất một nguyên liệu.";
+    const invalid = selectedIngredients.find((item) => !Number.isFinite(item.quantity) || item.quantity <= 0 || !item.unit.trim());
+    if (invalid) return `${invalid.ingredientName}: cần số lượng dương và đơn vị.`;
+    return "";
+  }, [name, user?.userId, selectedIngredients, canCreate]);
+
+  const resetForm = useCallback(() => {
+    setName("");
+    setDescription("");
+    setCookingTimeMinutes("30");
+    setDifficulty("Easy");
+    setServingSize("2");
+    setInstructionText(defaultInstruction());
+    setImageUrl("");
+    setSourceType("Manual");
+    setAllergens([]);
+    setSearchText("");
+    setIngredientResults([]);
+    setSelectedIngredients([]);
+    setErrorMessage("");
+  }, []);
+
+  const submitRecipe = useCallback(async () => {
+    if (saving.current) return;
+    const validation = validate();
+    if (validation) {
+      setErrorMessage(validation);
+      return;
+    }
+
+    const minutes = Number(cookingTimeMinutes.replace(",", "."));
+    const servings = Number(servingSize.replace(",", "."));
+    if (!Number.isInteger(minutes) || minutes <= 0) {
+      setErrorMessage("Thời gian nấu phải là số nguyên lớn hơn 0.");
+      return;
+    }
+    if (!Number.isInteger(servings) || servings <= 0) {
+      setErrorMessage("Số khẩu phần phải là số nguyên lớn hơn 0.");
+      return;
+    }
+
+    const payload: RecipePayload = {
+      name: name.trim(),
+      description: description.trim(),
+      cookingTimeMinutes: Math.round(minutes),
+      difficulty,
+      servingSize: Math.round(servings),
+      instructionText: instructionText.trim(),
+      imageUrl: imageUrl.trim(),
+      allergens,
+      sourceType,
+      gradientFrom: gradient.start,
+      gradientTo: gradient.end,
+      ingredients: selectedIngredients.map((item) => ({
+        ingredientId: item.ingredientId,
+        quantity: item.quantity,
+        unit: item.unit.trim(),
+        isRequired: item.isRequired,
+        note: item.note?.trim() || ""
+      }))
+    };
+
+    saving.current = true;
+    setIsSaving(true);
+    setErrorMessage("");
+    try {
+      const created = await recipesApi.create(payload);
+      toast.show(`Đã tạo công thức ${created.name}.`);
+      resetForm();
+      navigation.popTo("AdminManagement", { initialTab: "recipes", showBackButton: false });
+    } catch (error) {
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tạo được công thức. Vui lòng thử lại."));
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
+    }
+  }, [cookingTimeMinutes, description, difficulty, gradient.end, gradient.start, imageUrl, instructionText, name, navigation, resetForm, selectedIngredients, servingSize, sourceType, validate, allergens, toast]);
+
+  const refreshSearch = useCallback(async () => {
+    if (!searchText.trim()) return;
+    setIsRefreshing(true);
+    try {
+      const page = await ingredientsApi.search(searchText.trim(), 1, 12);
+      setIngredientResults(page.data);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Chưa tải lại được kết quả tìm nguyên liệu.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [searchText]);
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshSearch} tintColor={colors.primary} />}
+        contentContainerStyle={{ padding: 20, paddingBottom: 42, gap: 16 }}
+      >
+
+        {!canCreate ? <Text accessibilityRole="alert" style={{ color: colors.warning, lineHeight: 22 }}>Tạo công thức trong danh mục hiện dành cho quản trị viên hoặc quản lý. Tài khoản của bạn chưa có quyền lưu công thức.</Text> : null}
+        <View
+          style={{
+            borderRadius: 28,
+            padding: 18,
+            overflow: "hidden",
+            backgroundColor: gradient.start,
+            borderWidth: 1,
+            borderColor: colors.surface2
+          }}
+        >
+          <View style={{ position: "absolute", top: -36, right: -24, width: 150, height: 150, borderRadius: 75, backgroundColor: gradient.end, opacity: 0.34 }} />
+          <View style={{ position: "absolute", left: -18, bottom: -26, width: 120, height: 120, borderRadius: 60, backgroundColor: colors.surface2 }} />
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <View style={{ flex: 1, gap: 8 }}>
+              <Text style={{ color: colors.textDark, fontSize: 30, fontWeight: "700", lineHeight: 36 }} selectable>
+                Tạo công thức
+              </Text>
+              <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700", lineHeight: 19, opacity: 0.9 }} selectable>
+                Đặt tên món, chọn nguyên liệu và ghi cách nấu để lưu công thức của bạn.
+              </Text>
+            </View>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 18,
+                backgroundColor: colors.surface2,
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <MaterialCommunityIcons name="notebook-edit-outline" size={30} color={colors.textDark} />
+            </View>
+          </View>
+        </View>
+
+        <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
+            Thông tin công thức
+          </Text>
+          <Field label="Tên món" value={name} onChangeText={setName} placeholder="Cơm chiên trứng" />
+          <Field label="Mô tả" value={description} onChangeText={setDescription} placeholder="Mô tả ngắn về món ăn" multiline />
+
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Field label="Thời gian nấu (phút)" value={cookingTimeMinutes} onChangeText={setCookingTimeMinutes} placeholder="30" keyboardType="decimal-pad" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Field label="Số khẩu phần" value={servingSize} onChangeText={setServingSize} placeholder="2" keyboardType="decimal-pad" />
+            </View>
+          </View>
+
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
+              Độ khó
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+              {difficultyOptions.map((option) => (
+                <CategoryChip key={option} label={option} active={difficulty === option} icon="chef-hat" onPress={() => setDifficulty(option)} />
+              ))}
+            </View>
+          </View>
+
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
+              Nguồn công thức
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+              {sourceOptions.map((option) => (
+                <CategoryChip key={option} label={option} active={sourceType === option} icon="source-branch" onPress={() => setSourceType(option)} />
+              ))}
+            </View>
+          </View>
+
+          <Field label="Đường dẫn ảnh" value={imageUrl} onChangeText={setImageUrl} placeholder="https://..." />
+        </View>
+
+        <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
+              Nguyên liệu
+            </Text>
+            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }} selectable>
+              {selectedIngredients.length} đã chọn
+            </Text>
+          </View>
+
+          <SearchBar placeholder="Tìm nguyên liệu để thêm" value={searchText} onChangeText={setSearchText} />
+          {isSearching ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={{ color: colors.muted, fontWeight: "700" }} selectable>
+                Đang tìm nguyên liệu…
+              </Text>
+            </View>
+          ) : null}
+
+          {searchText.trim().length >= 2 ? (
+            <View style={{ gap: 10 }}>
+              {ingredientResults.length === 0 && !isSearching ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }} selectable>
+                  Không tìm thấy nguyên liệu. Hãy thử từ khóa khác.
+                </Text>
+              ) : (
+                ingredientResults.map((item) => {
+                  const selected = selectedIds.has(item.id);
+                  return (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Thêm ${item.name}`}
+                      disabled={selected}
+                      onPress={() => addIngredient(item)}
+                      style={({ pressed }) => ({
+                        borderRadius: 14,
+                        padding: 12,
+                        backgroundColor: selected ? colors.secondary : colors.white,
+                        borderWidth: 1,
+                        borderColor: selected ? "rgba(57,217,138,0.45)" : colors.line,
+                        opacity: pressed ? 0.85 : 1
+                      })}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
+                            {item.name}
+                          </Text>
+                          <Text style={{ color: colors.mutedDark, fontSize: 12, fontWeight: "700", marginTop: 4 }} selectable>
+                            {item.category || "Ingredient"} · {item.defaultUnit || item.unit || "g"}
+                          </Text>
+                        </View>
+                        <Ionicons name={selected ? "checkmark-circle" : "add-circle"} size={25} color={selected ? colors.primary : colors.primary} />
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
+            </View>
+          ) : null}
+
+          {selectedIngredients.length > 0 ? (
+            <View style={{ gap: 12 }}>
+              {selectedIngredients.map((item) => (
+                <View key={item.ingredientId} style={{ borderRadius: 16, backgroundColor: colors.white, padding: 12, gap: 10 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.textDark, fontSize: 15, fontWeight: "700" }} selectable>
+                        {item.ingredientName}
+                      </Text>
+                      <Text style={{ color: colors.mutedDark, fontSize: 11, fontWeight: "700", marginTop: 4 }} selectable>
+                        {item.category || "Ingredient"}
+                      </Text>
+                    </View>
+                    <Pressable onPress={() => removeIngredient(item.ingredientId)} hitSlop={12}>
+                      <Ionicons name="close-circle" size={24} color={colors.danger} />
+                    </Pressable>
+                  </View>
+
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <FieldInline value={String(item.quantity)} onChangeText={(value) => updateIngredient(item.ingredientId, { quantity: Number(value.replace(",", ".")) || 0 })} placeholder="Số lượng" keyboardType="decimal-pad" />
+                    <FieldInline value={item.unit} onChangeText={(value) => updateIngredient(item.ingredientId, { unit: value })} placeholder="Đơn vị" />
+                  </View>
+                  <Field label="Ghi chú" value={item.note} onChangeText={(value) => updateIngredient(item.ingredientId, { note: value })} placeholder="Ghi chú thêm" multiline light />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={{ borderRadius: 16, padding: 14, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line }}>
+              <Text style={{ color: colors.text, fontWeight: "600", lineHeight: 20 }} selectable>
+                Tìm và chọn các nguyên liệu cần dùng cho món ăn.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }} selectable>
+            Cách nấu
+          </Text>
+          <Field label="Các bước nấu" value={instructionText} onChangeText={setInstructionText} placeholder="Nhập từng bước nấu món ăn" multiline />
+
+          {errorMessage ? (
+            <Text style={{ color: colors.danger, fontWeight: "600", lineHeight: 20 }} selectable>
+              {errorMessage}
+            </Text>
+          ) : null}
+
+          <Text style={{ color: colors.text, fontWeight: "600" }}>Chất gây dị ứng</Text>
+          <AllergenChoices value={allergens} onChange={setAllergens} disabled={isSaving} />
+          <PrimaryButton title={isSaving ? "Đang lưu…" : "Tạo công thức"} icon="content-save" disabled={isSaving || !canCreate} onPress={submitRecipe} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = "default",
+  multiline = false,
+  light = false
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  keyboardType?: "default" | "decimal-pad";
+  multiline?: boolean;
+  light?: boolean;
+}) {
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={{ color: light ? colors.textDark : colors.text, fontSize: 12, fontWeight: "700" }} selectable>
+        {label}
+      </Text>
+      <View
+        style={{
+          minHeight: multiline ? 84 : 48,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.line,
+          backgroundColor: light ? colors.surface2 : colors.surface2,
+          paddingHorizontal: 12,
+          paddingVertical: multiline ? 10 : 0,
+          justifyContent: multiline ? "flex-start" : "center"
+        }}
+      >
+        <AppInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={light ? colors.mutedDark : colors.muted}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          style={{
+            minHeight: multiline ? 62 : 42,
+            color: light ? colors.textDark : colors.text,
+            fontSize: 14,
+            fontWeight: "700",
+            textAlignVertical: multiline ? "top" : "center"
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+function FieldInline({
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = "default"
+}: {
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  keyboardType?: "default" | "decimal-pad";
+}) {
+  return (
+    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
+      <AppInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.mutedDark}
+        keyboardType={keyboardType}
+        style={{ color: colors.textDark, fontSize: 14, fontWeight: "600" }}
+      />
+    </View>
+  );
+}

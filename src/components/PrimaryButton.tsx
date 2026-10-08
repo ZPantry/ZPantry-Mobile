@@ -1,44 +1,16 @@
+import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { Pressable, Text, ViewStyle } from "react-native";
-import { colors } from "@/constants/colors";
-
-type Props = {
-  title: string;
-  icon?: ComponentProps<typeof MaterialCommunityIcons>["name"];
-  variant?: "solid" | "soft" | "outline";
-  onPress?: () => void;
-  style?: ViewStyle;
-};
-
-export default function PrimaryButton({ title, icon, variant = "solid", onPress, style }: Props) {
-  const isSolid = variant === "solid";
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        {
-          minHeight: 50,
-          borderRadius: 14,
-          borderCurve: "continuous",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "row",
-          gap: 8,
-          paddingHorizontal: 18,
-          backgroundColor: isSolid ? colors.primary : variant === "soft" ? colors.card : "transparent",
-          borderWidth: variant === "outline" ? 1 : 0,
-          borderColor: colors.line,
-          opacity: pressed ? 0.82 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }]
-        },
-        style
-      ]}
-    >
-      {icon ? <MaterialCommunityIcons name={icon} size={20} color={isSolid ? colors.white : colors.text} /> : null}
-      <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "900", fontSize: 15 }} selectable>
-        {title}
-      </Text>
-    </Pressable>
-  );
+import { ActivityIndicator, Pressable, type StyleProp, type ViewStyle } from "react-native";
+import { colors, radius, shadows } from "@/constants/colors";
+type Props = { title: string; icon?: ComponentProps<typeof MaterialCommunityIcons>["name"]; variant?: "solid" | "soft" | "outline"; onPress?: () => void; style?: StyleProp<ViewStyle>; disabled?: boolean; loading?: boolean };
+export default function PrimaryButton({ title, icon, variant = "solid", onPress, style, disabled = false, loading = false }: Props) {
+  const solid = variant === "solid", color = solid ? colors.white : colors.text;
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: disabled || loading, busy: loading }} disabled={disabled || loading} onPress={onPress}
+    style={({ pressed }) => [{ minHeight: 46, borderRadius: radius.sm, borderCurve: "continuous", paddingHorizontal: 16, paddingVertical: 12,
+      flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", backgroundColor: solid ? colors.primary : variant === "soft" ? colors.surface2 : colors.surface,
+      borderWidth: solid ? 0 : 1, borderColor: colors.line, boxShadow: solid ? shadows.button : undefined, opacity: disabled || loading ? 0.5 : pressed ? 0.76 : 1 }, style]}>
+    {loading ? <ActivityIndicator color={color} /> : icon ? <MaterialCommunityIcons name={icon} size={18} color={color} /> : null}
+    <Text style={{ color, fontWeight: "700", fontSize: 14, flexShrink: 1, textAlign: "center" }}>{title}</Text>
+  </Pressable>;
 }

@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Text, View } from "react-native";
+import Animated, { Easing, FadeInDown, FadeOutDown, ReduceMotion } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
 
 type ToastTone = "success" | "danger" | "info";
@@ -16,6 +18,9 @@ type ToastContextValue = {
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
+const toastEasing = Easing.bezier(0.23, 1, 0.32, 1);
+const toastEnter = FadeInDown.duration(220).easing(toastEasing).reduceMotion(ReduceMotion.System);
+const toastExit = FadeOutDown.duration(170).easing(toastEasing).reduceMotion(ReduceMotion.System);
 
 function toneMeta(tone: ToastTone) {
   if (tone === "danger") return { icon: "alert-circle", color: colors.danger };
@@ -24,6 +29,7 @@ function toneMeta(tone: ToastTone) {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
   const [toast, setToast] = useState<ToastState | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,7 +60,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       {toast && meta ? (
-        <View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 118, alignItems: "center" }}>
+        <Animated.View entering={toastEnter} exiting={toastExit} pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: Math.max(insets.bottom + 82, 100), alignItems: "center" }}>
           <View
             style={{
               maxWidth: 460,
@@ -69,15 +75,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               flexDirection: "row",
               alignItems: "center",
               gap: 10,
-              boxShadow: "0 14px 30px rgba(0,0,0,0.24)"
+              boxShadow: "0 8px 24px rgba(0,48,20,0.12)"
             }}
           >
             <MaterialCommunityIcons name={meta.icon as never} size={24} color={meta.color} />
-            <Text style={{ flex: 1, color: colors.textDark, fontSize: 14, fontWeight: "900", lineHeight: 20 }} selectable>
+            <Text accessibilityRole="alert" style={{ flex: 1, color: colors.textDark, fontSize: 14, fontWeight: "600", lineHeight: 20 }} selectable>
               {toast.message}
             </Text>
           </View>
-        </View>
+        </Animated.View>
       ) : null}
     </ToastContext.Provider>
   );

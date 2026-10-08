@@ -35,6 +35,11 @@ export function translateApiMessage(message: string) {
   const lower = value.toLowerCase();
 
   if (!value) return value;
+  if (lower.includes("otp") && (lower.includes("expired") || lower.includes("invalid") || lower.includes("incorrect"))) return "Mã OTP không đúng hoặc đã hết hạn. Kiểm tra lại mã hoặc yêu cầu mã mới.";
+  if (lower.includes("password") && (lower.includes("match") || lower.includes("confirm"))) return "Mật khẩu xác nhận chưa trùng khớp.";
+  if (lower.includes("recommendation not found")) return "Không tìm thấy lượt gợi ý đã lưu để gửi phản hồi.";
+  if (lower.includes("alias") && (lower.includes("exist") || lower.includes("duplicate"))) return "Tên gọi này đã được sử dụng. Vui lòng chọn tên khác.";
+  if (lower.includes("role change is not permitted")) return "Bạn không có quyền thay đổi vai trò của tài khoản này.";
   if (lower.includes("this meal already exists in today's menu")) return "Món này đã có trong thực đơn hôm nay.";
   if (lower.includes("recipe not found")) return "Không tìm thấy công thức.";
   if (lower.includes("today menu item not found")) return "Không tìm thấy món trong thực đơn hôm nay.";
@@ -50,6 +55,9 @@ export function translateApiMessage(message: string) {
   if (lower.includes("email delivery timed out") || lower.includes("could not send otp email")) return "Chưa gửi được mã OTP. Vui lòng thử lại sau ít phút hoặc kiểm tra cấu hình email.";
   if (lower.includes("gmail__password") || lower.includes("gmail__emailaddress")) return "Thiếu cấu hình Gmail gửi mã OTP trên server.";
   if (lower.includes("email already exists")) return "Email này đã được đăng ký.";
+  if (lower.includes("invalid email or password") || lower.includes("invalid credentials")) return "Email hoặc mật khẩu không đúng.";
+  if (lower.includes("ingredient name is required")) return "Vui lòng nhập tên nguyên liệu.";
+  if (lower.includes("recipe name is required")) return "Vui lòng nhập tên công thức.";
   if (lower.includes("request failed")) return "Yêu cầu thất bại. Vui lòng thử lại.";
   if (lower.includes("internal server error")) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
   if (lower.includes("network error")) return "Không thể kết nối mạng. Vui lòng thử lại.";
@@ -64,15 +72,24 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
   const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
   const lower = rawMessage.toLowerCase();
 
+  if (lower.includes("media storage is not configured")) return "Máy chủ chưa cấu hình lưu ảnh thành phẩm. Vui lòng liên hệ quản trị viên.";
+  if (status === 503 && lower.includes("ai service")) return "Đầu bếp AI hiện chưa kết nối được dịch vụ trả lời. Vui lòng thử lại sau.";
+
+  if (status >= 500 && context === "imageUpload") return "Dịch vụ tải ảnh đang gặp sự cố. Vui lòng giữ lại thông tin và thử lại sau.";
   if (context === "imageUpload") {
-    if (status >= 400 || lower.includes("image") || lower.includes("file") || lower.includes("upload") || lower.includes("multipart") || lower.includes("unsupported") || lower.includes("invalid")) {
+    if (status === 413) return "Ảnh của bạn quá lớn. Vui lòng chọn ảnh nhẹ hơn rồi thử lại.";
+    if (status === 415 || (status === 400 && (lower.includes("image") || lower.includes("file") || lower.includes("multipart") || lower.includes("unsupported") || lower.includes("invalid")))) {
       return "Ảnh của bạn không phù hợp hoặc không đúng định dạng. Vui lòng kiểm tra và chọn ảnh JPG, PNG hoặc WEBP rõ nét hơn.";
     }
   }
 
   if (!rawMessage) return fallback;
+  if (status === 503 && lower.includes("image analysis")) return "Tính năng nhận diện ảnh hiện chưa khả dụng. Bạn có thể thử lại hoặc thêm nguyên liệu thủ công.";
+  // Java registration reports these expected failures with HTTP 500.
+  if (context === "auth" && lower === "email already exists.") return "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.";
+  if (context === "auth" && lower === "email delivery is not configured") return "Máy chủ chưa cấu hình gửi mã OTP. Vui lòng liên hệ quản trị viên.";
   if (status >= 500) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
-  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Chưa kết nối được dữ liệu. Vui lòng kiểm tra mạng rồi thử lại.";
+  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Không thể kết nối tới máy chủ. Máy chủ có thể chưa hoạt động hoặc kết nối mạng bị gián đoạn. Vui lòng thử lại sau.";
 
   const translated = translateApiMessage(rawMessage);
   if (translated !== rawMessage) return translated;
