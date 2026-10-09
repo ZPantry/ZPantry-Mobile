@@ -19,9 +19,14 @@ import SelectField from "@/components/SelectField";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import { useQuotaWarning } from "@/hooks/useQuotaWarning";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 
 export default function MealSuggestionScreen() {
+  const { isCompact, isLandscape } = useSizeClass();
   const navigation = useNavigation<any>();
+  const warnLowQuota = useQuotaWarning();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [catalogError, setCatalogError] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -65,6 +70,7 @@ export default function MealSuggestionScreen() {
     try {
       const result = await recommendationsApi.personalized(Number(topK), { mode, servings: Number(servings),
         ...(mealType ? { mealType } : {}), ...(cookTime ? { maxCookTimeMinutes: Number(cookTime) } : {}) });
+      void warnLowQuota("MEAL_SUGGESTION");
       navigation.navigate("MealRecommendationResults", {
         recommendations: result.recommendations,
         mode,
@@ -73,9 +79,17 @@ export default function MealSuggestionScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tạo được gợi ý. Vui lòng thử lại.")); }
     finally { busy.current = false; setSuggesting(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom", "left", "right"]}>
     <ScrollView refreshControl={<RefreshControl refreshing={loading || catalogLoading} onRefresh={() => { void load(); void loadCatalog(); }} tintColor={colors.primary} />}
-      contentContainerStyle={{ paddingTop: 62, paddingBottom: 32, gap: 22 }}>
+      contentContainerStyle={{
+        paddingTop: isLandscape ? 16 : isCompact ? 52 : 32,
+        paddingBottom: isCompact ? 116 : 40,
+        paddingHorizontal: isCompact ? 16 : 24,
+        gap: 20,
+        maxWidth: layoutTokens.contentMaxWidth,
+        width: "100%",
+        alignSelf: "center"
+      }}>
       <SearchBar placeholder="Tìm công thức, nguyên liệu…" value={search} onChangeText={setSearch} onSubmit={() => setSearch(search.trim())} actionLabel="Tìm" />
       <BrandPanel asset={assets.imgContainer3} eyebrow="AI SMART CHEF" title="Nấu gì hôm nay với tủ lạnh của bạn?"
         description="Tìm công thức từ nguyên liệu sẵn có hoặc hồ sơ ăn uống của bạn. Chọn cách gợi ý trong phần cá nhân hóa bên dưới.">
