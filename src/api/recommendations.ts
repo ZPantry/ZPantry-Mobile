@@ -56,6 +56,10 @@ export type MealRecommendationResponse = {
   recommendations: MealRecommendation[];
 };
 
+export type PersonalizedRecommendationResult = MealRecommendationResponse & {
+  mode?: NonNullable<PersonalizedRecommendationOptions["mode"]>;
+};
+
 export type MealIngredientStatus = {
   ingredientId?: string;
   name: string;
@@ -97,6 +101,7 @@ type RawMealRecommendation = Partial<MealRecommendation> & {
   matchedIngredients?: RawIngredientName[];
   missingIngredients?: RawIngredientName[];
   matchingIngredientNames?: RawIngredientName[];
+  matchingIngredients?: RawIngredientName[];
   missingIngredientNames?: RawIngredientName[];
   matching?: RawIngredientName[];
   missing?: RawIngredientName[];
@@ -147,7 +152,7 @@ function normalizeRecommendation(item: RawMealRecommendation, index: number): Me
     reasons: reasons.map(translateRecommendationText),
     cookTimeMinutes: typeof item.cookTimeMinutes === "number" ? item.cookTimeMinutes : undefined,
     missingIngredientCount: Number(item.missingIngredientCount ?? item.missingIngredientNames?.length ?? item.missingIngredients?.length ?? 0),
-    matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredientNames || item.matching),
+    matchedIngredients: normalizeIngredientNames(item.matchedIngredients || item.matchingIngredients || item.matchingIngredientNames || item.matching),
     missingIngredients: normalizeIngredientNames(item.missingIngredients || item.missingIngredientNames || item.missing),
     expiringSoonIngredients: normalizeIngredientNames(item.expiringSoonIngredients)
   };
@@ -195,6 +200,17 @@ function normalizeMealIngredientCheck(body: unknown): MealIngredientCheckRespons
 }
 
 export const recommendationsApi = {
+  async chat(message: string) {
+    const text = message.trim();
+    if (!text || text.length > 2000) throw new ApiError("Vui lòng nhập câu hỏi từ 1 đến 2000 ký tự.", 400);
+    const response = await apiRequest<unknown>("/api/recommendations/chat", {
+      method: "POST", auth: true, body: JSON.stringify({ message: text }), timeoutMs: 60000
+    });
+    const body = unwrapEnvelope<{ answer?: string; recommendations?: RawMealRecommendation[] }>(response);
+    if (!body || typeof body.answer !== "string" || !body.answer.trim() || !Array.isArray(body.recommendations))
+      throw new ApiError("Phản hồi đầu bếp AI chưa đầy đủ. Vui lòng thử lại.", 502);
+    return { answer: body.answer, recommendations: body.recommendations.map(normalizeRecommendation) };
+  },
   get(id: string) { return apiRequest<RecommendationRecord>(endpoints.recommendations.item(id), { auth: true }); },
   feedback(id: string, payload: RecommendationFeedback) {
     if (!id || payload.mealRecommendationId !== id || !Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 5)
@@ -207,7 +223,7 @@ export const recommendationsApi = {
     if (!body || !Array.isArray(body.missingIngredients)) throw new ApiError("Kết quả gợi ý nguyên liệu chưa đầy đủ.", 502);
     return normalizeIngredientStatus(body.missingIngredients);
   },
-  async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}) {
+  async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}): Promise<PersonalizedRecommendationResult> {
     const { mode, mealType, maxCookTimeMinutes, servings, includeIngredients } = options;
     const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
       method: "POST", auth: true, body: JSON.stringify({ topK, mode, mealType, maxCookTimeMinutes, servings, includeIngredients }), timeoutMs: 60000
@@ -217,7 +233,8 @@ export const recommendationsApi = {
     if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
       throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
     const result = normalizeRecommendationResponse(body);
-    return result;
+    const resolvedMode = typeof (body as { mode?: unknown }).mode === "string" ? (body as { mode: PersonalizedRecommendationResult["mode"] }).mode : undefined;
+    return { ...result, ...(resolvedMode ? { mode: resolvedMode } : {}) };
   },
   async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<unknown>(endpoints.recommendations.meals, {

@@ -44,5 +44,6 @@ export default function AccountSettingsScreen() {
     ].map(field=><View key={field.label} style={{gap:8}}><Text style={{color:colors.text,fontWeight:"600"}}>{field.label}</Text><TextInput accessibilityLabel={field.label} placeholder={field.label} placeholderTextColor={colors.muted} value={field.value} onChangeText={field.onChange} secureTextEntry={field.secure} autoCapitalize={field.secure?"none":"words"} editable={!busy} style={{color:colors.text,backgroundColor:colors.card,padding:14,borderRadius:10}}/></View>)}
     {message ? <Text accessibilityRole="alert" style={{color:failed?colors.danger:colors.success}}>{message}</Text> : null}
     <PrimaryButton title={busy?"Đang lưu…":"Lưu tài khoản"} onPress={save} disabled={busy}/>
+    <PrimaryButton title="Gói Z-Pantry & giới hạn" variant="outline" onPress={() => navigation.navigate("Subscription")}/>
   </ScrollView></SafeAreaView>;
 }

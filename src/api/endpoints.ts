@@ -56,7 +56,10 @@ export const endpoints = {
     list: "/api/me/today-menu",
     create: "/api/me/today-menu/items",
     item: (id: string) => item("/api/me/today-menu/items", id),
+    ingredientAvailability: (id: string) => `${item("/api/me/today-menu/items", id)}/ingredient-availability`,
+    missingIngredients: (id: string) => `${item("/api/me/today-menu/items", id)}/missing-ingredients`,
     complete: (id: string) => `${item("/api/me/today-menu/items", id)}/complete`,
-    cookingLogs: "/api/me/cooking-logs"
+    cookingLogs: "/api/me/cooking-logs",
+    dailyNutrition: "/api/me/nutrition/daily"
   }
 } as const;

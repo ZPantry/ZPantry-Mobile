@@ -1,12 +1,14 @@
 import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { colors } from "@/constants/colors";
 import type { PantryItem } from "@/types";
 import { statusColor } from "@/utils/helpers";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import FigmaAsset from './FigmaAsset';
 import { pantryAssets, profileAssets } from '@/constants/figmaAssets';
+import { layoutTokens } from "@/constants/responsive";
 
 type Props = {
   item: PantryItem;
@@ -38,22 +40,29 @@ export default function PantryItemCard({ item, onPress, quantityControl }: Props
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Thực phẩm ${item.name}`}
       onPress={onPress}
       style={({ pressed }) => ({
         backgroundColor: colors.white,
-        borderRadius: 12,
+        borderRadius: 14,
         borderCurve: "continuous",
-        padding: 8,
+        padding: 10,
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
+        gap: 10,
         borderWidth: 1,
         borderColor: item.status === "safe" ? "transparent" : `${color}4D`,
         opacity: pressed ? 0.86 : 1,
         transform: [{ scale: pressed ? 0.99 : 1 }]
       })}
     >
-      <Image source={{ uri: imageUrl }} style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: colors.secondary }} />
+      <ExpoImage
+        source={{ uri: imageUrl }}
+        contentFit="cover"
+        transition={200}
+        style={{ width: 56, height: 56, borderRadius: 10, backgroundColor: colors.secondary }}
+      />
 
       <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -61,7 +70,7 @@ export default function PantryItemCard({ item, onPress, quantityControl }: Props
             {item.name}
           </Text>
           <View style={{ borderRadius: 999, backgroundColor: `${color}18`, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text style={{ color, fontSize: 10, fontWeight: "700" }} selectable>
+            <Text maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.badge} style={{ color, fontSize: 10, fontWeight: "700" }} selectable>
               {statusCopy(item.status)}
             </Text>
           </View>
@@ -83,18 +92,46 @@ export default function PantryItemCard({ item, onPress, quantityControl }: Props
         </View>
       </View>
 
-      {quantityControl ? <View style={{ alignItems: 'center', gap: 6 }}>
-        <Text style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>{quantityControl.value} {quantityControl.unit}</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {[-1, 1].map(delta => <Pressable key={delta} accessibilityRole="button" accessibilityLabel={`${delta < 0 ? 'Giảm' : 'Tăng'} số lượng ${item.name}`} disabled={quantityControl.busy || (delta < 0 && quantityControl.value <= 1)} accessibilityState={{ disabled: quantityControl.busy || (delta < 0 && quantityControl.value <= 1), busy: quantityControl.busy }}
-            onPress={event => { event.stopPropagation(); quantityControl.onChange(quantityControl.value + delta); }}
-            style={{ width: 32, height: 32, borderRadius: 8, borderWidth: delta < 0 ? 1 : 0, borderColor: colors.line, backgroundColor: delta < 0 ? colors.white : colors.primary, alignItems: 'center', justifyContent: 'center', opacity: quantityControl.busy || (delta < 0 && quantityControl.value <= 1) ? 0.4 : 1 }}>
-            <FigmaAsset asset={delta < 0 ? pantryAssets.imgContainer4 : pantryAssets.imgContainer5} />
-          </Pressable>)}
+      {quantityControl ? (
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          <Text maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.badge} style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+            {quantityControl.value} {quantityControl.unit}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[-1, 1].map(delta => (
+              <Pressable
+                key={delta}
+                accessibilityRole="button"
+                accessibilityLabel={`${delta < 0 ? 'Giảm' : 'Tăng'} số lượng ${item.name}`}
+                disabled={quantityControl.busy || (delta < 0 && quantityControl.value <= 1)}
+                accessibilityState={{ disabled: quantityControl.busy || (delta < 0 && quantityControl.value <= 1), busy: quantityControl.busy }}
+                hitSlop={layoutTokens.hitSlop48From32}
+                onPress={event => {
+                  event.stopPropagation();
+                  quantityControl.onChange(quantityControl.value + delta);
+                }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  borderWidth: delta < 0 ? 1 : 0,
+                  borderColor: colors.line,
+                  backgroundColor: delta < 0 ? colors.white : colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: quantityControl.busy || (delta < 0 && quantityControl.value <= 1) ? 0.4 : 1
+                }}
+              >
+                <FigmaAsset asset={delta < 0 ? pantryAssets.imgContainer4 : pantryAssets.imgContainer5} />
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View> : <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-        <FigmaAsset asset={profileAssets.imgContainer9} />
-      </View>}
+      ) : (
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+          <FigmaAsset asset={profileAssets.imgContainer9} />
+        </View>
+      )}
     </Pressable>
   );
 }

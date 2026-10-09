@@ -56,7 +56,7 @@ export type UserProfile = {
 };
 
 export type RootStackParamList = {
-  Plan: undefined;
+  Plan: { date?: string; refreshKey?: number } | undefined;
   Login: undefined;
   ForgotPassword: undefined;
   Onboarding: undefined;
@@ -67,6 +67,7 @@ export type RootStackParamList = {
   CreateRecipe: undefined;
   CookingHistory: undefined;
   AccountSettings: undefined;
+  Subscription: { paymentOutcome?: "success" | "cancel" } | undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
@@ -100,6 +101,5 @@ export type TabParamList = {
   Home: undefined;
   Pantry: undefined;
   MealSuggestion: undefined;
-  Plan: undefined;
   Profile: undefined;
 };

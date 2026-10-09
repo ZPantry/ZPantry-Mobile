@@ -223,7 +223,7 @@ test('pagination loads beyond the first server page', async () => {
 
 test('role capabilities match Java admin and catalog roles', () => {
   const {canManageCatalog,canManageUsers}=loader()('@/utils/roles');
-  assert.equal(canManageCatalog('MANAGER'),true); assert.equal(canManageUsers('MANAGER'),false);
+  assert.equal(canManageCatalog('MANAGER'),false); assert.equal(canManageUsers('MANAGER'),false);
   assert.equal(canManageUsers('SUPER_ADMIN'),true); assert.equal(canManageCatalog('user'),false);
 });
 
@@ -517,7 +517,8 @@ test('personalized suggestions send documented profile-only filters and preserve
 test('image upload distinguishes unavailable services, oversized images and network errors', () => {
   const { getFriendlyErrorMessage } = load('@/utils/localize');
   const message = (status, text) => getFriendlyErrorMessage(Object.assign(new Error(text), { status }), 'fallback', 'imageUpload');
-  assert.match(message(500, 'Media storage is not configured'), /Dịch vụ tải ảnh/);
+  assert.match(message(503, 'Media storage is not configured'), /chưa cấu hình lưu ảnh/);
+  assert.match(message(503, 'Media upload is unavailable'), /Dịch vụ tải ảnh/);
   assert.match(message(413, 'Payload too large'), /quá lớn/);
   assert.match(message(415, 'Unsupported media type'), /định dạng/);
   assert.match(message(0, 'Failed to fetch'), /Không thể kết nối/);

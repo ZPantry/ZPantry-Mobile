@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getGradientPair } from "@/utils/gradients";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import type { RootStackParamList } from "@/types";
+import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 
 type SelectedIngredient = {
   ingredientId: string;
@@ -56,6 +57,7 @@ function recipeToCandidate(recipe: Recipe) {
 
 export default function ManualMealSuggestionScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const warnLowQuota = useQuotaWarning();
   const { user } = useAuth();
   const busy = useRef(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
@@ -200,6 +202,7 @@ export default function ManualMealSuggestionScreen() {
         topK
       });
 
+      void warnLowQuota("MEAL_SUGGESTION");
       setRecommendations(response.recommendations ?? []);
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tạo được gợi ý. Vui lòng thử lại."));
@@ -207,7 +210,7 @@ export default function ManualMealSuggestionScreen() {
       busy.current = false;
       setIsSuggesting(false);
     }
-  }, [candidateRecipes, freeText, freeTextTokens, selectedIngredients, topK, user?.userId, catalogLoaded, isLoadingRecipes]);
+  }, [candidateRecipes, freeText, freeTextTokens, selectedIngredients, topK, user?.userId, catalogLoaded, isLoadingRecipes, warnLowQuota]);
 
   const recommendationCount = recommendations.length;
 
@@ -224,9 +227,6 @@ export default function ManualMealSuggestionScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
 
 
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <PrimaryButton title="Tạo công thức" icon="notebook-edit-outline" variant="soft" onPress={() => navigation.navigate("CreateRecipe")} style={{ minHeight: 42 }} />
-              </View>
             </View>
 
             <View style={{ gap: 8 }}>
