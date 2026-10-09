@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import { authApi } from "@/api/auth";
 import Text from "@/components/AppText";
 import PrimaryButton from "@/components/PrimaryButton";
 import ScrollView from "@/components/ScreenScrollView";
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import { colors } from "@/constants/colors";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import type { RootStackParamList } from "@/types";
@@ -65,9 +66,9 @@ export default function ForgotPasswordScreen({ navigation }: NativeStackScreenPr
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa đặt lại được mật khẩu. Kiểm tra mã OTP rồi thử lại.", "auth")); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, maxWidth: 480, padding: 24, paddingBottom: 48, gap: 24 }}>
+  return <SafeAreaView edges={["left", "right", "bottom", "top"]} style={{ flex: 1, backgroundColor: colors.background }}>
+    <KeyboardSafeView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, maxWidth: 480, width: "100%", alignSelf: "center", padding: 24, paddingBottom: 48, gap: 24 }}>
 
         <View style={{ gap: 12, paddingTop: 12 }}>
           <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: step === "done" ? colors.successSoft : colors.secondary, justifyContent: "center", alignItems: "center" }}>
@@ -100,7 +101,7 @@ export default function ForgotPasswordScreen({ navigation }: NativeStackScreenPr
           </> : null}
         </View> : <PrimaryButton title="Quay lại đăng nhập" icon="login" onPress={() => navigation.goBack()} />}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardSafeView>
   </SafeAreaView>;
 }
 function Field({ label, value, onChange, disabled, secret, email, otp, password }: { label: string; value: string; onChange: (v: string) => void; disabled: boolean; secret?: boolean; email?: boolean; otp?: boolean; password?: boolean }) {

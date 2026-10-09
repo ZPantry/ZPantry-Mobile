@@ -15,7 +15,11 @@ import { useAuth } from "@/context/AuthContext";
 
 import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
 
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
+
 export default function ProfileScreen() {
+  const { isCompact, isLandscape } = useSizeClass();
   const showUnavailable = useUnavailableFeature();
   const navigation = useNavigation<any>();
   const { user, signOut } = useAuth();
@@ -35,8 +39,20 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView testID="profile-scroll" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 62, paddingBottom: 24, gap: 18 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom", "left", "right"]}>
+      <ScrollView
+        testID="profile-scroll"
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          paddingHorizontal: isCompact ? 16 : 24,
+          paddingTop: isLandscape ? 16 : isCompact ? 52 : 32,
+          paddingBottom: isCompact ? 116 : 40,
+          gap: 18,
+          maxWidth: 680,
+          width: "100%",
+          alignSelf: "center"
+        }}
+      >
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 16 }}>
           <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.surface2, borderWidth: 4, borderColor: "#FFDBBD", alignItems: "center", justifyContent: "center" }}>
             <FigmaAsset asset={assets.imgNguynThuyLinh} style={{ borderRadius: 44 }} />
@@ -53,14 +69,14 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><FigmaAsset asset={assets.imgContainer5} /></View>
             <View style={{ flex: 1, gap: 3 }}><Text style={{ color: "#FFDCC6", fontSize: 11, fontWeight: "600", letterSpacing: 0.55 }}>ĐẶC QUYỀN HỘI VIÊN</Text><Text style={{ color: "white", fontSize: 20, fontWeight: "700" }}>PANTRY VIP</Text></View>
-            <Text style={{ color: "#F9F9F7", backgroundColor: "#FFFFFF26", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, fontSize: 11 }}>Sắp có</Text>
+            <Text style={{ color: "#F9F9F7", backgroundColor: "#FFFFFF26", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, fontSize: 11 }}>Z-Plus</Text>
           </View>
-          <Text style={{ color: "#E2E3E1", fontSize: 14, lineHeight: 21 }}>Nâng tầm trải nghiệm bếp với các quyền lợi hội viên. Thông tin gói và mức phí sẽ được công bố khi tính năng ra mắt.</Text>
+          <Text style={{ color: "#E2E3E1", fontSize: 14, lineHeight: 21 }}>Nâng tầm trải nghiệm bếp với gợi ý món không giới hạn và nhiều lượt nhận diện ảnh hơn mỗi ngày.</Text>
           <View style={{ backgroundColor: "#FFFFFF1A", borderRadius: 8, padding: 14, gap: 10 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 12, lineHeight: 18 }}>Trong lúc chờ, hãy lưu khẩu vị và dị ứng để gợi ý bữa ăn phù hợp hơn với bạn.</Text>
-            <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })} style={{ minHeight: 40, justifyContent: "center" }}><Text style={{ color: "#FFDCC6", fontSize: 12, fontWeight: "600" }}>Cá nhân hóa khẩu vị →</Text></Pressable>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, lineHeight: 18 }}>Xem quyền lợi, hạn mức và nâng cấp gói an toàn qua PayOS.</Text>
+            <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: "#FFDCC6", fontSize: 12, fontWeight: "600" }}>Cá nhân hóa khẩu vị →</Text></Pressable>
           </View>
-          <PrimaryButton title="Khám phá gói VIP" onPress={() => showUnavailable("Gói thành viên VIP")} />
+          <PrimaryButton title="Khám phá gói VIP" onPress={() => navigation.navigate("Subscription")} />
         </View>
         <View style={{ gap: 2, backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" }}>
           <ActionRow icon="account-outline" title="Thông tin tài khoản" subtitle="Tên hiển thị, email và thông tin cá nhân" onPress={() => navigation.navigate("AccountSettings")} />

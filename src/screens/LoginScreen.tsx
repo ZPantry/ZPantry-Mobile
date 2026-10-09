@@ -15,6 +15,8 @@ import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 
 import Text from '@/components/AppText';
 import FigmaAsset from '@/components/FigmaAsset';
@@ -27,6 +29,7 @@ type AuthMode = "login" | "register" | "otp";
 
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isLandscape, isCompact } = useSizeClass();
 
   const { signIn } = useAuth();
   const google = useGoogleSignIn();
@@ -221,14 +224,28 @@ export default function LoginScreen() {
   const primaryTitle = isSubmitting ? "Đang xử lý..." : mode === "register" ? "Đăng ký" : mode === "otp" ? "Xác thực OTP" : "Đăng nhập";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
-      <ScrollView testID="login-scroll" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 80, maxWidth: 440, overflow: "hidden" }}>
-        <View pointerEvents="none" style={{ position: "absolute", width: 1638, height: 1368, left: -599, top: -622 }}>
-          <FigmaAsset asset={assets.imgVector1} style={{ width: 1638, height: 1368 }} />
-        </View>
-        <View style={{ paddingTop: 93, alignItems: "center" }}>
-          <FigmaAsset asset={assets.imgLogoZPantryVer61} label="Z Pantry" />
-          <Text style={{ marginTop: 22, paddingHorizontal: 16, color: colors.dark, fontFamily: "Inter_700Bold", fontSize: mode === "login" ? 30 : 24, lineHeight: 34, textAlign: "center", fontWeight: "700" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom", "left", "right"]}>
+      <KeyboardSafeView style={{ flex: 1 }}>
+        <ScrollView
+          testID="login-scroll"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: isCompact ? 16 : 24,
+            paddingTop: 0,
+            paddingBottom: isLandscape ? 32 : 60,
+            maxWidth: 480,
+            width: "100%",
+            alignSelf: "center",
+            overflow: "hidden"
+          }}
+        >
+          <View pointerEvents="none" style={{ position: "absolute", width: 1638, height: 1368, left: -599, top: -622 }}>
+            <FigmaAsset asset={assets.imgVector1} style={{ width: 1638, height: 1368 }} />
+          </View>
+          <View style={{ paddingTop: isLandscape ? 20 : isCompact ? 40 : 64, alignItems: "center" }}>
+            <FigmaAsset asset={assets.imgLogoZPantryVer61} label="Z Pantry" />
+            <Text style={{ marginTop: isLandscape ? 12 : 22, paddingHorizontal: 16, color: colors.dark, fontFamily: "Inter_700Bold", fontSize: mode === "login" ? (isCompact ? 26 : 30) : 24, lineHeight: 34, textAlign: "center", fontWeight: "700" }}>
             {mode === "register" ? "Bắt đầu hành trình ăn uống\nlành mạnh cùng Z - Pantry" : mode === "otp" ? "Xác thực tài khoản" : "Chào mừng trở lại!"}
           </Text>
           {mode !== "register" ? <Text style={{ marginTop: 4, color: colors.dark, fontFamily: "Inter_500Medium", fontSize: 12, lineHeight: 20, textAlign: "center" }}>
@@ -292,6 +309,7 @@ export default function LoginScreen() {
           {!google.ready ? <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>Google chưa được cấu hình trên phiên bản này.</Text> : null}
         </View> : null}
       </ScrollView>
+      </KeyboardSafeView>
     </SafeAreaView>
   );
 }

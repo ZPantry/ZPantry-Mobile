@@ -10,6 +10,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 import { colors } from "@/constants/colors";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 import { useAuth } from "@/context/AuthContext";
 import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
 import AdminManagementScreen from "@/screens/AdminManagementScreen";
@@ -39,6 +41,7 @@ import type { RootStackParamList, TabParamList } from "@/types";
 import { canManageCatalog, canManageUsers } from "@/utils/roles";
 import CookingHistoryScreen from "@/screens/CookingHistoryScreen";
 import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import QuickAddScreen from "@/screens/QuickAddScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -55,42 +58,124 @@ const tabMeta = {
 
 function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const desktop = width >= 900;
-  return <View testID="bottom-tab-bar" style={{ backgroundColor: colors.surface, borderTopWidth: desktop ? 0 : 1,
-    borderBottomWidth: desktop ? 1 : 0, borderColor: colors.line, paddingBottom: desktop ? 0 : Math.max(insets.bottom, 8),
-    paddingTop: desktop ? 0 : 6 }}>
-    <View style={{ width: "100%", maxWidth: 1200, alignSelf: "center", minHeight: desktop ? 76 : 58,
-      flexDirection: "row", alignItems: "center", paddingHorizontal: desktop ? 32 : 4, gap: desktop ? 24 : 0 }}>
-      {desktop ? <FigmaAsset asset={loginAssets.imgLogoZPantryVer61} style={{ width: 138, height: 35.28, marginRight: "auto" }} label="Z Pantry" /> : null}
-      {state.routes.map((route, index) => {
-        const focused = state.index === index;
-        const meta = tabMeta[route.name as keyof typeof tabMeta];
-        const color = focused ? '#EF9D1F' : colors.tabText;
-        const iconAssets = focused ? { Home: homeAssets.imgContainer13, Pantry: pantryAssets.imgContainer15, MealSuggestion: exploreAssets.imgContainer28, Profile: profileAssets.imgContainer17 } : { Home: pantryAssets.imgContainer14, Pantry: homeAssets.imgContainer14, MealSuggestion: homeAssets.imgContainer15, Profile: homeAssets.imgContainer16 };
-        const designIcon = iconAssets[route.name as keyof typeof iconAssets];
-        return <Pressable key={route.key} accessibilityRole="tab" accessibilityLabel={meta.label}
-          accessibilityState={{ selected: focused }}
-          onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
-          onPress={() => {
-            const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-          }} style={({ pressed }) => ({ flex: desktop ? undefined : 1, minHeight: 52,
-            paddingHorizontal: desktop ? 12 : 2, alignItems: "center", justifyContent: "center", gap: 5,
-            flexDirection: desktop ? "row" : "column", opacity: pressed ? 0.6 : 1,
-            borderBottomWidth: desktop && focused ? 2 : 0, borderColor: colors.primary })}>
-          {designIcon ? <FigmaAsset asset={designIcon} /> : <Ionicons name="calendar-outline" size={21} color={color} />}
-          <Text numberOfLines={1} style={{ color, fontSize: desktop ? 13 : width < 360 ? 10 : 11, fontWeight: focused ? "700" : "500" }}>{meta.label}</Text>
-        </Pressable>;
-      })}
+  const { isCompact, isSmallDevice, width } = useSizeClass();
+  const isTopNav = !isCompact;
+
+  return (
+    <View
+      testID="bottom-tab-bar"
+      style={{
+        backgroundColor: colors.surface,
+        borderTopWidth: isTopNav ? 0 : 1,
+        borderBottomWidth: isTopNav ? 1 : 0,
+        borderColor: colors.line,
+        paddingBottom: isTopNav ? 0 : Math.max(insets.bottom, 8),
+        paddingTop: isTopNav ? 0 : 6
+      }}
+    >
+      <View
+        style={{
+          width: "100%",
+          maxWidth: layoutTokens.contentMaxWidth,
+          alignSelf: "center",
+          minHeight: isTopNav ? 70 : 54,
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: isTopNav ? 24 : 4,
+          gap: isTopNav ? 16 : 0
+        }}
+      >
+        {isTopNav ? (
+          <FigmaAsset
+            asset={loginAssets.imgLogoZPantryVer61}
+            style={{ width: 138, height: 35.28, marginRight: "auto" }}
+            label="Z Pantry"
+          />
+        ) : null}
+        {state.routes.map((route, index) => {
+          const focused = state.index === index;
+          const meta = tabMeta[route.name as keyof typeof tabMeta];
+          const color = focused ? "#EF9D1F" : colors.tabText;
+          const iconAssets = focused
+            ? {
+                Home: homeAssets.imgContainer13,
+                Pantry: pantryAssets.imgContainer15,
+                MealSuggestion: exploreAssets.imgContainer28,
+                Profile: profileAssets.imgContainer17
+              }
+            : {
+                Home: pantryAssets.imgContainer14,
+                Pantry: homeAssets.imgContainer14,
+                MealSuggestion: homeAssets.imgContainer15,
+                Profile: homeAssets.imgContainer16
+              };
+          const designIcon = iconAssets[route.name as keyof typeof iconAssets];
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="tab"
+              accessibilityLabel={meta.label}
+              accessibilityState={{ selected: focused }}
+              onLongPress={() =>
+                navigation.emit({ type: "tabLongPress", target: route.key })
+              }
+              onPress={() => {
+                const event = navigation.emit({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true
+                });
+                if (!focused && !event.defaultPrevented)
+                  navigation.navigate(route.name);
+              }}
+              style={({ pressed }) => ({
+                flex: isTopNav ? undefined : 1,
+                minHeight: 52,
+                paddingHorizontal: isTopNav ? 14 : isSmallDevice ? 2 : 4,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: isTopNav ? 8 : 4,
+                flexDirection: isTopNav ? "row" : "column",
+                opacity: pressed ? 0.6 : 1,
+                borderBottomWidth: isTopNav && focused ? 2 : 0,
+                borderColor: colors.primary
+              })}
+            >
+              {designIcon ? (
+                <FigmaAsset asset={designIcon} />
+              ) : (
+                <Ionicons name="calendar-outline" size={21} color={color} />
+              )}
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.tabBar}
+                style={{
+                  color,
+                  fontSize: isTopNav ? 13 : isSmallDevice ? 10 : 11,
+                  fontWeight: focused ? "700" : "500"
+                }}
+              >
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
-  </View>;
+  );
 }
 
 function Tabs() {
-  const { width } = useWindowDimensions();
+  const { isCompact } = useSizeClass();
   return (
-    <Tab.Navigator tabBar={(props) => <BrandTabBar {...props} />} screenOptions={{ headerShown: false, tabBarPosition: width >= 900 ? "top" : "bottom" }}>
+    <Tab.Navigator
+      tabBar={(props) => <BrandTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+        tabBarPosition: !isCompact ? "top" : "bottom"
+      }}
+    >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Hôm nay" }} />
       <Tab.Screen name="Pantry" component={PantryScreen} options={{ title: "Tủ" }} />
       <Tab.Screen name="MealSuggestion" component={MealSuggestionScreen} options={{ title: "Công thức" }} />
@@ -163,6 +248,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PantryImport" component={PantryImportScreen} />
           <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} />
           <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: "Gói Z-Pantry" }} />
           <Stack.Screen name="InteractiveGuide" component={InteractiveGuideScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
           <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />

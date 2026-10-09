@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import Text from './AppText';
 import SelectField from './SelectField';
 import { colors } from '@/constants/colors';
+import { layoutTokens } from '@/constants/responsive';
 
 type Props = { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; optional?: boolean; birthday?: boolean };
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -27,15 +28,35 @@ export default function DateField({ label, value, onChange, disabled, optional, 
     }
     setDraft(updated); onChange(updated.some(Boolean) ? updated.join('-') : '');
   };
-  return <View style={{ gap: 8 }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
-      {optional && draft.some(Boolean) ? <Pressable accessibilityRole="button" accessibilityLabel={`Xóa ${label}`} disabled={disabled} onPress={() => { setDraft(['', '', '']); onChange(''); }} style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' }}><Text style={{ color: colors.primaryDark, fontSize: 12 }}>Bỏ ngày</Text></Pressable> : null}
+
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+        {optional && draft.some(Boolean) ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Xóa ${label}`}
+            disabled={disabled}
+            onPress={() => { setDraft(['', '', '']); onChange(''); }}
+            hitSlop={layoutTokens.hitSlop48From44}
+            style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' }}
+          >
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: '600' }}>Bỏ ngày</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 6, backgroundColor: colors.surface, borderRadius: 16, padding: 8 }}>
+        <View style={{ flex: 0.9, minWidth: 0 }}>
+          <SelectField label={`${label} · Ngày`} displayLabel="Ngày" value={day} disabled={disabled} onValueChange={v => update(2, v)} options={[{ value: '', label: 'Ngày' }, ...Array.from({ length: days }, (_, i) => ({ value: pad(i + 1), label: pad(i + 1) }))]} />
+        </View>
+        <View style={{ flex: 1.1, minWidth: 0 }}>
+          <SelectField label={`${label} · Tháng`} displayLabel="Tháng" value={month} disabled={disabled} onValueChange={v => update(1, v)} options={[{ value: '', label: 'Tháng' }, ...Array.from({ length: 12 }, (_, i) => ({ value: pad(i + 1), label: `Tháng ${pad(i + 1)}` }))]} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <SelectField label={`${label} · Năm`} displayLabel="Năm" value={year} disabled={disabled} onValueChange={v => update(0, v)} options={[{ value: '', label: 'Năm' }, ...Array.from({ length: endYear - startYear + 1 }, (_, i) => ({ value: String(endYear - i), label: String(endYear - i) }))]} />
+        </View>
+      </View>
     </View>
-    <View style={{ flexDirection: 'row', gap: 8, backgroundColor: colors.surface, borderRadius: 16, padding: 8 }}>
-      <View style={{ flex: 0.9, minWidth: 0 }}><SelectField label={`${label} · Ngày`} displayLabel="Ngày" value={day} disabled={disabled} onValueChange={v => update(2, v)} options={[{ value: '', label: 'Ngày' }, ...Array.from({ length: days }, (_, i) => ({ value: pad(i + 1), label: pad(i + 1) }))]} /></View>
-      <View style={{ flex: 1.1, minWidth: 0 }}><SelectField label={`${label} · Tháng`} displayLabel="Tháng" value={month} disabled={disabled} onValueChange={v => update(1, v)} options={[{ value: '', label: 'Tháng' }, ...Array.from({ length: 12 }, (_, i) => ({ value: pad(i + 1), label: `Tháng ${pad(i + 1)}` }))]} /></View>
-      <View style={{ flex: 1, minWidth: 0 }}><SelectField label={`${label} · Năm`} displayLabel="Năm" value={year} disabled={disabled} onValueChange={v => update(0, v)} options={[{ value: '', label: 'Năm' }, ...Array.from({ length: endYear - startYear + 1 }, (_, i) => ({ value: String(endYear - i), label: String(endYear - i) }))]} /></View>
-    </View>
-  </View>;
+  );
 }

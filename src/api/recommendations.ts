@@ -56,6 +56,10 @@ export type MealRecommendationResponse = {
   recommendations: MealRecommendation[];
 };
 
+export type PersonalizedRecommendationResult = MealRecommendationResponse & {
+  mode?: NonNullable<PersonalizedRecommendationOptions["mode"]>;
+};
+
 export type MealIngredientStatus = {
   ingredientId?: string;
   name: string;
@@ -219,7 +223,7 @@ export const recommendationsApi = {
     if (!body || !Array.isArray(body.missingIngredients)) throw new ApiError("Kết quả gợi ý nguyên liệu chưa đầy đủ.", 502);
     return normalizeIngredientStatus(body.missingIngredients);
   },
-  async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}) {
+  async personalized(topK = 5, options: PersonalizedRecommendationOptions = {}): Promise<PersonalizedRecommendationResult> {
     const { mode, mealType, maxCookTimeMinutes, servings, includeIngredients } = options;
     const response = await apiRequest<unknown>(endpoints.recommendations.personalized, {
       method: "POST", auth: true, body: JSON.stringify({ topK, mode, mealType, maxCookTimeMinutes, servings, includeIngredients }), timeoutMs: 60000
@@ -229,7 +233,8 @@ export const recommendationsApi = {
     if (!body || ![body.items, body.recommendations, body.meals].some(Array.isArray))
       throw new ApiError("Dữ liệu gợi ý chưa đầy đủ. Vui lòng thử lại.", 502);
     const result = normalizeRecommendationResponse(body);
-    return result;
+    const resolvedMode = typeof (body as { mode?: unknown }).mode === "string" ? (body as { mode: PersonalizedRecommendationResult["mode"] }).mode : undefined;
+    return { ...result, ...(resolvedMode ? { mode: resolvedMode } : {}) };
   },
   async suggestMeals(payload: MealRecommendationRequest) {
     const response = await apiRequest<unknown>(endpoints.recommendations.meals, {
