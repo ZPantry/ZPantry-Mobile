@@ -12,8 +12,9 @@ export type ImportPreviewItem = {
   resolverStatus: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED";
   reviewRequired?: boolean;
   sourceUnit?: string | null;
+  flags?: Array<"LOW_CONFIDENCE" | "NO_QUANTITY" | "ANOMALY">;
 };
-export type ImportPreview = { sourceType: ImportMethod; items: ImportPreviewItem[]; warnings: string[] };
+export type ImportPreview = { sourceType: ImportMethod; items: ImportPreviewItem[]; warnings: string[]; analysisId?: string; imageTypeConfidence?: number | null; imageQuality?: "GOOD" | "LOW" | "UNREADABLE"; needsUserChoice?: boolean; reason?: string | null };
 export type ImportItem = { ingredientId: string; quantity: number; unit: string };
 
 export function buildMenuPreview(meals: Array<{ recipe: Recipe; servingSize: number }>): ImportPreview {
@@ -44,12 +45,13 @@ export function buildMenuPreview(meals: Array<{ recipe: Recipe; servingSize: num
 
 export function validateImportItems(items: ImportItem[]) {
   if (!items.length) throw new ApiError("Chọn ít nhất một nguyên liệu để thêm vào tủ.", 400);
-  const ids = new Set<string>();
+  const lines = new Set<string>();
   for (const item of items) {
     if (!item.ingredientId || !Number.isFinite(item.quantity) || item.quantity < 0.0001 || !item.unit.trim() || item.unit.length > 50)
       throw new ApiError("Mỗi dòng cần nguyên liệu, số lượng lớn hơn 0 và đơn vị hợp lệ.", 400);
-    if (ids.has(item.ingredientId)) throw new ApiError("Có nguyên liệu bị trùng. Hãy gộp số lượng vào một dòng trước khi lưu.", 400);
-    ids.add(item.ingredientId);
+    const lineKey = `${item.ingredientId}:${item.unit.trim().toLocaleLowerCase()}`;
+    if (lines.has(lineKey)) throw new ApiError("Có nguyên liệu bị trùng cùng đơn vị. Hãy gộp số lượng vào một dòng trước khi lưu.", 400);
+    lines.add(lineKey);
   }
 }
 export const pantryImportApi = {
@@ -74,17 +76,20 @@ export const pantryImportApi = {
   async analyze(source: ImportSource, file: UploadFile): Promise<ImportPreview> {
     const body = new FormData();
     body.append("image", file as Blob);
+    if (source === "AUTO") body.append("expectedType", "AUTO");
     const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(source === "AUTO" ? endpoints.pantryImport.autoImage : source === "RECEIPT" ? endpoints.pantryImport.receipt : endpoints.pantryImport.food, {
       method: "POST", auth: true, body, timeoutMs: 90000
     });
     const items = source === "AUTO" ? result.ingredients : result.items;
     if (!Array.isArray(items)) throw new ApiError("Kết quả phân tích ảnh không hợp lệ. Vui lòng thử lại.", 502);
     if (source === "AUTO" && result.imageType === "UNKNOWN")
-      return { sourceType: "AUTO", items: [], warnings: [...(result.warnings || []), "Chưa xác định được loại ảnh. Hãy chọn ảnh thực phẩm hoặc hóa đơn rõ hơn."] };
-    return { sourceType: source === "AUTO" ? (result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE") : source, items, warnings: result.warnings || [] };
+      return { sourceType: "AUTO", items: [], warnings: [...(result.warnings || []), "Chưa xác định được loại ảnh. Hãy chọn ảnh thực phẩm hoặc hóa đơn rõ hơn."], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
+    return { sourceType: source === "AUTO" ? (result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE") : source, items, warnings: result.warnings || [], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
   },
-  confirm(items: ImportItem[]) {
+  confirm(items: ImportItem[], analysisId?: string, idempotencyKey = crypto.randomUUID()) {
     validateImportItems(items);
-    return apiRequest<ApiMessageResponse>(endpoints.pantryImport.confirm, { method: "POST", auth: true, body: JSON.stringify({ items }) });
+    return apiRequest<ApiMessageResponse>(endpoints.pantryImport.confirm, {
+      method: "POST", auth: true, headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ analysisId, items })
+    });
   }
 };

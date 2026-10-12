@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { Animated, View } from "react-native";
+import { Animated, Platform, View } from "react-native";
 import FigmaAsset from "@/components/FigmaAsset";
 import { overviewAssets } from "@/constants/figmaAssets";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,14 +15,14 @@ export default function SplashScreen() {
       Animated.timing(opacity, {
         toValue: 1,
         duration: 520,
-        useNativeDriver: true
+        useNativeDriver: Platform.OS !== "web"
       }),
       Animated.spring(scale, {
         toValue: 1,
         damping: 12,
         stiffness: 110,
         mass: 0.8,
-        useNativeDriver: true
+        useNativeDriver: Platform.OS !== "web"
       })
     ]).start();
   }, [opacity, scale]);

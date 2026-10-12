@@ -38,6 +38,9 @@ export default function PantryImportScreen() {
   const [image, setImage] = useState<PickedUploadImage | null>(null);
   const [rows, setRows] = useState<Draft[] | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [analysisNotice, setAnalysisNotice] = useState("");
+  const [analysisId, setAnalysisId] = useState<string | undefined>();
+  const confirmKey = useRef<string | undefined>();
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [error, setError] = useState("");
@@ -65,6 +68,10 @@ export default function PantryImportScreen() {
     if (!Array.isArray(result.items)) throw new Error("Kết quả không hợp lệ. Vui lòng thử lại.");
     setRows(result.items.map((r, key) => ({ ...r, key, quantityText: r.quantity == null ? "" : String(r.quantity), unitText: r.unit || "" })));
     setWarnings(result.warnings || []);
+    setAnalysisId(result.analysisId);
+    confirmKey.current = undefined;
+    if (!result.items.length && result.reason) setAnalysisNotice(unknownReasonMessage(result.reason));
+    else setAnalysisNotice("");
   };
   const prepare = async () => {
     if (lock.current) return;
@@ -97,7 +104,7 @@ export default function PantryImportScreen() {
         setError("Chọn ảnh JPG, PNG hoặc WEBP. Ảnh HEIC cần chuyển định dạng trước."); return;
       }
       if (chosen.size !== undefined && chosen.size > 10 * 1024 * 1024) { setError("Ảnh vượt quá 10 MB. Hãy chọn ảnh nhỏ hơn."); return; }
-      setImage(chosen); setRows(null); setWarnings([]); setEditing(null);
+      setImage(chosen); setRows(null); setWarnings([]); setAnalysisNotice(""); setAnalysisId(undefined); confirmKey.current = undefined; setEditing(null);
     } catch (e) { setError(e instanceof Error ? e.message : "Chưa chọn được ảnh."); }
     finally { lock.current = false; setBusy(false); }
   };
@@ -119,7 +126,8 @@ export default function PantryImportScreen() {
     if (!rows?.length || lock.current) return;
     lock.current = true; setBusy(true); setError("");
     try {
-      await pantryImportApi.confirm(rows.map((r) => ({ ingredientId: r.ingredientId || "", quantity: Number(r.quantityText.replace(",", ".")), unit: r.unitText.trim() })));
+      confirmKey.current ??= crypto.randomUUID();
+      await pantryImportApi.confirm(rows.map((r) => ({ ingredientId: r.ingredientId || "", quantity: Number(r.quantityText.replace(",", ".")), unit: r.unitText.trim() })), analysisId, confirmKey.current);
       setRows(null); toast.show("Đã cập nhật nguyên liệu trong tủ.");
       navigation.popTo("Tabs", { screen: "Pantry" });
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được. Bản chỉnh sửa vẫn được giữ lại.")); }
@@ -157,6 +165,7 @@ export default function PantryImportScreen() {
       </> : null}
       {busy ? <ActivityIndicator color={colors.primary} /> : null}
       {error ? <Text accessibilityRole="alert" selectable style={{ color: colors.danger, lineHeight: 22 }}>{error}</Text> : null}
+      {analysisNotice ? <Text accessibilityRole="alert" selectable style={{ color: colors.warning, lineHeight: 22 }}>{analysisNotice} Lượt AI của bạn không bị trừ.</Text> : null}
       {warnings.map((w, index) => <Text key={index} selectable style={{ color: colors.primary }}>{w === "No food ingredients were detected." ? "Chưa nhận diện được nguyên liệu. Hãy thử ảnh rõ hơn hoặc thêm thủ công." : w}</Text>)}
       {rows !== null ? <>
         <Text style={{ color: colors.text, fontSize: 21, fontWeight: "700" }}>Kiểm tra {rows.length} nguyên liệu</Text>
@@ -166,6 +175,9 @@ export default function PantryImportScreen() {
             <View style={{ flex: 1, gap: 4 }}><Text style={{ color: colors.text, fontSize: 17, fontWeight: "600" }}>{r.rawName}</Text>
               <Text style={{ color: r.ingredientId ? colors.muted : colors.primaryDark }}>{r.ingredientId ? r.canonicalIngredientName : "Cần chọn nguyên liệu tương ứng"}</Text>
               {r.reviewRequired || r.resolverStatus === "AMBIGUOUS" ? <Text style={{ color: colors.warning, fontSize: 12 }}>Cần kiểm tra lại kết quả nhận diện</Text> : null}
+              {r.flags?.includes("LOW_CONFIDENCE") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>AI chưa tự tin về nguyên liệu này</Text> : null}
+              {r.flags?.includes("NO_QUANTITY") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>Hãy nhập số lượng trước khi lưu</Text> : null}
+              {r.flags?.includes("ANOMALY") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>Đơn vị hoặc kết quả cần kiểm tra lại</Text> : null}
               {r.sourceUnit && r.sourceUnit !== r.unit ? <Text style={{ color: colors.muted, fontSize: 12 }}>Đơn vị trên ảnh: {r.sourceUnit}</Text> : null}</View>
             <Pressable disabled={busy} accessibilityLabel={`Bỏ ${r.rawName}`} onPress={() => { setRows((current) => current?.filter((x) => x.key !== r.key) ?? null); if (editing === r.key) setEditing(null); }} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={{ color: colors.danger }}>Bỏ</Text></Pressable>
           </View>
@@ -185,13 +197,16 @@ export default function PantryImportScreen() {
             <View style={{ flex: 1, gap: 6 }}><Text style={{ color: colors.muted }}>Đơn vị</Text><AppInput accessibilityLabel={`Đơn vị ${r.rawName}`} editable={!busy} value={r.unitText} onChangeText={(v) => patchRow(r.key, { unitText: v })} maxLength={50} placeholder="g, kg, cái…" placeholderTextColor={colors.muted} style={inputStyle} /></View>
           </View>
         </View>)}
-        <Text style={{ color: colors.primary, lineHeight: 22 }}>Nếu nguyên liệu đã có trong tủ, số lượng sẽ được thay bằng số bạn xác nhận, không cộng thêm. Bạn có thể đặt hạn sử dụng trong chi tiết tủ sau khi lưu.</Text>
+        <Text style={{ color: colors.primary, lineHeight: 22 }}>Nếu nguyên liệu đã có cùng đơn vị trong tủ, số lượng sẽ được cộng dồn. Khác đơn vị sẽ được lưu thành dòng riêng để không quy đổi sai. Bạn có thể đặt hạn sử dụng trong chi tiết tủ sau khi lưu.</Text>
         <Action label={busy ? "Đang lưu…" : `Xác nhận lưu ${rows.length} nguyên liệu`} onPress={confirm} disabled={busy || !rows.length} />
         <Action label="Chỉnh lại nguồn nhập" soft disabled={busy} onPress={() => { setRows(null); setEditing(null); setError(""); setWarnings([]); }} />
       </> : null}
       <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} />
     </ScrollView>
   </SafeAreaView>;
+}
+function unknownReasonMessage(reason: string) {
+  return ({ BLURRY: "Ảnh bị mờ, hãy chụp lại gần hơn.", TOO_DARK: "Ảnh quá tối, hãy thêm ánh sáng.", NO_FOOD: "Không thấy thực phẩm hoặc hóa đơn trong ảnh.", NOT_SUPPORTED: "Ảnh menu, công thức hoặc món đã nấu chưa được hỗ trợ.", UNCERTAIN: "Chưa nhận diện được loại ảnh, hãy chọn thủ công." } as Record<string, string>)[reason] || "Chưa nhận diện được ảnh.";
 }
 const inputStyle = { minHeight: 48, padding: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 12, color: colors.text };
 function Action({ label, onPress, disabled, soft }: { label: string; onPress: () => void; disabled?: boolean; soft?: boolean }) {
