@@ -3,7 +3,7 @@ import { canManageUsers, assignableRoles } from "@/utils/roles";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Image, Modal, Pressable, RefreshControl, TextInput, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Animated, Image, Modal, Platform, Pressable, RefreshControl, TextInput, useWindowDimensions, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
@@ -238,7 +238,7 @@ function AdminBottomBar({ activeTab, onChange, tabs }: { activeTab: AdminTab; on
   useEffect(() => {
     Animated.spring(progress, {
       toValue: tabs.findIndex((item) => item.key === activeTab),
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
       damping: 16,
       stiffness: 170,
       mass: 0.8
@@ -302,7 +302,7 @@ function AdminBottomTabButton({ item, active, onPress }: { item: (typeof adminTa
   useEffect(() => {
     Animated.spring(scale, {
       toValue: active ? 1 : 0,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
       damping: 13,
       stiffness: 180,
       mass: 0.65
