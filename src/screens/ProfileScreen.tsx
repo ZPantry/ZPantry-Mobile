@@ -2,8 +2,8 @@ import { userDisplayName } from '@/utils/userProfile';
 import FigmaAsset from '@/components/FigmaAsset';
 import { profileAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
 
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
+import { subscriptionApi } from "@/api/subscription";
 
 export default function ProfileScreen() {
   const { isCompact, isLandscape } = useSizeClass();
@@ -25,8 +26,17 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const displayName = userDisplayName(user);
   const displayEmail = user?.email || "Chưa có email";
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void subscriptionApi.current()
+      .then((subscription) => active && setIsPremium(subscription.planCode === "Z_PLUS" && subscription.status === "ACTIVE"))
+      .catch(() => active && setIsPremium(false));
+    return () => { active = false; };
+  }, []));
 
   const confirmSignOut = async () => {
     setIsSigningOut(true);
@@ -59,7 +69,7 @@ export default function ProfileScreen() {
           </View>
           <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>{displayName}</Text>
           <View style={{ backgroundColor: "#FFDCC6", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, flexDirection: "row", gap: 6, alignItems: "center" }}>
-            <FigmaAsset asset={assets.imgContainer1} /><Text style={{ color: "#311300", fontSize: 11, fontWeight: "600" }}>Thành viên Z-Pantry</Text>
+            <FigmaAsset asset={assets.imgContainer1} /><Text style={{ color: "#311300", fontSize: 11, fontWeight: "600" }}>{isPremium ? "Thành viên Premium" : "Thành viên Z-Pantry"}</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
             <FigmaAsset asset={assets.imgContainer2} /><Text selectable style={{ color: colors.muted, fontSize: 12 }}>{displayEmail}</Text>
@@ -71,12 +81,12 @@ export default function ProfileScreen() {
             <View style={{ flex: 1, gap: 3 }}><Text style={{ color: "#FFDCC6", fontSize: 11, fontWeight: "600", letterSpacing: 0.55 }}>ĐẶC QUYỀN HỘI VIÊN</Text><Text style={{ color: "white", fontSize: 20, fontWeight: "700" }}>PANTRY VIP</Text></View>
             <Text style={{ color: "#F9F9F7", backgroundColor: "#FFFFFF26", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, fontSize: 11 }}>Z-Plus</Text>
           </View>
-          <Text style={{ color: "#E2E3E1", fontSize: 14, lineHeight: 21 }}>Nâng tầm trải nghiệm bếp với gợi ý món không giới hạn và nhiều lượt nhận diện ảnh hơn mỗi ngày.</Text>
+          <Text style={{ color: "#E2E3E1", fontSize: 14, lineHeight: 21 }}>{isPremium ? "Gói Z-Plus của bạn đang hoạt động với các quyền lợi Premium sẵn sàng sử dụng." : "Nâng tầm trải nghiệm bếp với gợi ý món không giới hạn và nhiều lượt nhận diện ảnh hơn mỗi ngày."}</Text>
           <View style={{ backgroundColor: "#FFFFFF1A", borderRadius: 8, padding: 14, gap: 10 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 12, lineHeight: 18 }}>Xem quyền lợi, hạn mức và nâng cấp gói an toàn qua PayOS.</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, lineHeight: 18 }}>{isPremium ? "Bạn đang sử dụng Z-Plus. Xem hạn mức và thời hạn gói trong phần gói sử dụng." : "Xem quyền lợi, hạn mức và nâng cấp gói an toàn qua PayOS."}</Text>
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ProfileSetup", { editing: true })} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: "#FFDCC6", fontSize: 12, fontWeight: "600" }}>Cá nhân hóa khẩu vị →</Text></Pressable>
           </View>
-          <PrimaryButton title="Khám phá gói VIP" onPress={() => navigation.navigate("Subscription")} />
+          {isPremium ? <Pressable accessibilityRole="button" onPress={() => navigation.navigate("Subscription")} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: "#FFDCC6", fontSize: 12, fontWeight: "600" }}>Xem gói Z-Plus →</Text></Pressable> : <PrimaryButton title="Khám phá gói VIP" onPress={() => navigation.navigate("Subscription")} />}
         </View>
         <View style={{ gap: 2, backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" }}>
           <ActionRow icon="account-outline" title="Thông tin tài khoản" subtitle="Tên hiển thị, email và thông tin cá nhân" onPress={() => navigation.navigate("AccountSettings")} />

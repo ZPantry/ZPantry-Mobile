@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator, Linking, Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -9,12 +10,11 @@ import { colors, radius, shadows } from "@/constants/colors";
 import { subscriptionApi, type Quota, type Subscription } from "@/api/subscription";
 import type { RootStackParamList } from "@/types";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import { quotaSummary, quotaUsageDetail } from "@/utils/subscriptionQuota";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Subscription">;
 
 function findQuota(quotas: Quota[], feature: Quota["feature"]) { return quotas.find(q => q.feature === feature); }
-function quotaText(quota?: Quota) { return !quota || quota.remaining === null ? "Không giới hạn" : `${quota.remaining}/${quota.limit}`; }
-
 function Benefit({ children }: { children: string }) {
   return <View style={{ flexDirection: "row", gap: 9, alignItems: "flex-start" }}>
     <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginTop: 1 }}><MaterialCommunityIcons name="check" size={13} color={colors.white} /></View>
@@ -22,11 +22,11 @@ function Benefit({ children }: { children: string }) {
   </View>;
 }
 
-function QuotaBox({ icon, title, value }: { icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; title: string; value: string }) {
+function QuotaBox({ icon, title, quota }: { icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; title: string; quota?: Quota }) {
   return <View style={{ flex: 1, backgroundColor: "#FFF7EC", borderRadius: 11, padding: 10, gap: 5 }}>
     <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 4 }}><Text style={{ color: colors.muted, fontSize: 10 }}>{title}</Text><MaterialCommunityIcons name={icon} size={13} color={colors.primaryDark} /></View>
-    <Text style={{ color: colors.text, fontWeight: "800", fontSize: 13 }}>{value}</Text>
-    <Text style={{ color: colors.primaryDark, fontSize: 9 }}>còn lượt hôm nay</Text>
+    <Text style={{ color: colors.text, fontWeight: "800", fontSize: 13 }}>{quotaSummary(quota)}</Text>
+    <Text style={{ color: colors.primaryDark, fontSize: 9 }}>{quotaUsageDetail(quota)}</Text>
   </View>;
 }
 
@@ -35,8 +35,16 @@ export default function SubscriptionScreen({ navigation, route }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const load = () => subscriptionApi.current().then(setData).catch(cause => setError(getFriendlyErrorMessage(cause, "Chưa tải được gói sử dụng.")));
-  useEffect(() => { void load(); }, []);
+  const load = useCallback(async () => {
+    try {
+      const subscription = await subscriptionApi.current();
+      setData(subscription);
+      setError("");
+    } catch (cause) {
+      setError(getFriendlyErrorMessage(cause, "Chưa tải được gói sử dụng."));
+    }
+  }, []);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
   useEffect(() => {
     const outcome = route.params?.paymentOutcome;
     if (!outcome) return;
@@ -47,8 +55,9 @@ export default function SubscriptionScreen({ navigation, route }: Props) {
   const quotas = data?.quotas ?? [];
   const suggestion = useMemo(() => findQuota(quotas, "MEAL_SUGGESTION"), [quotas]);
   const ocr = useMemo(() => findQuota(quotas, "OCR"), [quotas]);
-  const plus = data?.planCode === "Z_PLUS";
+  const plus = data?.planCode === "Z_PLUS" && data?.status === "ACTIVE";
   const upgrade = async () => {
+    if (plus) return;
     setBusy(true); setError("");
     try {
       const payment = await subscriptionApi.checkout();
@@ -64,7 +73,7 @@ export default function SubscriptionScreen({ navigation, route }: Props) {
     {notice ? <Text accessibilityRole="alert" style={{ color: colors.primaryDark, textAlign: "center", fontSize: 12 }}>{notice}</Text> : null}
     <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: 15, gap: 12, borderWidth: 1, borderColor: colors.line, boxShadow: shadows.card }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}><View style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: "#F8F8F7", justifyContent: "center", alignItems: "center" }}><MaterialCommunityIcons name="crown-outline" size={21} color={colors.dark} /></View><View style={{ flex: 1 }}><Text style={{ color: colors.muted, fontWeight: "700", fontSize: 9, letterSpacing: .5 }}>GÓI HIỆN TẠI</Text><Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }}>{plus ? "Z-Plus" : "Z-Free"}</Text></View></View>
-      <View style={{ flexDirection: "row", gap: 9 }}><QuotaBox icon="silverware-fork-knife" title="Gợi ý món" value={quotaText(suggestion)} /><QuotaBox icon="receipt-text-outline" title="Quét OCR" value={quotaText(ocr)} /></View>
+      <View style={{ flexDirection: "row", gap: 9 }}><QuotaBox icon="silverware-fork-knife" title="Gợi ý món" quota={suggestion} /><QuotaBox icon="receipt-text-outline" title="Quét OCR" quota={ocr} /></View>
     </View>
     {!plus ? <View style={{ backgroundColor: "#FFF0DE", borderRadius: 20, padding: 16, gap: 13, borderWidth: 1, borderColor: "#FFCB91", boxShadow: "0 7px 18px rgba(241,117,14,0.12)" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><View style={{ backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, flexDirection: "row", gap: 4, alignItems: "center" }}><MaterialCommunityIcons name="star" size={11} color={colors.white} /><Text style={{ color: colors.white, fontSize: 9, fontWeight: "700" }}>NÂNG CẤP LIỀN</Text></View><Text style={{ color: colors.warning, backgroundColor: colors.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, fontSize: 9, fontWeight: "700" }}>Tiết kiệm 35%</Text></View>

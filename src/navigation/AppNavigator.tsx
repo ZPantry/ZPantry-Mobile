@@ -5,9 +5,10 @@ import { homeAssets, pantryAssets, exploreAssets, profileAssets, loginAssets } f
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useFocusEffect } from "@react-navigation/native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { useSizeClass } from "@/hooks/useSizeClass";
@@ -44,6 +45,7 @@ import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import QuickAddScreen from "@/screens/QuickAddScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { subscriptionApi } from "@/api/subscription";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -56,7 +58,7 @@ const tabMeta = {
   Profile: { label: "Cá nhân", icon: "person-outline", activeIcon: "person", family: "ion" }
 } as const;
 
-function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBarProps & { isPremium: boolean }) {
   const insets = useSafeAreaInsets();
   const { isCompact, isSmallDevice, width } = useSizeClass();
   const isTopNav = !isCompact;
@@ -86,11 +88,10 @@ function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         }}
       >
         {isTopNav ? (
-          <FigmaAsset
-            asset={loginAssets.imgLogoZPantryVer61}
-            style={{ width: 138, height: 35.28, marginRight: "auto" }}
-            label="Z Pantry"
-          />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginRight: "auto" }}>
+            <FigmaAsset asset={loginAssets.imgLogoZPantryVer61} style={{ width: 138, height: 35.28 }} label="Z Pantry" />
+            {isPremium ? <Text style={{ color: "#7C4A03", backgroundColor: "#FFF0C2", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, fontSize: 10, fontWeight: "800", letterSpacing: 0.6 }}>PREMIUM</Text> : null}
+          </View>
         ) : null}
         {state.routes.map((route, index) => {
           const focused = state.index === index;
@@ -168,9 +169,19 @@ function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 function Tabs() {
   const { isCompact } = useSizeClass();
+  const [isPremium, setIsPremium] = useState(false);
+  const refreshSubscription = useCallback(async () => {
+    try {
+      const subscription = await subscriptionApi.current();
+      setIsPremium(subscription.planCode === "Z_PLUS" && subscription.status === "ACTIVE");
+    } catch {
+      setIsPremium(false);
+    }
+  }, []);
+  useFocusEffect(useCallback(() => { void refreshSubscription(); }, [refreshSubscription]));
   return (
     <Tab.Navigator
-      tabBar={(props) => <BrandTabBar {...props} />}
+      tabBar={(props) => <BrandTabBar {...props} isPremium={isPremium} />}
       screenOptions={{
         headerShown: false,
         tabBarPosition: !isCompact ? "top" : "bottom"
