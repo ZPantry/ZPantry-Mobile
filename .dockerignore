@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+node_modules
+.expo
+dist
+dist-check
+work
+.git

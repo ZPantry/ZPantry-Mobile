@@ -1,56 +1,37 @@
-# Welcome to your Expo app 👋
+# Z-Pantry Meal Planner
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Frontend Expo SDK 56 (React Native + React Navigation), chạy trên Android, iOS và web.
 
-## Get started
+## Chạy dự án
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm install
+Copy-Item .env.example .env
+npm run web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Nếu đã có `.env`, giữ lại cấu hình Google OAuth. Backend mặc định: `https://zpantry-java-backend.onrender.com`. Để dùng Java local, đổi `EXPO_PUBLIC_API_BASE_URL` thành `http://localhost:8080` và `EXPO_PUBLIC_ANDROID_API_BASE_URL` thành `http://10.0.2.2:8080` cho Android emulator.
 
-### Other setup steps
+`npm run start` mở Metro. Google Sign-In trên native cần development build và cấu hình client ID theo `app.config.js`.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Luồng chính
 
-## Learn more
+- Đăng ký → xác thực email → đăng nhập; quên mật khẩu → OTP → đặt mật khẩu mới.
+- Hồ sơ ăn uống v2 → gợi ý theo hồ sơ, tủ hoặc tự chọn nguyên liệu.
+- Kho thực phẩm → thêm thủ công, văn bản, ảnh/hóa đơn tự nhận diện hoặc nguyên liệu từ thực đơn → kiểm tra → xác nhận lưu.
+- Công thức → đối chiếu lượng trong tủ → chọn ngày, bữa, khẩu phần, ghi chú → thực đơn → ảnh thành phẩm, đánh giá → nhật ký nấu ăn.
+- Quản trị theo vai trò → danh mục nguyên liệu/công thức, dị ứng, tên gọi khác; Admin/Super Admin quản lý người dùng và vai trò theo cấp quyền.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Kiểm tra
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```powershell
+npm run typecheck
+npm run test:api
+npm run build
+# Cần Playwright và Chrome; có thể đặt PLAYWRIGHT_MODULE thành đường dẫn module.
+node tests/swagger-flows.web.cjs
+```
 
-## Join the community
+Browser tests dùng phản hồi API giả lập, không thay đổi backend Render. Ảnh kiểm tra và kết quả nằm trong `work/swagger-review-2026-10-04/`.
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Xem [đối chiếu API và giới hạn kiểm chứng](docs/api-sync-2026-10-04.md). Swagger là nguồn contract; API có dữ liệu dạng mở vẫn cần kiểm tra bằng tài khoản thật và dữ liệu thực tế.

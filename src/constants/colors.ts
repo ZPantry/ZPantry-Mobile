@@ -1,22 +1,37 @@
 export const colors = {
-  primary: "#F4A21C",
-  primaryDark: "#B87507",
-  secondary: "#FFE0A3",
-  background: "#003B1E",
-  surface: "#164F31",
-  surface2: "#2C6847",
-  glass: "rgba(255,255,255,0.14)",
-  glassStrong: "rgba(255,255,255,0.22)",
-  dark: "#062817",
-  text: "#F7FFF8",
-  textDark: "#172219",
-  muted: "rgba(255,255,255,0.72)",
-  mutedDark: "#6B7C6F",
-  success: "#39D98A",
-  warning: "#F4A21C",
-  danger: "#FF4D4F",
-  card: "rgba(255,255,255,0.16)",
+  primary: "#FF8928",
+  primaryDark: "#985509",
+  secondary: "#FFF0D8",
+  background: "#F1F1F1",
+  surface: "#FFFFFF",
+  surface2: "#E8EDE7",
+  glass: "#FFFFFF",
+  glassStrong: "#E8EDE7",
+  dark: "#003014",
+  text: "#1A1C1B",
+  textDark: "#1A1C1B",
+  muted: "#727972",
+  mutedDark: "#727972",
+  success: "#28734A",
+  successSoft: "#E4F3E7",
+  warning: "#A96312",
+  warningSoft: "#FFF0D8",
+  danger: "#BA3F3F",
+  dangerSoft: "#FCEBE9",
+  card: "#FFFFFF",
   white: "#FFFFFF",
-  line: "rgba(255,255,255,0.34)",
-  tabText: "#4A3210"
+  line: "#E8E8E6",
+  tabText: "#424843",
+  onDark: "#FFFFFF",
+  onDarkMuted: "#C8D9C8",
+  input: "#F4F4F2"
 };
+
+// Shared values from the new Z-Pantry mobile frames (440px, light surfaces).
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, page: 20, xl: 24, xxl: 32 } as const;
+export const radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
+export const shadows = {
+  card: "0 2px 8px rgba(0,48,20,0.04)",
+  raised: "0 6px 20px rgba(0,48,20,0.08)",
+  button: "0 3px 8px rgba(244,162,28,0.18)",
+} as const;

@@ -1,84 +1,12 @@
+import { resolveApiBaseUrl } from "@/api/baseUrl";
+import { ApiError, getMessage, unwrapEnvelope } from "@/api/response";
+export { ApiError } from "@/api/response";
+export type { ApiMessageResponse, PaginatedResponse } from "@/api/response";
 import { authStorage } from "@/utils/authStorage";
 import { Platform } from "react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 const ANDROID_API_BASE_URL = process.env.EXPO_PUBLIC_ANDROID_API_BASE_URL;
-
-export type ApiMessageResponse = {
-  message: string;
-};
-
-export type PaginatedResponse<T> = {
-  pageIndex: number;
-  pageSize: number;
-  totalItems: number;
-  totalCount: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  data: T[];
-  items: T[];
-};
-
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data?: T;
-  errors?: unknown;
-  traceId?: string;
-  timestamp?: string;
-  pageIndex?: number;
-  pageSize?: number;
-  totalCount?: number;
-  totalItems?: number;
-  totalPages?: number;
-  hasNextPage?: boolean;
-  hasPreviousPage?: boolean;
-  items?: T;
-};
-
-export class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
-
-function getApiBaseUrl() {
-  if (!API_BASE_URL) {
-    throw new ApiError("Chưa kết nối được nguồn dữ liệu.", 0);
-  }
-
-  const normalizedUrl = API_BASE_URL.trim().replace(/\/+$/, "");
-  const urlWithScheme = /^https?:\/\//i.test(normalizedUrl) ? normalizedUrl : `http://${normalizedUrl}`;
-
-  try {
-    const url = new URL(urlWithScheme);
-    if (!url.protocol.startsWith("http")) {
-      throw new Error("Invalid protocol");
-    }
-    if (url.protocol === "http:" && url.hostname.endsWith(".onrender.com")) {
-      url.protocol = "https:";
-      return url.toString().replace(/\/+$/, "");
-    }
-  } catch {
-    throw new ApiError("Nguồn dữ liệu chưa sẵn sàng.", 0);
-  }
-
-  if (Platform.OS === "android") {
-    const url = new URL(urlWithScheme);
-    const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
-
-    if (isLocalhost) {
-      return ANDROID_API_BASE_URL?.replace(/\/+$/, "") || normalizedUrl.replace(url.host, `10.0.2.2${url.port ? `:${url.port}` : ""}`);
-    }
-  }
-
-  return urlWithScheme;
-}
 
 async function readResponse(response: Response) {
   const text = await response.text();
@@ -91,114 +19,102 @@ async function readResponse(response: Response) {
   }
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object";
-}
-
-function getMessage(body: unknown, fallback: string) {
-  if (isObject(body) && typeof body.message === "string" && body.message.trim()) {
-    return body.message;
-  }
-
-  if (isObject(body) && Array.isArray(body.errors) && body.errors.length > 0) {
-    return body.errors
-      .map((error) => {
-        if (isObject(error) && typeof error.message === "string") return error.message;
-        return String(error);
-      })
-      .join("\n");
-  }
-
-  if (typeof body === "string") {
-    return body;
-  }
-
-  return fallback;
-}
-
-function unwrapEnvelope<T>(body: unknown): T {
-  if (!isObject(body)) {
-    return body as T;
-  }
-
-  const envelope = body as ApiEnvelope<T>;
-  const hasEnvelopeShape = "success" in envelope || "data" in envelope || "errors" in envelope || "traceId" in envelope;
-
-  if (!hasEnvelopeShape) {
-    return body as T;
-  }
-
-  if (envelope.success === false) {
-    throw new ApiError(getMessage(envelope, "Yêu cầu thất bại."), 200);
-  }
-
-  if ((Array.isArray(envelope.data) || Array.isArray(envelope.items)) && "pageIndex" in envelope) {
-    const items = Array.isArray(envelope.data) ? envelope.data : (envelope.items as T[]);
-    const totalItems = Number(envelope.totalItems ?? envelope.totalCount ?? items.length);
-
-    return {
-      pageIndex: Number(envelope.pageIndex ?? 1),
-      pageSize: Number(envelope.pageSize ?? items.length),
-      totalItems,
-      totalCount: totalItems,
-      totalPages: Number(envelope.totalPages ?? Math.max(1, Math.ceil(totalItems / Math.max(1, Number(envelope.pageSize ?? items.length))))),
-      hasNextPage: Boolean(envelope.hasNextPage),
-      hasPreviousPage: Boolean(envelope.hasPreviousPage),
-      data: items,
-      items
-    } as T;
-  }
-
-  if (envelope.data !== undefined && envelope.data !== null) {
-    return envelope.data;
-  }
-
-  return { message: envelope.message || "" } as T;
-}
-
 type ApiRequestOptions = RequestInit & {
   auth?: boolean;
   timeoutMs?: number;
+  skipAuthRefresh?: boolean;
 };
 
+let refreshFlight: { revision: number; promise: Promise<string> } | null = null;
+
+export async function refreshAccessToken(): Promise<string> {
+  const revision = authStorage.getRevision();
+  if (refreshFlight?.revision === revision) return refreshFlight.promise;
+  const promise = (async () => {
+    const refreshToken = await authStorage.getRefreshToken();
+    if (!refreshToken) {
+      if (authStorage.getRevision() === revision) await authStorage.clearSession();
+      throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
+    }
+    try {
+      const tokens = await apiRequest<{ accessToken: string; refreshToken: string; expiresAt: string }>("/api/Auth/refresh-token", {
+        method: "POST", body: JSON.stringify({ refreshToken }), skipAuthRefresh: true
+      });
+      if (!tokens.accessToken || !tokens.refreshToken) throw new ApiError("Phiên đăng nhập không hợp lệ.", 401);
+      if (!await authStorage.updateTokens(tokens, revision)) throw new ApiError("Phiên đăng nhập đã thay đổi.", 401);
+      return tokens.accessToken;
+    } catch (error) {
+      if (error instanceof ApiError && [400, 401, 403].includes(error.status) && authStorage.getRevision() === revision)
+        await authStorage.clearSession();
+      throw error;
+    }
+  })();
+  refreshFlight = { revision, promise };
+  try { return await promise; } finally { if (refreshFlight?.promise === promise) refreshFlight = null; }
+}
+
+export async function restoreSession() {
+  const session = await authStorage.getSession();
+  if (session && (!session.user.expiresAt || Date.parse(session.user.expiresAt) <= Date.now() + 30000)) {
+    try { await refreshAccessToken(); } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 0) return authStorage.getSession();
+      // Keep credentials during a network outage; requests can retry when connected.
+    }
+    return authStorage.getSession();
+  }
+  return session;
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const { auth = false, headers, timeoutMs = 30000, ...fetchOptions } = options;
+  const { auth = false, headers, timeoutMs = 30000, skipAuthRefresh = false, ...fetchOptions } = options;
+  const sessionRevision = authStorage.getRevision();
   const token = auth ? await authStorage.getAccessToken() : null;
-  const url = `${getApiBaseUrl()}${path}`;
+  const url = `${resolveApiBaseUrl(API_BASE_URL, ANDROID_API_BASE_URL, Platform.OS)}${path}`;
   const requestBody = fetchOptions.body;
   const isFormData = typeof FormData !== "undefined" && requestBody instanceof FormData;
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
 
-  if (fetchOptions.signal) {
-    fetchOptions.signal.addEventListener("abort", () => timeoutController.abort(), { once: true });
-  }
+  const abortRequest = () => timeoutController.abort();
+  if (fetchOptions.signal?.aborted) abortRequest();
+  else fetchOptions.signal?.addEventListener("abort", abortRequest, { once: true });
+
+  const requestHeaders = new Headers(headers);
+  if (!isFormData && !requestHeaders.has("Content-Type")) requestHeaders.set("Content-Type", "application/json");
+  if (token && !requestHeaders.has("Authorization")) requestHeaders.set("Authorization", `Bearer ${token}`);
 
   let response: Response;
   try {
     response = await fetch(url, {
       ...fetchOptions,
       signal: timeoutController.signal,
-      headers: {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...headers
-      }
+      headers: requestHeaders
     });
+    const body = await readResponse(response);
+    if (response.status === 401 && auth && !skipAuthRefresh && !new Headers(headers).has("Authorization")) {
+      if (sessionRevision !== authStorage.getRevision()) throw new ApiError("Phiên đăng nhập đã thay đổi.", 401);
+      const currentToken = await authStorage.getAccessToken();
+      const freshToken = currentToken && currentToken !== token ? currentToken : await refreshAccessToken();
+      if (fetchOptions.signal?.aborted) throw new ApiError("Yêu cầu đã hủy.", 0);
+      return await apiRequest<T>(path, { ...options, headers: { ...Object.fromEntries(new Headers(headers).entries()), Authorization: `Bearer ${freshToken}` }, skipAuthRefresh: true });
+    }
+    if (!response.ok) {
+      const fallback = response.status === 401
+        ? "Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."
+        : response.status === 403
+          ? "Bạn không có quyền thực hiện thao tác này."
+          : `Yêu cầu thất bại (${response.status}).`;
+      throw new ApiError(getMessage(body, fallback), response.status);
+    }
+    return unwrapEnvelope<T>(body, response.status);
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (error instanceof ApiError) throw error;
+    if (timeoutController.signal.aborted) {
       throw new ApiError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.", 0);
     }
     throw new ApiError("Chưa kết nối được dữ liệu. Vui lòng thử lại sau.", 0);
   } finally {
     clearTimeout(timeoutId);
+    fetchOptions.signal?.removeEventListener("abort", abortRequest);
   }
-
-  const body = await readResponse(response);
-
-  if (!response.ok) {
-    throw new ApiError(getMessage(body, `Yêu cầu thất bại (${response.status}).`), response.status);
-  }
-
-  return unwrapEnvelope<T>(body);
 }

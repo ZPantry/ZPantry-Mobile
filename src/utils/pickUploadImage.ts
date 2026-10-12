@@ -4,6 +4,8 @@ import type { UploadFile } from "@/api/recipes";
 export type PickedUploadImage = {
   uri: string;
   file: UploadFile;
+  size?: number;
+  mimeType?: string;
 };
 
 function guessImageType(fileName: string) {
@@ -14,7 +16,7 @@ function guessImageType(fileName: string) {
   return "image/jpeg";
 }
 
-export async function pickUploadImage(filePrefix: string): Promise<PickedUploadImage | null> {
+export async function pickUploadImage(filePrefix: string, allowsEditing = true): Promise<PickedUploadImage | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) {
     throw new Error("Vui lòng cấp quyền truy cập thư viện ảnh để chọn ảnh.");
@@ -22,7 +24,7 @@ export async function pickUploadImage(filePrefix: string): Promise<PickedUploadI
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
-    allowsEditing: true,
+    allowsEditing,
     aspect: [4, 3],
     quality: 0.85
   });
@@ -37,6 +39,8 @@ export async function pickUploadImage(filePrefix: string): Promise<PickedUploadI
 
   return {
     uri: asset.uri,
+    size: webFile?.size ?? asset.fileSize,
+    mimeType: webFile?.type || asset.mimeType || guessImageType(fileName),
     file: webFile || {
       uri: asset.uri,
       name: fileName,

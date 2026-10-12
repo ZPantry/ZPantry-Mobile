@@ -1,0 +1,910 @@
+{
+  "startedAt": "2026-09-29T11:22:29.386Z",
+  "base": "http://localhost:8080",
+  "run": 1790680949386,
+  "checks": [
+    {
+      "label": "pantry requires auth",
+      "method": "GET",
+      "route": "/api/me/pantry",
+      "status": 401,
+      "pass": true,
+      "ms": 56,
+      "message": ""
+    },
+    {
+      "label": "register a",
+      "method": "POST",
+      "route": "/api/Auth/register",
+      "status": 200,
+      "pass": true,
+      "ms": 25,
+      "message": "Đăng ký thành công! Vui lòng kiểm tra Gmail để nhận mã OTP xác thực."
+    },
+    {
+      "label": "wrong OTP a",
+      "method": "POST",
+      "route": "/api/Auth/verify-otp",
+      "status": 400,
+      "pass": true,
+      "ms": 10,
+      "message": "Mã OTP không chính xác, đã hết hạn hoặc tài khoản đã được xác thực trước đó."
+    },
+    {
+      "label": "verify OTP a",
+      "method": "POST",
+      "route": "/api/Auth/verify-otp",
+      "status": 200,
+      "pass": true,
+      "ms": 12,
+      "message": "Xác thực tài khoản thành công! Bạn hiện đã có thể đăng nhập."
+    },
+    {
+      "label": "login a",
+      "method": "POST",
+      "route": "/api/Auth/login",
+      "status": 200,
+      "pass": true,
+      "ms": 17,
+      "message": ""
+    },
+    {
+      "label": "register b",
+      "method": "POST",
+      "route": "/api/Auth/register",
+      "status": 200,
+      "pass": true,
+      "ms": 16,
+      "message": "Đăng ký thành công! Vui lòng kiểm tra Gmail để nhận mã OTP xác thực."
+    },
+    {
+      "label": "wrong OTP b",
+      "method": "POST",
+      "route": "/api/Auth/verify-otp",
+      "status": 400,
+      "pass": true,
+      "ms": 6,
+      "message": "Mã OTP không chính xác, đã hết hạn hoặc tài khoản đã được xác thực trước đó."
+    },
+    {
+      "label": "verify OTP b",
+      "method": "POST",
+      "route": "/api/Auth/verify-otp",
+      "status": 200,
+      "pass": true,
+      "ms": 8,
+      "message": "Xác thực tài khoản thành công! Bạn hiện đã có thể đăng nhập."
+    },
+    {
+      "label": "login b",
+      "method": "POST",
+      "route": "/api/Auth/login",
+      "status": 200,
+      "pass": true,
+      "ms": 15,
+      "message": ""
+    },
+    {
+      "label": "duplicate registration client error",
+      "method": "POST",
+      "route": "/api/Auth/register",
+      "status": 500,
+      "pass": false,
+      "ms": 7,
+      "message": "Email already exists.",
+      "response": {
+        "success": false,
+        "message": "Email already exists.",
+        "data": null,
+        "errors": null,
+        "traceId": "a4",
+        "timestamp": "2026-09-29T11:22:29.567489Z"
+      }
+    },
+    {
+      "label": "wrong password rejected",
+      "method": "POST",
+      "route": "/api/Auth/login",
+      "status": 401,
+      "pass": true,
+      "ms": 12,
+      "message": "Invalid email or password."
+    },
+    {
+      "label": "profile default",
+      "method": "GET",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7/profile",
+      "status": 200,
+      "pass": true,
+      "ms": 8,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": {
+          "id": null,
+          "userId": "d4ea6973-362b-4247-a477-c05817fd23c7",
+          "age": null,
+          "gender": null,
+          "height": null,
+          "weight": null,
+          "goal": null,
+          "dietPreference": null,
+          "allergies": []
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:29.587602900Z"
+      }
+    },
+    {
+      "label": "profile save",
+      "method": "PUT",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7/profile",
+      "status": 200,
+      "pass": true,
+      "ms": 15,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": {
+          "id": "234a0fd8-d896-4c49-934a-4c9303acdba9",
+          "userId": "d4ea6973-362b-4247-a477-c05817fd23c7",
+          "age": 28,
+          "gender": "Male",
+          "height": 170,
+          "weight": 65,
+          "goal": "HEALTHY_EATING",
+          "dietPreference": "NONE",
+          "allergies": [
+            "PEANUT"
+          ]
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:29.597454200Z"
+      }
+    },
+    {
+      "label": "profile readback",
+      "method": "GET",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7/profile",
+      "status": 200,
+      "pass": true,
+      "ms": 7,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": {
+          "id": "234a0fd8-d896-4c49-934a-4c9303acdba9",
+          "userId": "d4ea6973-362b-4247-a477-c05817fd23c7",
+          "age": 28,
+          "gender": "Male",
+          "height": 170,
+          "weight": 65,
+          "goal": "HEALTHY_EATING",
+          "dietPreference": "NONE",
+          "allergies": [
+            "PEANUT"
+          ]
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:29.610644800Z"
+      }
+    },
+    {
+      "label": "profile cross-user read denied",
+      "method": "GET",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7/profile",
+      "status": 500,
+      "pass": false,
+      "ms": 9,
+      "message": "Bạn chỉ được phép cập nhật thông tin của chính tài khoản mình."
+    },
+    {
+      "label": "profile cross-user write denied",
+      "method": "PUT",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7/profile",
+      "status": 500,
+      "pass": false,
+      "ms": 10,
+      "message": "Bạn chỉ được phép cập nhật thông tin của chính tài khoản mình."
+    },
+    {
+      "label": "owner account update",
+      "method": "PUT",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7",
+      "status": 200,
+      "pass": true,
+      "ms": 13,
+      "message": "User updated successfully."
+    },
+    {
+      "label": "other account update denied",
+      "method": "PUT",
+      "route": "/api/users/d4ea6973-362b-4247-a477-c05817fd23c7",
+      "status": 403,
+      "pass": true,
+      "ms": 7,
+      "message": "Bạn chỉ được phép cập nhật thông tin của chính tài khoản mình."
+    },
+    {
+      "label": "user list requires admin",
+      "method": "GET",
+      "route": "/api/users",
+      "status": 403,
+      "pass": true,
+      "ms": 4,
+      "message": ""
+    },
+    {
+      "label": "role change requires admin",
+      "method": "PATCH",
+      "route": "/api/admin/users/d4ea6973-362b-4247-a477-c05817fd23c7/role",
+      "status": 403,
+      "pass": true,
+      "ms": 4,
+      "message": ""
+    },
+    {
+      "label": "ingredient catalog",
+      "method": "GET",
+      "route": "/api/ingredients?pageIndex=1&pageSize=100",
+      "status": 200,
+      "pass": true,
+      "ms": 8,
+      "message": ""
+    },
+    {
+      "label": "ingredient search",
+      "method": "GET",
+      "route": "/api/ingredients?search=rice",
+      "status": 200,
+      "pass": true,
+      "ms": 8,
+      "message": ""
+    },
+    {
+      "label": "ingredient create",
+      "method": "POST",
+      "route": "/api/ingredients",
+      "status": 500,
+      "pass": false,
+      "ms": 12,
+      "message": "No message available",
+      "response": {
+        "timestamp": "2026-09-29T11:22:29.688Z",
+        "status": 500,
+        "error": "Internal Server Error",
+        "trace": "java.lang.NullPointerException\r\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:233)\r\n\tat java.base/java.util.ImmutableCollections$MapN.<init>(ImmutableCollections.java:1193)\r\n\tat java.base/java.util.Map.of(Map.java:1431)\r\n\tat com.zpantry.integration.ai.HttpAiClient.embedIngredient(HttpAiClient.java:54)\r\n\tat com.zpantry.ingredient.service.IngredientService.create(IngredientService.java:55)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:133)\r\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:371)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)\r\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)\r\n\tat com.zpantry.ingredient.service.IngredientService$$SpringCGLIB$$0.create(<generated>)\r\n\tat com.zpantry.ingredient.api.IngredientController.create(IngredientController.java:27)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)\r\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)\r\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)\r\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)\r\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132)\r\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)\r\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376)\r\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)\r\n\tat org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)\r\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)\r\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535)\r\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\r\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86)\r\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71)\r\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347)\r\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406)\r\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71)\r\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307)\r\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036)\r\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483)\r\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\r\n",
+        "message": "No message available",
+        "path": "/api/ingredients"
+      }
+    },
+    {
+      "label": "anonymous ingredient update must be denied",
+      "method": "PUT",
+      "route": "/api/ingredients/47bed559-407a-422b-8490-0ba78e279269",
+      "status": 200,
+      "pass": false,
+      "ms": 52,
+      "message": "Ingredient updated."
+    },
+    {
+      "label": "ingredient update and clear allergens",
+      "method": "PUT",
+      "route": "/api/ingredients/47bed559-407a-422b-8490-0ba78e279269",
+      "status": 200,
+      "pass": true,
+      "ms": 21,
+      "message": "Ingredient updated."
+    },
+    {
+      "label": "recipe catalog",
+      "method": "GET",
+      "route": "/api/recipes?pageIndex=1&pageSize=10",
+      "status": 200,
+      "pass": true,
+      "ms": 10,
+      "message": ""
+    },
+    {
+      "label": "anonymous recipe create must be denied",
+      "method": "POST",
+      "route": "/api/recipes",
+      "status": 200,
+      "pass": false,
+      "ms": 41,
+      "message": "Recipe created.",
+      "response": {
+        "success": true,
+        "message": "Recipe created.",
+        "data": {
+          "id": "322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+          "name": "Audit recipe 1790680949386",
+          "description": "Synthetic audit fixture",
+          "cookingTimeMinutes": 10,
+          "difficulty": "Easy",
+          "servingSize": 1,
+          "instructionText": "1. Cook",
+          "imageUrl": "",
+          "sourceType": "Manual",
+          "gradientFrom": null,
+          "gradientTo": null,
+          "ingredients": [
+            {
+              "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+              "ingredientName": "Audit fixture 1790680949386",
+              "quantity": 10,
+              "unit": "g",
+              "isRequired": true,
+              "note": ""
+            }
+          ],
+          "allergens": [
+            "EGG"
+          ]
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.122227100Z"
+      }
+    },
+    {
+      "label": "recipe detail",
+      "method": "GET",
+      "route": "/api/recipes/322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+      "status": 200,
+      "pass": true,
+      "ms": 17,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": {
+          "id": "322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+          "name": "Audit recipe 1790680949386",
+          "description": "Synthetic audit fixture",
+          "cookingTimeMinutes": 10,
+          "difficulty": "Easy",
+          "servingSize": 1,
+          "instructionText": "1. Cook",
+          "imageUrl": "",
+          "sourceType": "Manual",
+          "gradientFrom": null,
+          "gradientTo": null,
+          "ingredients": [
+            {
+              "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+              "ingredientName": "Audit fixture 1790680949386",
+              "quantity": 10,
+              "unit": "g",
+              "isRequired": true,
+              "note": ""
+            }
+          ],
+          "allergens": [
+            "EGG"
+          ]
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.144847600Z"
+      }
+    },
+    {
+      "label": "anonymous recipe update must be denied",
+      "method": "PUT",
+      "route": "/api/recipes/322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+      "status": 200,
+      "pass": false,
+      "ms": 38,
+      "message": "Recipe updated."
+    },
+    {
+      "label": "recipe allergens clear",
+      "method": "PUT",
+      "route": "/api/recipes/322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+      "status": 200,
+      "pass": true,
+      "ms": 36,
+      "message": "Recipe updated."
+    },
+    {
+      "label": "pantry create",
+      "method": "POST",
+      "route": "/api/me/pantry/items",
+      "status": 200,
+      "pass": true,
+      "ms": 29,
+      "message": "Pantry item saved.",
+      "response": {
+        "success": true,
+        "message": "Pantry item saved.",
+        "data": {
+          "id": "730f3463-c2e5-42c6-8076-142055992d58",
+          "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+          "ingredientName": "Audit fixture 1790680949386",
+          "quantity": 100,
+          "unit": "g",
+          "expiredAt": "2026-10-30T00:00:00Z",
+          "storageLocation": "Fridge",
+          "note": "Audit fixture"
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.241204500Z"
+      }
+    },
+    {
+      "label": "pantry update",
+      "method": "PUT",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": true,
+      "ms": 23,
+      "message": "Pantry item updated."
+    },
+    {
+      "label": "pantry clear expiry",
+      "method": "PUT",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": false,
+      "ms": 18,
+      "message": "Pantry item updated.",
+      "response": {
+        "success": true,
+        "message": "Pantry item updated.",
+        "data": {
+          "id": "730f3463-c2e5-42c6-8076-142055992d58",
+          "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+          "ingredientName": "Audit fixture 1790680949386",
+          "quantity": 150,
+          "unit": "g",
+          "expiredAt": "2026-10-30T00:00:00Z",
+          "storageLocation": "Fridge",
+          "note": "Audit fixture"
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.288425900Z"
+      }
+    },
+    {
+      "label": "pantry negative quantity rejected",
+      "method": "PUT",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": false,
+      "ms": 16,
+      "message": "Pantry item updated.",
+      "response": {
+        "success": true,
+        "message": "Pantry item updated.",
+        "data": {
+          "id": "730f3463-c2e5-42c6-8076-142055992d58",
+          "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+          "ingredientName": "Audit fixture 1790680949386",
+          "quantity": -1,
+          "unit": "g",
+          "expiredAt": "2026-10-30T00:00:00Z",
+          "storageLocation": "Fridge",
+          "note": "Audit fixture"
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.305291200Z"
+      }
+    },
+    {
+      "label": "pantry restore fixture",
+      "method": "PUT",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": true,
+      "ms": 14,
+      "message": "Pantry item updated."
+    },
+    {
+      "label": "pantry other user write rejected",
+      "method": "PUT",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": true,
+      "ms": 9,
+      "message": "Pantry item not found."
+    },
+    {
+      "label": "pantry import confirm",
+      "method": "POST",
+      "route": "/api/me/pantry-import/confirm",
+      "status": 200,
+      "pass": true,
+      "ms": 47,
+      "message": "Pantry import confirmed."
+    },
+    {
+      "label": "pantry import readback",
+      "method": "GET",
+      "route": "/api/me/pantry",
+      "status": 200,
+      "pass": true,
+      "ms": 13,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": [
+          {
+            "id": "730f3463-c2e5-42c6-8076-142055992d58",
+            "ingredientId": "47bed559-407a-422b-8490-0ba78e279269",
+            "ingredientName": "Audit fixture 1790680949386",
+            "quantity": 120,
+            "unit": "g",
+            "expiredAt": "2026-10-30T00:00:00Z",
+            "storageLocation": "Fridge",
+            "note": "Audit fixture"
+          }
+        ],
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:30.394747Z",
+        "pageIndex": 1,
+        "pageSize": 10,
+        "totalItems": 1,
+        "totalPages": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    {
+      "label": "pantry import invalid quantity",
+      "method": "POST",
+      "route": "/api/me/pantry-import/confirm",
+      "status": 400,
+      "pass": true,
+      "ms": 94,
+      "message": "Validation failed for object='confirmPantryImportRequest'. Error count: 1"
+    },
+    {
+      "label": "recommendations V2",
+      "method": "POST",
+      "route": "/api/recommendations/v2/meals",
+      "status": 500,
+      "pass": false,
+      "ms": 20,
+      "message": "AI service request failed",
+      "response": {
+        "timestamp": "2026-09-29T11:22:30.509Z",
+        "status": 500,
+        "error": "Internal Server Error",
+        "trace": "com.zpantry.integration.ai.HttpAiClient$AiIntegrationException: AI service request failed\r\n\tat com.zpantry.integration.ai.HttpAiClient.post(HttpAiClient.java:32)\r\n\tat com.zpantry.recommendation.service.PersonalizedRecommendationService.recommend(PersonalizedRecommendationService.java:6)\r\n\tat com.zpantry.recommendation.api.RecommendationController.personalized(RecommendationController.java:39)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)\r\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)\r\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)\r\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)\r\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132)\r\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)\r\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376)\r\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)\r\n\tat org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)\r\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)\r\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535)\r\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\r\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86)\r\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71)\r\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347)\r\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406)\r\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71)\r\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307)\r\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036)\r\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483)\r\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\r\nCaused by: org.springframework.web.client.HttpClientErrorException$UnprocessableContent: 422 Unprocessable Content: \"{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\"],\"msg\":\"Field required\",\"input\":null}]}\"\r\n\tat org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:139)\r\n\tat org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)\r\n\tat org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)\r\n\tat org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(DefaultRestClient.java:943)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(DefaultRestClient.java:932)\r\n\tat org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestClient.java:224)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRestClient.java:931)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$0(DefaultRestClient.java:833)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestClient.java:617)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.java:572)\r\n\tat org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.java:924)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:833)\r\n\tat com.zpantry.integration.ai.HttpAiClient.post(HttpAiClient.java:30)\r\n\t... 99 more\r\n",
+        "message": "AI service request failed",
+        "path": "/api/recommendations/v2/meals"
+      }
+    },
+    {
+      "label": "recommendations V1",
+      "method": "POST",
+      "route": "/api/recommendations/meals",
+      "status": 500,
+      "pass": false,
+      "ms": 13,
+      "message": "AI service request failed",
+      "response": {
+        "timestamp": "2026-09-29T11:22:30.522Z",
+        "status": 500,
+        "error": "Internal Server Error",
+        "trace": "com.zpantry.integration.ai.HttpAiClient$AiIntegrationException: AI service request failed\r\n\tat com.zpantry.integration.ai.HttpAiClient.post(HttpAiClient.java:32)\r\n\tat com.zpantry.recommendation.service.RecommendationService.recommend(RecommendationService.java:43)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:133)\r\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:371)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)\r\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)\r\n\tat com.zpantry.recommendation.service.RecommendationService$$SpringCGLIB$$0.recommend(<generated>)\r\n\tat com.zpantry.recommendation.api.RecommendationController.meals(RecommendationController.java:33)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)\r\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)\r\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)\r\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)\r\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132)\r\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)\r\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376)\r\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)\r\n\tat org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)\r\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)\r\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535)\r\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\r\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86)\r\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71)\r\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347)\r\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406)\r\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71)\r\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307)\r\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036)\r\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483)\r\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\r\nCaused by: org.springframework.web.client.HttpClientErrorException$UnprocessableContent: 422 Unprocessable Content: \"{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\"],\"msg\":\"Field required\",\"input\":null}]}\"\r\n\tat org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:139)\r\n\tat org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)\r\n\tat org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)\r\n\tat org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(DefaultRestClient.java:943)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(DefaultRestClient.java:932)\r\n\tat org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestClient.java:224)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRestClient.java:931)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$0(DefaultRestClient.java:833)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestClient.java:617)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.java:572)\r\n\tat org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.java:924)\r\n\tat org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:833)\r\n\tat com.zpantry.integration.ai.HttpAiClient.post(HttpAiClient.java:30)\r\n\t... 110 more\r\n",
+        "message": "AI service request failed",
+        "path": "/api/recommendations/meals"
+      }
+    },
+    {
+      "label": "natural language pantry",
+      "method": "POST",
+      "route": "/api/me/pantry/parse",
+      "status": 200,
+      "pass": true,
+      "ms": 3288,
+      "message": "Preview only; confirm before saving.",
+      "response": {
+        "success": true,
+        "message": "Preview only; confirm before saving.",
+        "data": [
+          {
+            "name": "carrots",
+            "quantity": 2,
+            "unit": "piece",
+            "ingredientId": null,
+            "ingredientName": null,
+            "matched": false
+          }
+        ],
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:33.811171600Z"
+      }
+    },
+    {
+      "label": "today menu create",
+      "method": "POST",
+      "route": "/api/me/today-menu/items",
+      "status": 200,
+      "pass": true,
+      "ms": 13,
+      "message": "Meal added to today menu.",
+      "response": {
+        "success": true,
+        "message": "Meal added to today menu.",
+        "data": {
+          "id": "2e7398fd-0712-44c6-81e2-8f6bba409cc1",
+          "mealId": null,
+          "recipeId": "322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+          "mealName": "Audit meal 1790680949386",
+          "mealType": "Lunch",
+          "servingSize": 2,
+          "plannedDate": "2026-09-29",
+          "status": "Planned",
+          "note": "Audit fixture",
+          "cookedAt": null,
+          "imageUrl": null,
+          "imagePublicId": null,
+          "createdAt": "2026-09-29T11:22:33.820828Z"
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:33.820828Z"
+      }
+    },
+    {
+      "label": "today menu list",
+      "method": "GET",
+      "route": "/api/me/today-menu?date=2026-09-29",
+      "status": 200,
+      "pass": true,
+      "ms": 9,
+      "message": ""
+    },
+    {
+      "label": "today menu detail includes cooking data",
+      "method": "GET",
+      "route": "/api/me/today-menu/items/2e7398fd-0712-44c6-81e2-8f6bba409cc1",
+      "status": 200,
+      "pass": false,
+      "ms": 9,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": {
+          "id": "2e7398fd-0712-44c6-81e2-8f6bba409cc1",
+          "mealId": null,
+          "recipeId": "322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+          "mealName": "Audit meal 1790680949386",
+          "mealType": "Lunch",
+          "servingSize": 2,
+          "plannedDate": "2026-09-29",
+          "status": "Planned",
+          "note": "Audit fixture",
+          "cookedAt": null,
+          "imageUrl": null,
+          "imagePublicId": null,
+          "createdAt": "2026-09-29T11:22:33.820828Z"
+        },
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:33.846216500Z"
+      }
+    },
+    {
+      "label": "today menu other user rejected",
+      "method": "GET",
+      "route": "/api/me/today-menu/items/2e7398fd-0712-44c6-81e2-8f6bba409cc1",
+      "status": 200,
+      "pass": true,
+      "ms": 8,
+      "message": "Today menu item not found."
+    },
+    {
+      "label": "complete meal with image",
+      "method": "POST",
+      "route": "/api/me/today-menu/items/2e7398fd-0712-44c6-81e2-8f6bba409cc1/complete",
+      "status": 500,
+      "pass": false,
+      "ms": 26,
+      "message": "Media storage is not configured",
+      "response": {
+        "timestamp": "2026-09-29T11:22:33.882Z",
+        "status": 500,
+        "error": "Internal Server Error",
+        "trace": "java.lang.IllegalStateException: Media storage is not configured\r\n\tat com.zpantry.media.service.CloudinaryMediaStorageAdapter.configured(CloudinaryMediaStorageAdapter.java:57)\r\n\tat com.zpantry.media.service.CloudinaryMediaStorageAdapter.upload(CloudinaryMediaStorageAdapter.java:28)\r\n\tat com.zpantry.todaymenu.service.TodayMenuService.complete(TodayMenuService.java:95)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:133)\r\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:371)\r\n\tat org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130)\r\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)\r\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)\r\n\tat com.zpantry.todaymenu.service.TodayMenuService$$SpringCGLIB$$0.complete(<generated>)\r\n\tat com.zpantry.todaymenu.api.TodayMenuController.complete(TodayMenuController.java:51)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)\r\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)\r\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)\r\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)\r\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132)\r\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)\r\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376)\r\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)\r\n\tat org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)\r\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)\r\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535)\r\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\r\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86)\r\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71)\r\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347)\r\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406)\r\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71)\r\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307)\r\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036)\r\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483)\r\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\r\n",
+        "message": "Media storage is not configured",
+        "path": "/api/me/today-menu/items/2e7398fd-0712-44c6-81e2-8f6bba409cc1/complete"
+      }
+    },
+    {
+      "label": "cooking logs",
+      "method": "GET",
+      "route": "/api/me/cooking-logs",
+      "status": 200,
+      "pass": true,
+      "ms": 11,
+      "message": "",
+      "response": {
+        "success": true,
+        "message": "",
+        "data": [],
+        "errors": null,
+        "traceId": "",
+        "timestamp": "2026-09-29T11:22:33.895117100Z",
+        "pageIndex": 1,
+        "pageSize": 10,
+        "totalItems": 0,
+        "totalPages": 0,
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    {
+      "label": "media upload",
+      "method": "POST",
+      "route": "/api/media/upload",
+      "status": 500,
+      "pass": false,
+      "ms": 15,
+      "message": "Media storage is not configured",
+      "response": {
+        "timestamp": "2026-09-29T11:22:33.910Z",
+        "status": 500,
+        "error": "Internal Server Error",
+        "trace": "java.lang.IllegalStateException: Media storage is not configured\r\n\tat com.zpantry.media.service.CloudinaryMediaStorageAdapter.configured(CloudinaryMediaStorageAdapter.java:57)\r\n\tat com.zpantry.media.service.CloudinaryMediaStorageAdapter.upload(CloudinaryMediaStorageAdapter.java:28)\r\n\tat com.zpantry.media.api.MediaController.upload(MediaController.java:31)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)\r\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)\r\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)\r\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)\r\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)\r\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)\r\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)\r\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)\r\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132)\r\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)\r\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376)\r\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)\r\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\r\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\r\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)\r\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)\r\n\tat org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)\r\n\tat org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)\r\n\tat org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)\r\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)\r\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\r\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111)\r\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)\r\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)\r\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535)\r\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\r\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86)\r\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71)\r\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347)\r\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406)\r\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71)\r\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307)\r\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036)\r\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949)\r\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483)\r\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\r\n",
+        "message": "Media storage is not configured",
+        "path": "/api/media/upload"
+      }
+    },
+    {
+      "label": "food image analysis",
+      "method": "POST",
+      "route": "/api/me/pantry-import/food-image/analyze",
+      "status": 503,
+      "pass": false,
+      "ms": 17,
+      "message": "Image analysis is currently unavailable.",
+      "response": {
+        "success": false,
+        "message": "Image analysis is currently unavailable.",
+        "data": null,
+        "errors": null,
+        "traceId": "cc",
+        "timestamp": "2026-09-29T11:22:33.928423200Z"
+      }
+    },
+    {
+      "label": "receipt analysis",
+      "method": "POST",
+      "route": "/api/me/pantry-import/receipt/analyze",
+      "status": 503,
+      "pass": false,
+      "ms": 17,
+      "message": "Image analysis is currently unavailable.",
+      "response": {
+        "success": false,
+        "message": "Image analysis is currently unavailable.",
+        "data": null,
+        "errors": null,
+        "traceId": "cd",
+        "timestamp": "2026-09-29T11:22:33.946774200Z"
+      }
+    },
+    {
+      "label": "today menu cleanup",
+      "method": "DELETE",
+      "route": "/api/me/today-menu/items/2e7398fd-0712-44c6-81e2-8f6bba409cc1",
+      "status": 200,
+      "pass": true,
+      "ms": 11,
+      "message": "Today menu item deleted."
+    },
+    {
+      "label": "pantry cleanup",
+      "method": "DELETE",
+      "route": "/api/me/pantry/items/730f3463-c2e5-42c6-8076-142055992d58",
+      "status": 200,
+      "pass": true,
+      "ms": 11,
+      "message": "Pantry item deleted."
+    },
+    {
+      "label": "anonymous recipe delete must be denied",
+      "method": "DELETE",
+      "route": "/api/recipes/322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+      "status": 200,
+      "pass": false,
+      "ms": 14,
+      "message": "Recipe deleted."
+    },
+    {
+      "label": "recipe absent after cleanup",
+      "method": "GET",
+      "route": "/api/recipes/322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+      "status": 200,
+      "pass": true,
+      "ms": 7,
+      "message": "Recipe not found."
+    },
+    {
+      "label": "anonymous ingredient delete must be denied",
+      "method": "DELETE",
+      "route": "/api/ingredients/47bed559-407a-422b-8490-0ba78e279269",
+      "status": 200,
+      "pass": false,
+      "ms": 13,
+      "message": "Ingredient deleted."
+    },
+    {
+      "label": "refresh session",
+      "method": "POST",
+      "route": "/api/Auth/refresh-token",
+      "status": 200,
+      "pass": true,
+      "ms": 14,
+      "message": ""
+    },
+    {
+      "label": "old refresh rejected",
+      "method": "POST",
+      "route": "/api/Auth/refresh-token",
+      "status": 401,
+      "pass": true,
+      "ms": 9,
+      "message": "Invalid refresh token."
+    },
+    {
+      "label": "logout",
+      "method": "POST",
+      "route": "/api/Auth/logout",
+      "status": 200,
+      "pass": true,
+      "ms": 11,
+      "message": "Logout successful."
+    },
+    {
+      "label": "logged out access rejected",
+      "method": "GET",
+      "route": "/api/me/pantry",
+      "status": 401,
+      "pass": true,
+      "ms": 5,
+      "message": ""
+    },
+    {
+      "label": "logout second fixture",
+      "method": "POST",
+      "route": "/api/Auth/logout",
+      "status": 200,
+      "pass": true,
+      "ms": 12,
+      "message": "Logout successful."
+    }
+  ],
+  "fixtures": {
+    "a": {
+      "email": "audit-1790680949386-a@example.invalid",
+      "uid": "d4ea6973-362b-4247-a477-c05817fd23c7"
+    },
+    "b": {
+      "email": "audit-1790680949386-b@example.invalid",
+      "uid": "928cefa7-3852-469d-a9b9-1a635c0b451a"
+    },
+    "databaseIngredient": "47bed559-407a-422b-8490-0ba78e279269",
+    "recipe": "322c234c-67cf-4ae3-8a5b-52203bbd8d70",
+    "menu": "2e7398fd-0712-44c6-81e2-8f6bba409cc1"
+  },
+  "fixtureNote": "Ingredient catalog was empty and create API failed. One synthetic ingredient was inserted into local dev DB ONLY to isolate downstream pantry tests. This is NOT a passing ingredient-create test.",
+  "finishedAt": "2026-09-29T11:22:34.521Z"
+}

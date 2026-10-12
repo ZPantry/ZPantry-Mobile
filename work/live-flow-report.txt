@@ -1,0 +1,12 @@
+PASS real browser register -> dev OTP -> login, CORS and JWT session
+PASS profile saved by FE and re-read from actual database
+BLOCKED catalog create: POST /api/ingredients: HTTP 500 No message available; continuing with a temporary ingredient fixture inserted only into local dev DB
+PASS real pantry import confirm and database readback
+V2 actual HTTP 500
+BLOCKED V2: HTTP 500 AI service request failed; backend trace reports AI 422 missing request body
+PASS real today-menu create and FE renders stored item (separate from blocked V2)
+PASS catalog recipe allergen update and clear via real API
+Image analysis actual HTTP 503: Image analysis is currently unavailable.
+Media upload actual HTTP 500
+PASS no browser page errors during real flows
+PASS actual logout

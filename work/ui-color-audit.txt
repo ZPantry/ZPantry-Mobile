@@ -1,0 +1,180 @@
+src/screens\AccountSettingsScreen.tsx:36:  return <SafeAreaView style={{flex:1,backgroundColor:colors.background}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:22,gap:18}}>
+src/context/ToastContext.tsx:70:              backgroundColor: colors.white,
+src/screens\AddIngredientScreen.tsx:84:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\AddIngredientScreen.tsx:118:      {error ? <Text accessibilityRole="alert" style={{ color: "#FFE6E6" }}>{error}</Text> : null}
+src/components\CategoryChip.tsx:31:      {icon ? <MaterialCommunityIcons name={icon} size={17} color={active ? colors.white : colors.primary} /> : null}
+src/components\CategoryChip.tsx:32:      <Text style={{ color: active ? colors.white : colors.text, fontWeight: "800", fontSize: 13 }} selectable>
+src/components\ExpiryAlertCard.tsx:23:        borderColor: tone === "warning" ? "rgba(255,255,255,0.22)" : colors.line,
+src/components\ExpiryAlertCard.tsx:27:      <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: "rgba(255,255,255,0.26)", alignItems: "center", justifyContent: "center" }}>
+src/components\ExpiryAlertCard.tsx:28:        <MaterialCommunityIcons name="lightbulb-on-outline" size={23} color={toneColor === colors.warning ? colors.white : toneColor} />
+src/components\LogoutConfirmModal.tsx:16:        <View style={{ borderRadius: 22, backgroundColor: colors.white, padding: 20, gap: 16, boxShadow: "0 18px 42px rgba(0,0,0,0.28)" }}>
+src/components\LogoutConfirmModal.tsx:29:            <Pressable accessibilityRole="button" accessibilityLabel="Ở lại" disabled={isSigningOut} onPress={onStay} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSigningOut ? 0.76 : 1 })}>
+src/components\LogoutConfirmModal.tsx:35:              {isSigningOut ? <ActivityIndicator color={colors.white} /> : <MaterialCommunityIcons name="logout" size={19} color={colors.white} />}
+src/components\LogoutConfirmModal.tsx:36:              <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+src/components\MealCard.tsx:19:        backgroundColor: colors.white,
+src/screens\AdminIngredientFormScreen.tsx:46:  gradientFrom: "#F4A21C",
+src/screens\AdminIngredientFormScreen.tsx:47:  gradientTo: "#39D98A"
+src/screens\AdminIngredientFormScreen.tsx:88:    gradientFrom: ingredient.gradientFrom || "#F4A21C",
+src/screens\AdminIngredientFormScreen.tsx:89:    gradientTo: ingredient.gradientTo || "#39D98A"
+src/screens\AdminIngredientFormScreen.tsx:159:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\AdminIngredientFormScreen.tsx:204:            <FormInput label="Gradient From" value={form.gradientFrom} onChangeText={(gradientFrom) => setForm((current) => ({ ...current, gradientFrom }))} placeholder="#F4A21C" />
+src/screens\AdminIngredientFormScreen.tsx:207:            <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
+src/screens\AdminIngredientFormScreen.tsx:249:      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} keyboardType={keyboardType} style={{ minHeight: 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
+src/screens\AdminIngredientFormScreen.tsx:257:      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+src/screens\AdminIngredientFormScreen.tsx:274:    <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
+src/screens\AdminIngredientFormScreen.tsx:275:      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+src/components\WebFormStyles.tsx:17:        -webkit-box-shadow: 0 0 0 1000px ${colors.background} inset !important;
+src/components\WebFormStyles.tsx:21:      input:autofill, textarea:autofill { box-shadow: 0 0 0 1000px ${colors.background} inset !important; }
+src/components\SelectField.tsx:32:          backgroundColor: "rgba(255,255,255,0.14)",
+src/components\SelectField.tsx:38:        <Host style={{ width: "100%", minHeight: 46 }} seedColor={colors.primary} colorScheme="dark">
+src/components\SearchBar.tsx:30:      <Ionicons name="search" size={21} color={colors.white} />
+src/components\NutritionCard.tsx:23:      <View style={{ height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.26)", overflow: "hidden" }}>
+src/components\NutritionCard.tsx:67:      <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.24)" }} />
+src/components\NutritionCard.tsx:69:        <Ionicons name="water-outline" size={17} color="#38BDF8" />
+src/components\PrimaryButton.tsx:56:        {icon ? <MaterialCommunityIcons name={icon} size={18} color={isSolid ? colors.white : colors.text} /> : null}
+src/components\PrimaryButton.tsx:57:        <Text style={{ color: isSolid ? colors.white : colors.text, fontWeight: "800", fontSize: 14 }} selectable>
+src/components\PantryItemCard.tsx:39:        backgroundColor: colors.white,
+src/components\PantryItemCard.tsx:77:        <View style={{ height: 4, borderRadius: 999, backgroundColor: "#E6EEE4", overflow: "hidden", marginTop: 2 }}>
+src/screens\AdminManagementScreen.tsx:148:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\AdminManagementScreen.tsx:257:        backgroundColor: "rgba(255,255,255,0.30)",
+src/screens\AdminManagementScreen.tsx:259:        borderColor: "rgba(255,255,255,0.45)",
+src/screens\AdminManagementScreen.tsx:373:        <Pressable onPress={() => onChangeText("")} style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.14)" }}>
+src/screens\AdminManagementScreen.tsx:383:    <View style={{ minHeight: 112, borderRadius: 14, backgroundColor: colors.white, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
+src/screens\AdminManagementScreen.tsx:419:    <View style={{ borderRadius: 14, backgroundColor: colors.white, overflow: "hidden", boxShadow: "0 12px 24px rgba(0,0,0,0.20)" }}>
+src/screens\AdminManagementScreen.tsx:446:    <View style={{ minHeight: 96, borderRadius: 14, backgroundColor: colors.white, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
+src/screens\AdminManagementScreen.tsx:468:  const backgroundColor = tone === "inactive" ? "rgba(255,77,79,0.14)" : tone === "admin" ? colors.secondary : "#EEF3EF";
+src/screens\AdminManagementScreen.tsx:493:      <Pressable onPress={onEdit} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7, opacity: pressed ? 0.82 : 1 })}>
+src/screens\AdminManagementScreen.tsx:499:      <Pressable onPress={onDelete} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7, opacity: pressed ? 0.82 : 1 })}>
+src/screens\AdminManagementScreen.tsx:512:    <Pressable onPress={onPress} style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 12, backgroundColor: tone === "delete" ? "rgba(255,77,79,0.12)" : colors.secondary, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+src/screens\AdminManagementScreen.tsx:547:    <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
+src/screens\AdminManagementScreen.tsx:548:      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+src/screens\AdminManagementScreen.tsx:560:        <View style={{ borderRadius: 18, backgroundColor: colors.white, padding: 18, gap: 14 }}>
+src/screens\AdminManagementScreen.tsx:561:          <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center" }}>
+src/screens\AdminManagementScreen.tsx:571:            <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 25, backgroundColor: "#EEF3EF", alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+src/screens\AdminManagementScreen.tsx:577:              <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+src/screens\AdminRecipeFormScreen.tsx:48:  gradientFrom: "#F4A21C",
+src/screens\AdminRecipeFormScreen.tsx:49:  gradientTo: "#39D98A",
+src/screens\AdminRecipeFormScreen.tsx:88:    gradientFrom: recipe.gradientFrom || "#F4A21C",
+src/screens\AdminRecipeFormScreen.tsx:89:    gradientTo: recipe.gradientTo || "#39D98A",
+src/screens\AdminRecipeFormScreen.tsx:231:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\AdminRecipeFormScreen.tsx:272:            <FormInput label="Gradient From" value={form.gradientFrom} onChangeText={(gradientFrom) => setForm((current) => ({ ...current, gradientFrom }))} placeholder="#F4A21C" />
+src/screens\AdminRecipeFormScreen.tsx:275:            <FormInput label="Gradient To" value={form.gradientTo} onChangeText={(gradientTo) => setForm((current) => ({ ...current, gradientTo }))} placeholder="#39D98A" />
+src/screens\AdminRecipeFormScreen.tsx:292:                  <Pressable key={ingredient.id} onPress={() => addRecipeIngredient(ingredient)} style={({ pressed }) => ({ width: "47.5%", minWidth: 142, flexGrow: 1, borderRadius: 14, backgroundColor: selected ? "rgba(57,217,138,0.20)" : colors.white, borderWidth: 2, borderColor: selected ? colors.success : "transparent", overflow: "hidden", opacity: pressed ? 0.82 : 1 })}>
+src/screens\AdminRecipeFormScreen.tsx:311:            <View style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "rgba(255,255,255,0.12)", padding: 14 }}>
+src/screens\AdminRecipeFormScreen.tsx:320:                <View key={`${item.ingredientId}-${index}`} style={{ borderRadius: 14, backgroundColor: colors.white, padding: 12, gap: 10 }}>
+src/screens\AdminRecipeFormScreen.tsx:330:                    <TextInput value={String(item.quantity)} onChangeText={(value) => updateRecipeIngredient(index, { quantity: toNumber(value) })} keyboardType="decimal-pad" placeholder="SL" placeholderTextColor={colors.mutedDark} style={{ flex: 1, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
+src/screens\AdminRecipeFormScreen.tsx:331:                    <TextInput value={item.unit} onChangeText={(unit) => updateRecipeIngredient(index, { unit })} placeholder="Unit" placeholderTextColor={colors.mutedDark} style={{ width: 86, minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "800", paddingHorizontal: 10 }} />
+src/screens\AdminRecipeFormScreen.tsx:333:                  <TextInput value={item.note} onChangeText={(note) => updateRecipeIngredient(index, { note })} placeholder="Ghi chú cho nguyên liệu" placeholderTextColor={colors.mutedDark} style={{ minHeight: 42, borderRadius: 10, borderWidth: 1, borderColor: "#DCE8DD", color: colors.textDark, fontWeight: "700", paddingHorizontal: 10 }} />
+src/screens\AdminRecipeFormScreen.tsx:334:                  <Pressable onPress={() => updateRecipeIngredient(index, { isRequired: !item.isRequired })} style={{ alignSelf: "flex-start", borderRadius: 999, backgroundColor: item.isRequired ? colors.secondary : "#EEF3EF", paddingHorizontal: 10, paddingVertical: 6 }}>
+src/screens\AdminRecipeFormScreen.tsx:392:        style={{ minHeight: multiline ? 84 : 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0, textAlignVertical: multiline ? "top" : "center" }}
+src/screens\AdminRecipeFormScreen.tsx:401:      <Pressable onPress={onCancel} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+src/screens\AdminRecipeFormScreen.tsx:418:    <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
+src/screens\AdminRecipeFormScreen.tsx:419:      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+src/screens\AdminUserFormScreen.tsx:69:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\AdminUserFormScreen.tsx:101:          <View style={{ borderRadius: 999, backgroundColor: user?.role === "admin" ? colors.secondary : "rgba(255,255,255,0.16)", paddingHorizontal: 12, paddingVertical: 6 }}>
+src/screens\AdminUserFormScreen.tsx:113:          <Pressable onPress={() => navigation.goBack()} disabled={isSaving} style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", opacity: pressed || isSaving ? 0.76 : 1 })}>
+src/screens\AdminUserFormScreen.tsx:136:      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} secureTextEntry={secureTextEntry} style={{ minHeight: 46, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: colors.line, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 12 }} />
+src/screens\AdminUserFormScreen.tsx:143:    <View style={{ borderRadius: 14, backgroundColor: "rgba(255,77,79,0.18)", borderWidth: 1, borderColor: "rgba(255,77,79,0.45)", padding: 13 }}>
+src/screens\AdminUserFormScreen.tsx:144:      <Text style={{ color: "#FFE6E6", fontSize: 13, fontWeight: "800", lineHeight: 20 }} selectable>
+src/screens\CookingHistoryScreen.tsx:31:  return <SafeAreaView style={{flex:1,backgroundColor:colors.background}}>
+src/screens\CreateRecipeScreen.tsx:237:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\CreateRecipeScreen.tsx:253:            borderColor: "rgba(255,255,255,0.18)"
+src/screens\CreateRecipeScreen.tsx:257:          <View style={{ position: "absolute", left: -18, bottom: -26, width: 120, height: 120, borderRadius: 60, backgroundColor: "rgba(255,255,255,0.22)" }} />
+src/screens\CreateRecipeScreen.tsx:273:                backgroundColor: "rgba(255,255,255,0.28)",
+src/screens\CreateRecipeScreen.tsx:363:                        backgroundColor: selected ? "rgba(57,217,138,0.14)" : colors.white,
+src/screens\CreateRecipeScreen.tsx:390:                <View key={item.ingredientId} style={{ borderRadius: 16, backgroundColor: colors.white, padding: 12, gap: 10 }}>
+src/screens\CreateRecipeScreen.tsx:414:            <View style={{ borderRadius: 16, padding: 14, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: colors.line }}>
+src/screens\CreateRecipeScreen.tsx:429:            <Text style={{ color: "#FFE2E2", fontWeight: "800", lineHeight: 20 }} selectable>
+src/screens\CreateRecipeScreen.tsx:471:          backgroundColor: light ? "#EEF3EF" : "rgba(255,255,255,0.12)",
+src/screens\CreateRecipeScreen.tsx:509:    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: "#EEF3EF", borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
+src/screens\HomeScreen.tsx:133:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\HomeScreen.tsx:142:            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+src/screens\HomeScreen.tsx:143:              <Ionicons name="person-circle-outline" size={42} color={colors.background} />
+src/screens\HomeScreen.tsx:294:        backgroundColor: colors.white,
+src/screens\InteractiveGuideScreen.tsx:40:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\LoginScreen.tsx:162:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
+src/screens\LoginScreen.tsx:191:                  <Ionicons name="lock-closed" size={18} color={colors.white} />
+src/screens\LoginScreen.tsx:194:                    <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={19} color={colors.white} />
+src/screens\LoginScreen.tsx:227:              <Text style={{ color: colors.white, fontSize: 16, fontWeight: "900" }} selectable>
+src/screens\LoginScreen.tsx:263:        <Ionicons name={icon} size={18} color={colors.white} />
+src/screens\LoginScreen.tsx:284:        {checked ? <Ionicons name="checkmark" size={8} color={colors.white} /> : null}
+src/screens\LoginScreen.tsx:325:    <Text style={{ color: tone === "danger" ? "#FFE6E6" : "#E8FFE8", fontSize: 12, lineHeight: 17, fontWeight: "800", textAlign: "center" }} selectable>
+src/screens\ManualMealSuggestionScreen.tsx:212:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\ManualMealSuggestionScreen.tsx:255:                  backgroundColor: "rgba(255,255,255,0.12)",
+src/screens\ManualMealSuggestionScreen.tsx:297:                            backgroundColor: isSelected ? "rgba(57,217,138,0.16)" : colors.white,
+src/screens\ManualMealSuggestionScreen.tsx:341:                  backgroundColor: "rgba(255,255,255,0.10)"
+src/screens\ManualMealSuggestionScreen.tsx:364:                  <View key={item.ingredientId} style={{ backgroundColor: colors.white, borderRadius: 14, padding: 12, gap: 10 }}>
+src/screens\ManualMealSuggestionScreen.tsx:404:                <Text style={{ color: "#FFE6E6", fontWeight: "800", lineHeight: 20 }} selectable>
+src/screens\ManualMealSuggestionScreen.tsx:452:        backgroundColor: colors.white,
+src/screens\ManualMealSuggestionScreen.tsx:461:        <View style={{ position: "absolute", left: -18, bottom: -24, width: 96, height: 96, borderRadius: 48, backgroundColor: "rgba(255,255,255,0.18)" }} />
+src/screens\ManualMealSuggestionScreen.tsx:472:          <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.25)" }}>
+src/screens\ManualMealSuggestionScreen.tsx:534:    <View style={{ flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: "#EEF3EF", borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, justifyContent: "center" }}>
+src/screens\OnboardingScreen.tsx:70:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
+src/screens\OnboardingScreen.tsx:131:                  borderColor: colors.white
+src/screens\OnboardingScreen.tsx:175:            <Text style={{ color: colors.white, fontSize: compact ? 19 : 22, fontWeight: "900" }} selectable>
+src/screens\OnboardingScreen.tsx:178:            <Ionicons name="arrow-forward" size={compact ? 24 : 27} color={colors.white} />
+src/screens\MealRecommendationResultsScreen.tsx:23:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\MealRecommendationResultsScreen.tsx:80:    <View style={{ backgroundColor: colors.white, borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
+src/screens\MealRecommendationResultsScreen.tsx:102:        backgroundColor: colors.white,
+src/screens\MealSuggestionScreen.tsx:40:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\MealSuggestionScreen.tsx:55:      {error ? <View accessibilityRole="alert" style={{ gap: 10 }}><Text selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text>
+src/screens\PantryImportScreen.tsx:121:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\PantryImportScreen.tsx:135:        {menuError ? <><Text accessibilityRole="alert" style={{ color: "#FFE6E6" }}>{menuError}</Text><Action label="Tải lại thực đơn" disabled={menuLoading || busy} soft onPress={() => setMenuRetry(v => v + 1)} /></> : null}
+src/screens\PantryImportScreen.tsx:157:      {error ? <Text accessibilityRole="alert" selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text> : null}
+src/screens\PantryImportScreen.tsx:166:            <Pressable disabled={busy} accessibilityLabel={`Bỏ ${r.rawName}`} onPress={() => { setRows((current) => current?.filter((x) => x.key !== r.key) ?? null); if (editing === r.key) setEditing(null); }} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={{ color: "#FFE6E6" }}>Bỏ</Text></Pressable>
+src/screens\PantryImportScreen.tsx:173:            {searchError ? <Pressable onPress={() => setSearchRetry((v) => v + 1)}><Text style={{ color: "#FFE6E6" }}>{searchError} Nhấn để thử lại.</Text></Pressable> : null}
+src/screens\PantryScreen.tsx:131:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\PantryScreen.tsx:184:          <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.24)", alignItems: "center", justifyContent: "center" }}>
+src/screens\PantryScreen.tsx:185:            <MaterialCommunityIcons name="plus" size={22} color={colors.white} />
+src/screens\PantryScreen.tsx:188:            <Text style={{ color: colors.white, fontSize: 16, fontWeight: "800" }} selectable>
+src/screens\PantryScreen.tsx:191:            <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "800", marginTop: 3 }} selectable>
+src/screens\PantryScreen.tsx:195:          <MaterialCommunityIcons name="chevron-right" size={26} color={colors.white} />
+src/screens\PantryScreen.tsx:248:          <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxHeight: "75%", maxWidth: 520, width: "100%", alignSelf: "center" }}>
+src/screens\PantryScreen.tsx:253:                <Text style={{ color: item.status === "danger" ? "#FFB3B3" : colors.muted }}>{item.expiryLabel}</Text>
+src/screens\PantryItemDetailScreen.tsx:168:      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: 22 }} edges={["top"]}>
+src/screens\PantryItemDetailScreen.tsx:184:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\PantryItemDetailScreen.tsx:198:                backgroundColor: isEditing ? colors.primary : "rgba(255,255,255,0.18)",
+src/screens\PantryItemDetailScreen.tsx:200:                borderColor: isEditing ? colors.primary : "rgba(255,255,255,0.48)",
+src/screens\PantryItemDetailScreen.tsx:208:              <MaterialCommunityIcons name={isEditing ? "eye-outline" : "pencil-outline"} size={19} color={isEditing ? colors.textDark : colors.white} />
+src/screens\PantryItemDetailScreen.tsx:209:              <Text style={{ color: isEditing ? colors.textDark : colors.white, fontSize: 13, fontWeight: "900" }} selectable>
+src/screens\PantryItemDetailScreen.tsx:217:              <MaterialCommunityIcons name={tone === "safe" ? "check-circle" : "alert-circle"} size={16} color={colors.white} />
+src/screens\PantryItemDetailScreen.tsx:218:              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "900" }} selectable>
+src/screens\PantryItemDetailScreen.tsx:222:            <Text numberOfLines={2} style={{ color: colors.white, fontSize: 34, lineHeight: 39, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.26)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }} selectable>
+src/screens\PantryItemDetailScreen.tsx:225:            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "800" }} selectable>
+src/screens\PantryItemDetailScreen.tsx:232:          <View style={{ backgroundColor: colors.white, borderRadius: 18, padding: 16, gap: 15, boxShadow: "0 16px 30px rgba(0,0,0,0.24)" }}>
+src/screens\PantryItemDetailScreen.tsx:296:            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center", lineHeight: 20 }} selectable>
+src/screens\PantryItemDetailScreen.tsx:309:                backgroundColor: "rgba(255,77,79,0.16)",
+src/screens\PantryItemDetailScreen.tsx:311:                borderColor: "rgba(255,77,79,0.48)",
+src/screens\PantryItemDetailScreen.tsx:330:          <View style={{ borderRadius: 18, backgroundColor: colors.white, padding: 18, gap: 14, boxShadow: "0 18px 36px rgba(0,0,0,0.28)" }}>
+src/screens\PantryItemDetailScreen.tsx:331:            <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center" }}>
+src/screens\PantryItemDetailScreen.tsx:343:            <View style={{ borderRadius: 12, backgroundColor: "#FFF3F3", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+src/screens\PantryItemDetailScreen.tsx:360:                  backgroundColor: "#EEF3EF",
+src/screens\PantryItemDetailScreen.tsx:381:                <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+src/screens\PantryItemDetailScreen.tsx:413:      <View style={{ minHeight: multiline ? 78 : 46, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: multiline ? "flex-start" : "center", paddingHorizontal: 12, paddingVertical: multiline ? 10 : 0 }}>
+src/screens\PantryItemDetailScreen.tsx:431:      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" }}>
+src/screens\PlanScreen.tsx:102:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\PlanScreen.tsx:137:            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+src/screens\PlanScreen.tsx:191:        backgroundColor: colors.white,
+src/screens\ProfileScreen.tsx:31:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\ProfileScreen.tsx:42:          <View style={{ width: 118, height: 118, borderRadius: 59, borderWidth: 9, borderColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+src/screens\ProfileScreen.tsx:43:            <Ionicons name="person" size={76} color={colors.white} />
+src/screens\ProfileScreen.tsx:45:              <MaterialCommunityIcons name="star-four-points" size={20} color={colors.background} />
+src/screens\ProfileScreen.tsx:51:          <View style={{ borderRadius: 999, backgroundColor: "rgba(255,255,255,0.20)", paddingHorizontal: 10, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
+src/screens\ProfileScreen.tsx:81:          <View style={{ backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.line }}>
+src/screens\ProfileScreen.tsx:104:            <MaterialCommunityIcons name="logout" size={21} color={colors.white} />
+src/screens\ProfileScreen.tsx:105:            <Text style={{ color: colors.white, fontSize: 15, fontWeight: "900" }} selectable>
+src/screens\ProfileScreen.tsx:158:      <View style={{ minHeight: 38, borderRadius: 9, backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10 }}>
+src/screens\ProfileScreen.tsx:175:    <View style={{ minHeight: 42, borderRadius: 9, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: colors.line, justifyContent: "center", paddingHorizontal: 12 }}>
+src/screens\ProfileSetupScreen.tsx:66:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\ProfileSetupScreen.tsx:75:      {error && !loaded ? <View accessibilityRole="alert" style={{ gap: 8 }}><Text selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text>
+src/screens\ProfileSetupScreen.tsx:97:      {error && loaded ? <Text accessibilityRole="alert" selectable style={{ color: "#FFE6E6", lineHeight: 22 }}>{error}</Text> : null}
+src/screens\QuickAddScreen.tsx:12:  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\SplashScreen.tsx:28:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+src/screens\RecipeDetailScreen.tsx:129:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\RecipeDetailScreen.tsx:154:            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+src/screens\RecipeDetailScreen.tsx:206:                        <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
+src/screens\TodayMenuItemDetailScreen.tsx:103:    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+src/screens\TodayMenuItemDetailScreen.tsx:124:            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+src/screens\TodayMenuItemDetailScreen.tsx:169:                        <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
+src/screens\TodayMenuItemDetailScreen.tsx:205:                        <Ionicons name="star" size={20} color={value <= rating ? colors.white : colors.muted} />
+src/screens\TodayMenuItemDetailScreen.tsx:226:                    backgroundColor: "rgba(255,255,255,0.08)"

@@ -1,12 +1,13 @@
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { CompleteTodayMenuItemResponse, TodayMenuItemDetail } from "@/api/todayMenu";
+import type { CompleteTodayMenuItemResponse, IngredientAvailabilityResponse, TodayMenuItemDetail } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
-import AppBackButton from "@/components/AppBackButton";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
@@ -14,6 +15,8 @@ import type { RootStackParamList } from "@/types";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage, translatePantryWarning, translateStatus } from "@/utils/localize";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TodayMenuItemDetail">;
 
@@ -29,26 +32,33 @@ function splitInstructions(text?: string | null) {
 }
 
 export default function TodayMenuItemDetailScreen({ route, navigation }: Props) {
+  const { isLandscape } = useSizeClass();
   const toast = useToast();
   const [item, setItem] = useState<TodayMenuItemDetail | null>(null);
   const [completedResult, setCompletedResult] = useState<CompleteTodayMenuItemResponse | null>(null);
+  const [availability, setAvailability] = useState<IngredientAvailabilityResponse | null>(null);
+  const [isAddingMissing, setIsAddingMissing] = useState(false);
   const [pickedImage, setPickedImage] = useState<PickedUploadImage | null>(null);
   const [rating, setRating] = useState(5);
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const completionLock = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadDetail = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const detail = await todayMenuApi.get(route.params.itemId);
+      const [detail, pantryAvailability] = await Promise.all([
+        todayMenuApi.get(route.params.itemId),
+        todayMenuApi.ingredientAvailability(route.params.itemId)
+      ]);
       setItem(detail);
+      setAvailability(pantryAvailability);
       setNote(detail.note || "");
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
-      setItem(null);
     } finally {
       setIsLoading(false);
     }
@@ -73,14 +83,10 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     }
   }, [toast]);
 
-  const completeMeal = useCallback(async () => {
-    if (!item || isCooked) return;
+  const submitCompletion = useCallback(async () => {
+    if (!item || isCooked || completionLock.current) return;
 
-    if (!pickedImage) {
-      toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
-      return;
-    }
-
+    completionLock.current = true;
     setIsCompleting(true);
     try {
       const result = await todayMenuApi.complete(item.id, {
@@ -90,44 +96,79 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
         note
       });
       setCompletedResult(result);
+      setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
+        imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       await loadDetail();
     } catch (error) {
       toast.show(getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default"), "danger");
     } finally {
+      completionLock.current = false;
       setIsCompleting(false);
     }
   }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
 
+  const completeMeal = useCallback(() => {
+    if (!item || isCooked || completionLock.current) return;
+    if (!pickedImage) {
+      toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
+      return;
+    }
+    const missing = availability?.ingredients.filter(line => line.missingQuantity > 0) ?? [];
+    if (!missing.length) {
+      void submitCompletion();
+      return;
+    }
+    Alert.alert(
+      "Pantry chưa đủ nguyên liệu",
+      `Còn thiếu ${missing.map(line => `${line.missingQuantity} ${line.unit} ${line.ingredientName}`).join(", ")}. Bạn vẫn muốn lưu nhật ký đã nấu? Chỉ lượng thực có trong pantry mới bị trừ.`,
+      [{ text: "Quay lại", style: "cancel" }, { text: "Vẫn hoàn thành", onPress: () => void submitCompletion() }]
+    );
+  }, [availability?.ingredients, isCooked, item, pickedImage, submitCompletion, toast]);
+
+  const addMissingIngredients = useCallback(async () => {
+    if (!item || isAddingMissing) return;
+    setIsAddingMissing(true);
+    try {
+      const added = await todayMenuApi.addMissingIngredientsToShoppingList(item.id);
+      toast.show(added.length ? `Đã thêm ${added.length} nguyên liệu còn thiếu vào danh sách mua.` : "Pantry đã đủ nguyên liệu cho món này.");
+    } catch (error) {
+      toast.show(getFriendlyErrorMessage(error, "Chưa thêm được nguyên liệu vào danh sách mua."), "danger");
+    } finally {
+      setIsAddingMissing(false);
+    }
+  }, [isAddingMissing, item, toast]);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadDetail} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: 34 }}
+        contentContainerStyle={{
+          paddingBottom: 48,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center"
+        }}
       >
-        <View>
-          <Image source={{ uri: normalizeRemoteImageUrl(heroImage) }} style={{ width: "100%", height: 268, backgroundColor: colors.secondary }} />
-          <AppBackButton
-            variant="floating"
-            onPress={() => navigation.goBack()}
-            style={{
-              position: "absolute",
-              top: 18,
-              left: 18
-            }}
+        <View style={{ borderRadius: isLandscape ? 16 : 0, overflow: "hidden", marginHorizontal: isLandscape ? 16 : 0, marginTop: isLandscape ? 8 : 0 }}>
+          <ExpoImage
+            source={{ uri: normalizeRemoteImageUrl(heroImage) }}
+            style={{ width: "100%", height: isLandscape ? 220 : 268, backgroundColor: colors.secondary }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
           />
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
           {errorMessage ? (
-            <Text style={{ color: "#FFE6E6", fontWeight: "800", textAlign: "center" }} selectable>
+            <Text style={{ color: colors.danger, fontWeight: "600", textAlign: "center" }} selectable>
               {errorMessage}
             </Text>
           ) : null}
 
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontSize: 30, lineHeight: 37, fontWeight: "900" }} selectable>
+            <Text style={{ color: colors.text, fontSize: 30, lineHeight: 37, fontWeight: "700" }} selectable>
               {item?.mealName || "Chi tiết thực đơn"}
             </Text>
             {item ? (
@@ -161,12 +202,25 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 )}
               </Section>
 
+              {availability && !availability.sufficient ? (
+                <Section title="Nguyên liệu còn thiếu">
+                  {availability.ingredients.filter(line => line.missingQuantity > 0).map(line => (
+                    <InfoRow key={line.ingredientId} icon="alert-circle-outline" color={colors.warning}
+                      text={`${line.ingredientName}: thiếu ${line.missingQuantity} ${line.unit}${line.unitMismatch ? " (khác đơn vị trong pantry)" : ""}`} />
+                  ))}
+                  <PrimaryButton title="Thêm nguyên liệu còn thiếu vào danh sách mua" icon="cart-outline" variant="soft"
+                    loading={isAddingMissing} disabled={isAddingMissing || isCooked} onPress={addMissingIngredients} />
+                </Section>
+              ) : availability ? (
+                <InfoRow icon="checkmark-circle-outline" color={colors.success} text="Pantry hiện có đủ nguyên liệu cho món này." />
+              ) : null}
+
               {steps.length ? (
                 <Section title="Cách nấu">
                   {steps.map((step, index) => (
                     <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12 }}>
                       <View style={{ width: 30, height: 30, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: colors.white, fontWeight: "900" }} selectable>
+                        <Text style={{ color: colors.white, fontWeight: "700" }} selectable>
                           {index + 1}
                         </Text>
                       </View>
@@ -179,21 +233,24 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : null}
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
-                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" onPress={chooseImage} />
+                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
                 {pickedImage ? <Image source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
                 <View style={{ gap: 10 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "900" }} selectable>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: "700" }} selectable>
                     Đánh giá
                   </Text>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     {[1, 2, 3, 4, 5].map((value) => (
                       <Pressable
                         key={value}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Đánh giá món ${value} sao`}
+                        disabled={isCompleting || isCooked}
                         onPress={() => setRating(value)}
                         style={{
-                          width: 42,
-                          height: 42,
+                          width: 48,
+                          height: 48,
                           borderRadius: 14,
                           alignItems: "center",
                           justifyContent: "center",
@@ -210,6 +267,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
                 <TextInput
                   value={note}
+                  accessibilityLabel="Ghi chú sau khi nấu"
+                  editable={!isCompleting && !isCooked}
                   onChangeText={setNote}
                   placeholder="Ghi chú sau khi nấu"
                   placeholderTextColor={colors.muted}
@@ -223,18 +282,18 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                     padding: 14,
                     textAlignVertical: "top",
                     fontWeight: "700",
-                    backgroundColor: "rgba(255,255,255,0.08)"
+                    backgroundColor: colors.surface2
                   }}
                 />
 
                 {isCooked ? (
                   <InfoRow icon="checkmark-circle" color={colors.success} text="Món này đã hoàn thành. Pantry đã được xử lý ở lần xác nhận hoàn thành." />
                 ) : (
-                  <PrimaryButton title={isCompleting ? "Đang lưu..." : "Hoàn thành và ghi log"} icon="check-circle" onPress={completeMeal} />
+                  <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting} onPress={completeMeal} />
                 )}
               </Section>
 
-              {completedResult?.warnings.length ? (
+              {completedResult?.warnings?.length ? (
                 <Section title="Cảnh báo pantry">
                   {completedResult.warnings.map((warning) => (
                     <InfoRow key={warning} icon="warning-outline" color={colors.warning} text={translatePantryWarning(warning)} />
@@ -242,7 +301,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 </Section>
               ) : null}
 
-              {completedResult?.consumedIngredients.length ? (
+              {completedResult?.consumedIngredients?.length ? (
                 <Section title="Nguyên liệu đã trừ">
                   {completedResult.consumedIngredients.map((log) => (
                     <InfoRow key={log.id} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />
@@ -253,7 +312,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
           ) : (
             <View style={{ alignItems: "center", gap: 12, paddingVertical: 28 }}>
               <MaterialCommunityIcons name="silverware-fork-knife" size={38} color={colors.primary} />
-              <Text style={{ color: colors.muted, fontWeight: "800", textAlign: "center" }} selectable>
+              <Text style={{ color: colors.muted, fontWeight: "600", textAlign: "center" }} selectable>
                 Kéo xuống để thử tải lại chi tiết món.
               </Text>
             </View>
@@ -268,7 +327,7 @@ function Pill({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: stri
   return (
     <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 5 }}>
       <Ionicons name={icon} size={14} color={colors.primary} />
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }} selectable>
         {text}
       </Text>
     </View>
@@ -278,7 +337,7 @@ function Pill({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: stri
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ backgroundColor: colors.card, borderRadius: 16, borderCurve: "continuous", padding: 18, gap: 14, borderWidth: 1, borderColor: colors.line }}>
-      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }} selectable>
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }} selectable>
         {title}
       </Text>
       {children}
@@ -290,7 +349,7 @@ function InfoRow({ icon, color, text }: { icon: keyof typeof Ionicons.glyphMap; 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <Ionicons name={icon} size={22} color={color} />
-      <Text style={{ color: colors.text, fontWeight: "800", flex: 1, lineHeight: 21 }} selectable>
+      <Text style={{ color: colors.text, fontWeight: "600", flex: 1, lineHeight: 21 }} selectable>
         {text}
       </Text>
     </View>

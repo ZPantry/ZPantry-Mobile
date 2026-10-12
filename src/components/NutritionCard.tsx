@@ -1,5 +1,6 @@
+import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { colors } from "@/constants/colors";
 import type { NutritionMetric } from "@/types";
 import { progressPercent } from "@/utils/helpers";
@@ -20,7 +21,7 @@ function ProgressRow({ metric }: { metric: NutritionMetric }) {
           {metric.value} / {metric.target} {metric.unit}
         </Text>
       </View>
-      <View style={{ height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.26)", overflow: "hidden" }}>
+      <View style={{ height: 8, borderRadius: 999, backgroundColor: colors.surface2, overflow: "hidden" }}>
         <View style={{ width: `${progress}%`, height: "100%", borderRadius: 999, backgroundColor: metric.color }} />
       </View>
     </View>
@@ -64,7 +65,7 @@ export default function NutritionCard({ metrics }: Props) {
           ))}
         </View>
       </View>
-      <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.24)" }} />
+      <View style={{ height: 1, backgroundColor: colors.surface2 }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
         <Ionicons name="water-outline" size={17} color="#38BDF8" />
         <Text style={{ color: colors.text, fontSize: 13, fontWeight: "800" }} selectable>

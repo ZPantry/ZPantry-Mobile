@@ -1,10 +1,17 @@
+import FixedBackHeader from "@/components/FixedBackHeader";
+import AiChefChat from "@/components/AiChefChat";
+import FigmaAsset from '@/components/FigmaAsset';
+import { homeAssets, pantryAssets, exploreAssets, profileAssets, loginAssets } from '@/constants/figmaAssets';
+import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, useWindowDimensions, View } from "react-native";
 import { colors } from "@/constants/colors";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 import { useAuth } from "@/context/AuthContext";
 import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
 import AdminManagementScreen from "@/screens/AdminManagementScreen";
@@ -13,202 +20,175 @@ import AdminUserFormScreen from "@/screens/AdminUserFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 import MealRecommendationResultsScreen from "@/screens/MealRecommendationResultsScreen";
+import RecommendationAnalysisSampleScreen from "@/screens/RecommendationAnalysisSampleScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
+import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
+import CreateRecipeScreen from "@/screens/CreateRecipeScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
 import PantryScreen from "@/screens/PantryScreen";
+import PantryImportScreen from "@/screens/PantryImportScreen";
+import InteractiveGuideScreen from "@/screens/InteractiveGuideScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import ProfileSetupScreen from "@/screens/ProfileSetupScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import TodayMenuItemDetailScreen from "@/screens/TodayMenuItemDetailScreen";
 import type { RootStackParamList, TabParamList } from "@/types";
+import { canManageCatalog, canManageUsers } from "@/utils/roles";
+import CookingHistoryScreen from "@/screens/CookingHistoryScreen";
+import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import QuickAddScreen from "@/screens/QuickAddScreen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const tabMeta = {
-  Home: { label: "Hôm nay", icon: "home-outline", activeIcon: "home", family: "ion" },
-  Pantry: { label: "Tủ", icon: "fridge-outline", activeIcon: "fridge", family: "mci" },
-  MealSuggestion: { label: "Công thức", icon: "silverware-fork-knife", activeIcon: "silverware-fork-knife", family: "mci" },
+  Home: { label: "Trang chủ", icon: "home-outline", activeIcon: "home", family: "ion" },
+  Pantry: { label: "Kho thực phẩm", icon: "fridge-outline", activeIcon: "fridge", family: "mci" },
+  MealSuggestion: { label: "Khám phá", icon: "silverware-fork-knife", activeIcon: "silverware-fork-knife", family: "mci" },
   Plan: { label: "Thực đơn", icon: "calendar-outline", activeIcon: "calendar", family: "ion" },
   Profile: { label: "Cá nhân", icon: "person-outline", activeIcon: "person", family: "ion" }
 } as const;
 
-function TabIcon({ routeName, focused }: { routeName: keyof typeof tabMeta; focused: boolean }) {
-  const meta = tabMeta[routeName];
-  const name = focused ? meta.activeIcon : meta.icon;
-  const color = focused ? colors.primary : colors.tabText;
-  if (meta.family === "mci") {
-    return <MaterialCommunityIcons name={name as never} size={22} color={color} />;
-  }
-  return <Ionicons name={name as never} size={22} color={color} />;
-}
-
-function AnimatedTabButton({
-  routeName,
-  focused,
-  label,
-  onPress,
-  onLongPress
-}: {
-  routeName: keyof typeof tabMeta;
-  focused: boolean;
-  label: string;
-  onPress: () => void;
-  onLongPress: () => void;
-}) {
-  const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(progress, {
-      toValue: focused ? 1 : 0,
-      useNativeDriver: true,
-      damping: 13,
-      stiffness: 180,
-      mass: 0.65
-    }).start();
-  }, [focused, progress]);
-
-  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
-  const labelOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] });
-
-  return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Animated.View
-        style={{
-          width: 52,
-          height: 46,
-          borderRadius: 23,
-          alignItems: "center",
-          justifyContent: "center",
-          transform: [{ scale }]
-        }}
-      >
-        <TabIcon routeName={routeName} focused={focused} />
-      </Animated.View>
-      <Animated.Text
-        numberOfLines={1}
-        style={{
-          marginTop: -4,
-          color: focused ? colors.primary : colors.tabText,
-          fontSize: 10,
-          fontWeight: "900",
-          opacity: labelOpacity
-        }}
-      >
-        {label}
-      </Animated.Text>
-    </Pressable>
-  );
-}
-
-function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const { width } = useWindowDimensions();
-  const indicator = useRef(new Animated.Value(state.index)).current;
-  const tabWidth = useMemo(() => (width - 36 - 16) / state.routes.length, [state.routes.length, width]);
-  const translateX = Animated.multiply(indicator, tabWidth);
-
-  useEffect(() => {
-    Animated.spring(indicator, {
-      toValue: state.index,
-      useNativeDriver: true,
-      damping: 16,
-      stiffness: 170,
-      mass: 0.8
-    }).start();
-  }, [indicator, state.index]);
+function BrandTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { isCompact, isSmallDevice, width } = useSizeClass();
+  const isTopNav = !isCompact;
 
   return (
     <View
-      pointerEvents="box-none"
+      testID="bottom-tab-bar"
       style={{
-        position: "absolute",
-        left: 18,
-        right: 18,
-        bottom: 34,
-        height: 66,
-        borderRadius: 28,
-        borderCurve: "continuous",
-        backgroundColor: "rgba(255,255,255,0.30)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.45)",
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 8,
-        boxShadow: "0 -8px 28px rgba(0,0,0,0.28)",
-        overflow: "visible"
+        backgroundColor: colors.surface,
+        borderTopWidth: isTopNav ? 0 : 1,
+        borderBottomWidth: isTopNav ? 1 : 0,
+        borderColor: colors.line,
+        paddingBottom: isTopNav ? 0 : Math.max(insets.bottom, 8),
+        paddingTop: isTopNav ? 0 : 6
       }}
     >
-      <Animated.View
-        pointerEvents="none"
+      <View
         style={{
-          position: "absolute",
-          left: 8,
-          top: 4,
-          width: tabWidth,
+          width: "100%",
+          maxWidth: layoutTokens.contentMaxWidth,
+          alignSelf: "center",
+          minHeight: isTopNav ? 70 : 54,
+          flexDirection: "row",
           alignItems: "center",
-          transform: [{ translateX }]
+          paddingHorizontal: isTopNav ? 24 : 4,
+          gap: isTopNav ? 16 : 0
         }}
       >
-        <View
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: 27,
-            backgroundColor: "rgba(244,162,28,0.22)",
-            borderWidth: 1,
-            borderColor: "rgba(244,162,28,0.86)",
-            boxShadow: "0 8px 22px rgba(244,162,28,0.34)"
-          }}
-        />
-      </Animated.View>
-
-      {state.routes.map((route, index) => {
-        const focused = state.index === index;
-        const options = descriptors[route.key].options;
-        const label = typeof options.title === "string" ? options.title : tabMeta[route.name as keyof typeof tabMeta].label;
-
-        const onPress = () => {
-          const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        return (
-          <AnimatedTabButton
-            key={route.key}
-            routeName={route.name as keyof typeof tabMeta}
-            focused={focused}
-            label={label}
-            onPress={onPress}
-            onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
+        {isTopNav ? (
+          <FigmaAsset
+            asset={loginAssets.imgLogoZPantryVer61}
+            style={{ width: 138, height: 35.28, marginRight: "auto" }}
+            label="Z Pantry"
           />
-        );
-      })}
+        ) : null}
+        {state.routes.map((route, index) => {
+          const focused = state.index === index;
+          const meta = tabMeta[route.name as keyof typeof tabMeta];
+          const color = focused ? "#EF9D1F" : colors.tabText;
+          const iconAssets = focused
+            ? {
+                Home: homeAssets.imgContainer13,
+                Pantry: pantryAssets.imgContainer15,
+                MealSuggestion: exploreAssets.imgContainer28,
+                Profile: profileAssets.imgContainer17
+              }
+            : {
+                Home: pantryAssets.imgContainer14,
+                Pantry: homeAssets.imgContainer14,
+                MealSuggestion: homeAssets.imgContainer15,
+                Profile: homeAssets.imgContainer16
+              };
+          const designIcon = iconAssets[route.name as keyof typeof iconAssets];
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="tab"
+              accessibilityLabel={meta.label}
+              accessibilityState={{ selected: focused }}
+              onLongPress={() =>
+                navigation.emit({ type: "tabLongPress", target: route.key })
+              }
+              onPress={() => {
+                const event = navigation.emit({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true
+                });
+                if (!focused && !event.defaultPrevented)
+                  navigation.navigate(route.name);
+              }}
+              style={({ pressed }) => ({
+                flex: isTopNav ? undefined : 1,
+                minHeight: 52,
+                paddingHorizontal: isTopNav ? 14 : isSmallDevice ? 2 : 4,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: isTopNav ? 8 : 4,
+                flexDirection: isTopNav ? "row" : "column",
+                opacity: pressed ? 0.6 : 1,
+                borderBottomWidth: isTopNav && focused ? 2 : 0,
+                borderColor: colors.primary
+              })}
+            >
+              {designIcon ? (
+                <FigmaAsset asset={designIcon} />
+              ) : (
+                <Ionicons name="calendar-outline" size={21} color={color} />
+              )}
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.tabBar}
+                style={{
+                  color,
+                  fontSize: isTopNav ? 13 : isSmallDevice ? 10 : 11,
+                  fontWeight: focused ? "700" : "500"
+                }}
+              >
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 function Tabs() {
+  const { isCompact } = useSizeClass();
   return (
-    <Tab.Navigator tabBar={(props) => <GlassTabBar {...props} />} screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      tabBar={(props) => <BrandTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+        tabBarPosition: !isCompact ? "top" : "bottom"
+      }}
+    >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Hôm nay" }} />
       <Tab.Screen name="Pantry" component={PantryScreen} options={{ title: "Tủ" }} />
       <Tab.Screen name="MealSuggestion" component={MealSuggestionScreen} options={{ title: "Công thức" }} />
-      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: "Thực đơn" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Cá nhân" }} />
     </Tab.Navigator>
   );
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, onboardingStep } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
   const hasBeenAuthenticated = useRef(false);
-  const isAdmin = ["admin", "administrator"].includes((user?.role ?? "").toLowerCase());
+  const isAdmin = canManageCatalog(user?.role);
 
   useEffect(() => {
     if (isLoading) return;
@@ -237,27 +217,53 @@ export default function AppNavigator() {
     return <OnboardingScreen onStart={() => setIntroStage("ready")} />;
   }
 
+  let initialRoute: keyof RootStackParamList = "Tabs";
+  if (!isAuthenticated) {
+    initialRoute = "Login";
+  } else if (isAdmin) {
+    initialRoute = "AdminManagement";
+  } else {
+    initialRoute = onboardingStep === "profile_setup" ? "ProfileSetup" : "Tabs";
+  }
+
   return (
-    <Stack.Navigator key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <View style={{ flex: 1 }}>
+    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={({ route }) => ({ headerShown: !['Tabs', 'Login', 'AdminManagement'].includes(route.name), header: props => <FixedBackHeader {...props} />, contentStyle: { backgroundColor: colors.background } })}>
       {isAuthenticated && isAdmin ? (
         <>
           <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
-          <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />
+          {canManageUsers(user?.role) && <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />}
           <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
           <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
+          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
         </>
       ) : isAuthenticated ? (
         <>
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="Tabs" component={Tabs} />
+          <Stack.Screen name="Plan" component={PlanScreen} />
           <Stack.Screen name="AddIngredient" component={AddIngredientScreen} />
+          <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
+          <Stack.Screen name="ManualMealSuggestion" component={ManualMealSuggestionScreen} />
+          <Stack.Screen name="PantryImport" component={PantryImportScreen} />
+          <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} />
+          <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: "Gói Z-Pantry" }} />
+          <Stack.Screen name="InteractiveGuide" component={InteractiveGuideScreen} />
           <Stack.Screen name="PantryItemDetail" component={PantryItemDetailScreen} />
           <Stack.Screen name="MealRecommendationResults" component={MealRecommendationResultsScreen} />
+          <Stack.Screen name="RecommendationAnalysisSample" component={RecommendationAnalysisSampleScreen} options={{ title: "Phân tích món ăn" }} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
           <Stack.Screen name="TodayMenuItemDetail" component={TodayMenuItemDetailScreen} />
         </>
       ) : (
+        <>
         <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        </>
       )}
     </Stack.Navigator>
+    {isAuthenticated && !isAdmin ? <AiChefChat /> : null}
+    </View>
   );
 }

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Animated, Image, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Animated, View } from "react-native";
+import FigmaAsset from "@/components/FigmaAsset";
+import { overviewAssets } from "@/constants/figmaAssets";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
 
@@ -25,18 +28,15 @@ export default function SplashScreen() {
   }, [opacity, scale]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark }}>
+      <StatusBar style="light" />
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Animated.Image
-          source={require("../../assets/images/z-pantry-logo.png")}
-          resizeMode="contain"
+        <Animated.View
           style={{
-            width: 210,
-            height: 80,
             opacity,
             transform: [{ scale }]
           }}
-        />
+        ><FigmaAsset asset={overviewAssets.imgLogoZPantryVer51} style={{ width: 206, height: 165 }} label="Z Pantry" /></Animated.View>
       </View>
     </SafeAreaView>
   );

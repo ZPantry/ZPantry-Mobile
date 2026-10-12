@@ -1,0 +1,256 @@
+{
+  "status": "passed",
+  "calls": [
+    {
+      "p": "/api/Auth/forgot-password",
+      "method": "POST",
+      "body": {
+        "email": "fixture@example.invalid"
+      }
+    },
+    {
+      "p": "/api/Auth/reset-password",
+      "method": "POST",
+      "body": {
+        "email": "fixture@example.invalid",
+        "otpCode": "123456",
+        "newPassword": "new-password",
+        "confirmPassword": "new-password"
+      }
+    },
+    {
+      "p": "/api/Auth/reset-password",
+      "method": "POST",
+      "body": {
+        "email": "fixture@example.invalid",
+        "otpCode": "123456",
+        "newPassword": "new-password",
+        "confirmPassword": "new-password"
+      }
+    },
+    {
+      "p": "/api/recommendations/v2/meals",
+      "method": "POST",
+      "body": {
+        "topK": 5,
+        "mode": "AUTO",
+        "servings": 1
+      }
+    },
+    {
+      "p": "/api/recommendations/33f2f378-692a-4268-924e-e8c648190e32/feedback",
+      "method": "POST",
+      "body": {
+        "mealRecommendationId": "33f2f378-692a-4268-924e-e8c648190e32",
+        "recipeId": "22f2f378-692a-4268-924e-e8c648190e32",
+        "rating": 5,
+        "feedbackType": "RATING",
+        "comment": "Rất phù hợp"
+      }
+    },
+    {
+      "p": "/api/recommendations/missing-ingredients",
+      "method": "POST",
+      "body": {
+        "recipeId": "22f2f378-692a-4268-924e-e8c648190e32",
+        "recipeName": "Canh cà rốt",
+        "requiredIngredients": [
+          "Cà rốt"
+        ],
+        "userIngredients": [
+          "Cà rốt"
+        ]
+      }
+    },
+    {
+      "p": "/api/me/today-menu/items",
+      "method": "POST",
+      "body": {
+        "recipeId": "22f2f378-692a-4268-924e-e8c648190e32",
+        "mealName": "Canh cà rốt",
+        "mealType": "DINNER",
+        "servingSize": 4,
+        "plannedDate": "2026-10-05",
+        "note": "Ít muối"
+      }
+    },
+    {
+      "p": "/api/me/today-menu/items",
+      "method": "POST",
+      "body": {
+        "recipeId": "22f2f378-692a-4268-924e-e8c648190e32",
+        "mealName": "Canh cà rốt",
+        "mealType": "DINNER",
+        "servingSize": 4,
+        "plannedDate": "2026-10-05",
+        "note": "Ít muối"
+      }
+    },
+    {
+      "p": "/api/me/today-menu/items/menu-1/complete",
+      "method": "POST"
+    },
+    {
+      "p": "/api/me/today-menu/items/menu-1/complete",
+      "method": "POST"
+    },
+    {
+      "p": "/api/v2/ingredients/analyze-image",
+      "method": "POST"
+    },
+    {
+      "p": "/api/me/pantry-import/confirm",
+      "method": "POST",
+      "body": {
+        "items": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "g"
+          }
+        ]
+      }
+    },
+    {
+      "p": "/api/recommendations/meals",
+      "method": "POST",
+      "body": {
+        "inputIngredientText": "Tôi có cà rốt, hãy gợi ý món",
+        "topK": 3,
+        "selectedIngredients": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "name": "Cà rốt",
+            "quantity": 0.1,
+            "unit": "kg"
+          }
+        ],
+        "candidateRecipes": [
+          {
+            "recipeId": "22f2f378-692a-4268-924e-e8c648190e32",
+            "recipeName": "Canh cà rốt",
+            "ingredientNames": [
+              "Cà rốt"
+            ],
+            "instructionText": "1. Rửa rau\n2. Nấu canh"
+          }
+        ]
+      }
+    },
+    {
+      "p": "/api/me/profile/v2",
+      "method": "PUT",
+      "body": {
+        "birthDate": "2001-02-28",
+        "heightCm": 166,
+        "weightKg": 55.1,
+        "gender": "FEMALE",
+        "activityLevel": "MODERATE",
+        "goals": [],
+        "dietPreference": "NONE",
+        "allergies": [
+          "NO_ALLERGIES"
+        ]
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/batch",
+      "method": "POST",
+      "body": {
+        "items": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "g",
+            "expiredAt": "2026-10-11T00:00:00.000Z",
+            "storageLocation": "fridge",
+            "note": ""
+          },
+          {
+            "ingredientId": "66f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "ml",
+            "expiredAt": null,
+            "storageLocation": "fridge",
+            "note": ""
+          }
+        ]
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/batch",
+      "method": "POST",
+      "body": {
+        "items": [
+          {
+            "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "g",
+            "expiredAt": "2026-10-11T00:00:00.000Z",
+            "storageLocation": "fridge",
+            "note": ""
+          },
+          {
+            "ingredientId": "66f2f378-692a-4268-924e-e8c648190e32",
+            "quantity": 200,
+            "unit": "ml",
+            "expiredAt": null,
+            "storageLocation": "fridge",
+            "note": ""
+          }
+        ]
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/11f2f378-692a-4268-924e-e8c648190e32",
+      "method": "PUT",
+      "body": {
+        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+        "quantity": 0.1,
+        "unit": "kg",
+        "expiredAt": "2026-10-11T00:00:00.000Z",
+        "storageLocation": "fridge",
+        "note": ""
+      }
+    },
+    {
+      "p": "/api/me/pantry/items/11f2f378-692a-4268-924e-e8c648190e32",
+      "method": "PUT",
+      "body": {
+        "ingredientId": "11f2f378-692a-4268-924e-e8c648190e32",
+        "quantity": 0.1,
+        "unit": "kg",
+        "expiredAt": null,
+        "storageLocation": "fridge",
+        "note": ""
+      }
+    },
+    {
+      "p": "/api/admin/users/44f2f378-692a-4268-924e-e8c648190e32/role",
+      "method": "PATCH",
+      "body": {
+        "role": "MANAGER"
+      }
+    },
+    {
+      "p": "/api/ingredients/11f2f378-692a-4268-924e-e8c648190e32/aliases",
+      "method": "POST",
+      "body": {
+        "aliasName": "Cà rốt Đà Lạt"
+      }
+    },
+    {
+      "p": "/api/ingredients/11f2f378-692a-4268-924e-e8c648190e32/aliases",
+      "method": "POST",
+      "body": {
+        "aliasName": "Cà rốt Đà Lạt"
+      }
+    },
+    {
+      "p": "/api/ingredients/11f2f378-692a-4268-924e-e8c648190e32/aliases/alias-1",
+      "method": "DELETE",
+      "body": null
+    }
+  ],
+  "errors": []
+}

@@ -1,23 +1,14 @@
 import { authApi } from "@/api/auth";
 import { authStorage } from "@/utils/authStorage";
+import { refreshAccessToken } from "@/api/client";
 
 export async function refreshStoredSession() {
-  const refreshToken = await authStorage.getRefreshToken();
-  if (!refreshToken) {
-    throw new Error("Phiên đăng nhập không còn hiệu lực.");
-  }
-
-  const tokens = await authApi.refreshToken(refreshToken);
-  await authStorage.updateTokens(tokens);
-  return tokens;
+  await refreshAccessToken();
+  return authStorage.getSession();
 }
 
 export async function logoutStoredSession() {
   const accessToken = await authStorage.getAccessToken();
-
-  try {
-    await authApi.logout(accessToken || undefined);
-  } finally {
-    await authStorage.clearSession();
-  }
+  await authStorage.clearSession();
+  if (accessToken) await authApi.logout(accessToken);
 }
