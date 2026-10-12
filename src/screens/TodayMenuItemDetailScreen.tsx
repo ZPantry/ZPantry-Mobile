@@ -1,7 +1,7 @@
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Alert, Pressable, RefreshControl, TextInput, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
@@ -234,7 +234,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
                 <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
-                {pickedImage ? <Image source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
+                {pickedImage ? <ExpoImage source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
                 <View style={{ gap: 10 }}>
                   <Text style={{ color: colors.text, fontSize: 15, fontWeight: "700" }} selectable>

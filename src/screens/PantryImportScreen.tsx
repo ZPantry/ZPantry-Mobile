@@ -3,6 +3,7 @@ import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
+import { randomUUID } from "expo-crypto";
 import { ActivityIndicator, Image, Pressable, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,7 +41,7 @@ export default function PantryImportScreen() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [analysisNotice, setAnalysisNotice] = useState("");
   const [analysisId, setAnalysisId] = useState<string | undefined>();
-  const confirmKey = useRef<string | undefined>();
+  const confirmKey = useRef<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [error, setError] = useState("");
@@ -126,7 +127,7 @@ export default function PantryImportScreen() {
     if (!rows?.length || lock.current) return;
     lock.current = true; setBusy(true); setError("");
     try {
-      confirmKey.current ??= crypto.randomUUID();
+      confirmKey.current ??= randomUUID();
       await pantryImportApi.confirm(rows.map((r) => ({ ingredientId: r.ingredientId || "", quantity: Number(r.quantityText.replace(",", ".")), unit: r.unitText.trim() })), analysisId, confirmKey.current);
       setRows(null); toast.show("Đã cập nhật nguyên liệu trong tủ.");
       navigation.popTo("Tabs", { screen: "Pantry" });

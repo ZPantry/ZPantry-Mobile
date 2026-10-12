@@ -2,6 +2,7 @@ import { apiRequest, ApiError, type ApiMessageResponse } from "@/api/client";
 import { endpoints } from "@/api/endpoints";
 import { recipesApi, type Recipe, type UploadFile } from "@/api/recipes";
 import type { TodayMenuItem } from "@/api/todayMenu";
+import { randomUUID } from "expo-crypto";
 
 export type ImportSource = "RECEIPT" | "FOOD_IMAGE" | "AUTO";
 export type ImportMethod = ImportSource | "TEXT" | "MENU";
@@ -86,7 +87,7 @@ export const pantryImportApi = {
       return { sourceType: "AUTO", items: [], warnings: [...(result.warnings || []), "Chưa xác định được loại ảnh. Hãy chọn ảnh thực phẩm hoặc hóa đơn rõ hơn."], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
     return { sourceType: source === "AUTO" ? (result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE") : source, items, warnings: result.warnings || [], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
   },
-  confirm(items: ImportItem[], analysisId?: string, idempotencyKey = crypto.randomUUID()) {
+  confirm(items: ImportItem[], analysisId?: string, idempotencyKey: string = randomUUID()) {
     validateImportItems(items);
     return apiRequest<ApiMessageResponse>(endpoints.pantryImport.confirm, {
       method: "POST", auth: true, headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ analysisId, items })

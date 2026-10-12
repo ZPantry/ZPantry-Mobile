@@ -10,6 +10,7 @@ function loader(mocks = {}) {
   const cache = new Map();
   function load(name, parent = path.resolve('src')) {
     if (Object.hasOwn(mocks, name)) return mocks[name];
+    if (name === 'expo-crypto') return { randomUUID: require('node:crypto').randomUUID };
     const tsFile = name.startsWith('@/') ? path.resolve('src', name.slice(2) + '.ts') : path.resolve(parent, name + '.ts');
     const file = fs.existsSync(tsFile) ? tsFile : tsFile.replace(/\.ts$/, '.tsx');
     if (cache.has(file)) return cache.get(file).exports;
@@ -665,6 +666,26 @@ test('image analysis sends multipart image to Java and never confirms automatica
   await pantryImportApi.confirm(items);
   assert.deepEqual(JSON.parse(calls[2][1].body), { items });
   assert.equal(calls[2][0], '/api/me/pantry-import/confirm');
+});
+
+test('pantry confirmation keeps its idempotency key when retrying a failed request', async () => {
+  const calls = [];
+  const { pantryImportApi } = loader({
+    '@/api/client': { ApiError, apiRequest: async (...args) => {
+      calls.push(args);
+      if (calls.length === 1) throw new Error('Network unavailable');
+      return { message: 'Saved' };
+    } }
+  })('@/api/pantryImport');
+  const items = [{ ingredientId: id, quantity: 100, unit: 'g' }];
+  const key = require('node:crypto').randomUUID();
+  await assert.rejects(pantryImportApi.confirm(items, 'analysis-1', key), /Network unavailable/);
+  await pantryImportApi.confirm(items, 'analysis-1', key);
+  assert.equal(calls[0][1].headers['Idempotency-Key'], key);
+  assert.equal(calls[1][1].headers['Idempotency-Key'], key);
+  assert.equal(calls[1][1].body, calls[0][1].body);
+  await pantryImportApi.confirm(items);
+  assert.match(calls[2][1].headers['Idempotency-Key'], /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i);
 });
 
 test('import refuses unresolved, duplicate and invalid quantities before any pantry write', () => {
