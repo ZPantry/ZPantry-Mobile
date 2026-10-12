@@ -102,6 +102,15 @@ test('unified image analysis adapts ingredients and refuses unknown images witho
   assert.equal(calls.length, 2);
 });
 
+test('subscription quota display uses server-owned remaining, used, and reset values', () => {
+  const { quotaSummary, quotaUsageDetail } = load('@/utils/subscriptionQuota');
+  const quota = { feature: 'OCR', limit: 5, used: 2, remaining: 3, resetsOn: '2026-10-11' };
+  assert.equal(quotaSummary(quota), 'Còn 3/5');
+  assert.equal(quotaUsageDetail(quota), 'Đã dùng 2 · đặt lại 11/10');
+  assert.equal(quotaSummary({ ...quota, limit: null, remaining: null }), 'Không giới hạn');
+  assert.equal(quotaUsageDetail({ ...quota, limit: null, remaining: null }), 'Không áp dụng giới hạn lượt');
+});
+
 test('recipe pantry comparison scales portions, converts known units, excludes expired food and preserves shortages', () => {
   const { compareRecipePantry } = load('@/utils/recipePantry');
   const recipe = { servingSize: 2, ingredients: [{ ingredientId: id, ingredientName: 'Carrot', quantity: 200, unit: 'g' }] };
