@@ -14,6 +14,7 @@ import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 
 type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string };
 export default function PantryImportScreen() {
@@ -23,6 +24,7 @@ export default function PantryImportScreen() {
   const method: ImportMethod = route.params?.method === "TEXT" ? "FOOD_IMAGE" : route.params?.method || "FOOD_IMAGE";
   const imageMethod = method === "FOOD_IMAGE" || method === "RECEIPT";
   const toast = useToast();
+  const warnLowQuota = useQuotaWarning();
   const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "AUTO");
   const [menuDate, setMenuDate] = useState(() => {
     const now = new Date();
@@ -104,6 +106,7 @@ export default function PantryImportScreen() {
     lock.current = true; setBusy(true); setError(""); setEditing(null);
     try {
       const result = await pantryImportApi.analyze(source, image.file);
+      void warnLowQuota("OCR");
       showPreview(result);
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa phân tích được ảnh. Vui lòng thử lại.")); }
     finally { lock.current = false; setBusy(false); }

@@ -67,6 +67,7 @@ export type RootStackParamList = {
   CreateRecipe: undefined;
   CookingHistory: undefined;
   AccountSettings: undefined;
+  Subscription: { paymentOutcome?: "success" | "cancel" } | undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;

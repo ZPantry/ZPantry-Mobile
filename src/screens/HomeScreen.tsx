@@ -6,6 +6,8 @@ import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import { pantryApi } from "@/api/pantry";
+import { todayMenuApi, type DailyNutrition } from "@/api/todayMenu";
+import { recommendationsApi } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import { BrandPanel, SectionHeading, ActionRow } from "@/components/BrandPanel";
@@ -21,10 +23,15 @@ import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image"
 import { getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, RefreshControl, useWindowDimensions, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuotaWarning } from "@/hooks/useQuotaWarning";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
+import AdaptiveGrid from "@/components/AdaptiveGrid";
 
 function recipeToMeal(recipe: Recipe): Meal {
   return {
@@ -61,11 +68,12 @@ function getPantryName(item: PantryApiItem, ingredient?: Ingredient) {
 
 export default function HomeScreen() {
   const showUnavailable = useUnavailableFeature();
+  const warnLowQuota = useQuotaWarning();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const displayName = userDisplayName(user);
-  const { width } = useWindowDimensions();
-  const wide = width >= 900;
+  const { width, isCompact, isLandscape, isExpanded } = useSizeClass();
+  const insets = useSafeAreaInsets();
   const [showAddMethods, setShowAddMethods] = useState(false);
   const [recipes, setRecipes] = useState<Meal[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryApiItem[]>([]);
@@ -73,6 +81,10 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [nutrition, setNutrition] = useState<DailyNutrition | null>(null);
+  const [showNutritionDetail, setShowNutritionDetail] = useState(false);
+  const [quickSuggesting, setQuickSuggesting] = useState(false);
+  const quickSuggestionLock = useRef(false);
   const loadHome = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -80,11 +92,12 @@ export default function HomeScreen() {
       const recipePagePromise = recipesApi.list(1, 10);
       const ingredientPagePromise = ingredientsApi.all().then(data => ({ data }));
       const pantryPromise = pantryApi.all();
-      const [recipePage, ingredientPage, pantryItems] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPromise]);
+      const [recipePage, ingredientPage, pantryItems, dailyNutrition] = await Promise.all([recipePagePromise, ingredientPagePromise, pantryPromise, todayMenuApi.dailyNutrition()]);
 
       setRecipes(recipePage.data.map(recipeToMeal));
       setIngredients(ingredientPage.data);
       setPantryItems(pantryItems);
+      setNutrition(dailyNutrition);
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được dữ liệu hôm nay."));
 
@@ -122,10 +135,40 @@ export default function HomeScreen() {
   }, [normalizedKeyword, recipes]);
   const hasSearch = normalizedKeyword.length > 0;
 
+  const quickSuggest = useCallback(async () => {
+    if (quickSuggestionLock.current) return;
+    quickSuggestionLock.current = true;
+    setQuickSuggesting(true);
+    try {
+      const result = await recommendationsApi.personalized(5, { mode: "AUTO" });
+      void warnLowQuota("MEAL_SUGGESTION");
+      navigation.navigate("MealRecommendationResults", {
+        recommendations: result.recommendations,
+        mode: result.mode || "AUTO",
+        pantryItems: pantryItems.map(item => ({ id: item.id, ingredientId: item.ingredientId, name: item.ingredientName || "Nguyên liệu", quantity: item.quantity, unit: item.unit, source: "pantry" }))
+      });
+    } catch (error) {
+      setErrorMessage(getFriendlyErrorMessage(error, "Chưa tạo được gợi ý món ăn. Vui lòng thử lại."));
+    } finally {
+      quickSuggestionLock.current = false;
+      setQuickSuggesting(false);
+    }
+  }, [navigation, pantryItems, warnLowQuota]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-      <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
-        contentContainerStyle={{ paddingTop: 62, paddingBottom: 28, gap: 18 }}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
+        contentContainerStyle={{
+          paddingTop: isLandscape ? 18 : isCompact ? 52 : 32,
+          paddingBottom: isCompact ? 116 : 76,
+          gap: 18,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center",
+          paddingHorizontal: isCompact ? 16 : 24
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "600", letterSpacing: 0.8 }}>GỢI Ý TỪ ĐẦU BẾP AI</Text>
@@ -136,11 +179,25 @@ export default function HomeScreen() {
             <FigmaAsset asset={assets.imgContainer} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Hồ sơ cá nhân" onPress={() => navigation.navigate("Profile")}
-            style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>
+            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>
             <FigmaAsset asset={assets.imgImage1} style={{ borderRadius: 16 }} />
           </Pressable>
         </View>
         {errorMessage ? <><ExpiryAlertCard title={errorMessage} tone="danger" /><PrimaryButton title="Thử tải lại" variant="outline" onPress={loadHome} /></> : null}
+        {nutrition?.targetCalories != null ? <Pressable accessibilityRole="button" accessibilityLabel="Xem dinh dưỡng hôm nay" accessibilityState={{ expanded: showNutritionDetail }} onPress={() => setShowNutritionDetail(value => !value)}
+          style={({ pressed }) => ({ backgroundColor: colors.surface, borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.82 : 1 })}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}><Ionicons name="flame-outline" size={19} color={colors.primaryDark} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: colors.text, fontWeight: "700" }}>Hôm nay còn {Math.max(0, nutrition.remainingCalories ?? 0)} kcal</Text><Text style={{ color: colors.muted, fontSize: 12 }}>Chạm để xem chi tiết dinh dưỡng</Text></View>
+            <Ionicons name={showNutritionDetail ? "chevron-up" : "chevron-down"} size={20} color={colors.primaryDark} />
+          </View>
+          {showNutritionDetail ? <View style={{ paddingTop: spacing.sm, borderTopWidth: 1, borderColor: colors.line, gap: 7 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "700" }}>CALO HÔM NAY</Text>
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }}>{nutrition.consumedCalories} / {nutrition.targetCalories} kcal</Text>
+            <View style={{ height: 8, borderRadius: 999, overflow: "hidden", backgroundColor: colors.secondary }}><View style={{ width: `${Math.min(100, Math.round((nutrition.consumedCalories / nutrition.targetCalories) * 100))}%`, height: "100%", borderRadius: 999, backgroundColor: colors.primary }} /></View>
+            <Text style={{ color: colors.muted, lineHeight: 19 }}>{nutrition.remainingCalories != null && nutrition.remainingCalories < 0 ? `Bạn đã vượt ${Math.abs(nutrition.remainingCalories)} kcal so với mục tiêu.` : `Bạn còn ${nutrition.remainingCalories ?? 0} kcal theo mục tiêu hồ sơ ăn uống.`}</Text>
+          </View> : null}
+        </Pressable> : null}
         <View style={{ backgroundColor: colors.secondary, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.lg, borderWidth: 1, borderColor: colors.surface, boxShadow: shadows.card }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
             <View style={{ width: 56, height: 56, flexShrink: 0, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
@@ -172,12 +229,51 @@ export default function HomeScreen() {
         </View>
         <View style={{ gap: 12 }}>
           <SectionHeading title="Có sẵn trong tủ" action="Xem kho" onPress={() => navigation.navigate("Pantry")} />
-          {isLoading && !pantryItems.length ? <Text style={{ color: colors.muted }}>Đang tải nguyên liệu…</Text> : filteredPantryItems.length ?
-            filteredPantryItems.map(({ item, ingredient, name }) => <PantrySummaryRow key={item.id} name={name} quantity={formatQuantity(item)} imageUrl={ingredient?.imageUrl} onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item, ingredient })} />)
-            : !errorMessage ? <ActionRow icon="fridge-outline" title={hasSearch ? "Không tìm thấy nguyên liệu" : "Bắt đầu với tủ thực phẩm của bạn"} subtitle="Thêm những nguyên liệu đang có để tìm món phù hợp." onPress={() => navigation.navigate("AddIngredient")} /> : null}
+          {isLoading && !pantryItems.length ? <Text style={{ color: colors.muted }}>Đang tải nguyên liệu…</Text> : filteredPantryItems.length ? (
+            <AdaptiveGrid
+              data={filteredPantryItems}
+              minItemWidth={280}
+              columns={isCompact ? 1 : 2}
+              gap={10}
+              renderItem={({ item, ingredient, name }) => (
+                <PantrySummaryRow
+                  key={item.id}
+                  name={name}
+                  quantity={formatQuantity(item)}
+                  imageUrl={ingredient?.imageUrl}
+                  onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item, ingredient })}
+                />
+              )}
+            />
+          ) : !errorMessage ? <ActionRow icon="fridge-outline" title={hasSearch ? "Không tìm thấy nguyên liệu" : "Bắt đầu với tủ thực phẩm của bạn"} subtitle="Thêm những nguyên liệu đang có để tìm món phù hợp." onPress={() => navigation.navigate("AddIngredient")} /> : null}
         </View>
         <ActionRow icon="calendar-outline" title="Lên thực đơn hôm nay" subtitle="Sắp xếp bữa ăn và theo dõi những món đã nấu." onPress={() => navigation.navigate("Plan")} />
       </ScrollView>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Gợi ý món ăn nhanh bằng AI"
+        accessibilityHint="Tự động gợi ý món từ pantry hoặc hồ sơ ăn uống"
+        disabled={quickSuggesting}
+        onPress={() => void quickSuggest()}
+        style={({ pressed }) => ({
+          position: "absolute",
+          right: isExpanded ? Math.max(20, Math.floor((width - layoutTokens.contentMaxWidth) / 2) + 20) : 18,
+          bottom: (isCompact ? 72 : 24) + Math.max(insets.bottom, 12),
+          width: 58,
+          height: 58,
+          borderRadius: 29,
+          backgroundColor: colors.primary,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 3,
+          borderColor: colors.surface,
+          opacity: quickSuggesting ? 0.7 : pressed ? 0.78 : 1,
+          transform: [{ scale: pressed ? 0.94 : 1 }],
+          boxShadow: "0 5px 16px rgba(184,92,10,0.34)"
+        })}
+      >
+        {quickSuggesting ? <ActivityIndicator color={colors.white} /> : <MaterialCommunityIcons name="chef-hat" size={27} color={colors.white} />}
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -185,6 +281,8 @@ export default function HomeScreen() {
 function PantrySummaryRow({ name, quantity, imageUrl, onPress }: { name: string; quantity: string; imageUrl?: string | null; onPress: () => void }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Xem chi tiết ${name}`}
       onPress={onPress}
       style={({ pressed }) => ({
         minHeight: 72,
@@ -198,8 +296,13 @@ function PantrySummaryRow({ name, quantity, imageUrl, onPress }: { name: string;
         boxShadow: "0 2px 8px rgba(0,48,20,0.06)"
       })}
     >
-      <Image source={{ uri: normalizeRemoteImageUrl(imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: colors.secondary }} />
-      <View style={{ flex: 1 }}>
+      <ExpoImage
+        source={{ uri: normalizeRemoteImageUrl(imageUrl || FALLBACK_FOOD_IMAGE_URL) }}
+        contentFit="cover"
+        transition={200}
+        style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: colors.secondary }}
+      />
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: colors.textDark, fontSize: 16, fontWeight: "700" }} selectable>
           {name}
         </Text>

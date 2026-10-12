@@ -4,7 +4,8 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, RefreshControl, View } from "react-native";
+import { Pressable, RefreshControl, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { TodayMenuItem } from "@/api/todayMenu";
@@ -16,6 +17,9 @@ import { useToast } from "@/context/ToastContext";
 import type { RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage, translateMealType, translateStatus } from "@/utils/localize";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
+import AdaptiveGrid from "@/components/AdaptiveGrid";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -47,6 +51,7 @@ function statusMeta(status: string) {
 }
 
 export default function PlanScreen() {
+  const { isCompact, isLandscape } = useSizeClass();
   const { user } = useAuth();
   const toast = useToast();
   const navigation = useNavigation<Navigation>();
@@ -114,12 +119,20 @@ export default function PlanScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTodayMenu} tintColor={colors.primary} />}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22, gap: 18 }}
+        contentContainerStyle={{
+          paddingHorizontal: isCompact ? 16 : 24,
+          paddingTop: isLandscape ? 16 : isCompact ? 52 : 32,
+          paddingBottom: isCompact ? 116 : 40,
+          gap: 18,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center"
+        }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <View style={{ flex: 1 }}>
@@ -168,14 +181,20 @@ export default function PlanScreen() {
               </Text>
             </View>
           ) : (
-            items.map((item) => (
-              <TodayMenuCard
-                key={item.id}
-                item={item}
-                onPress={() => navigation.navigate("TodayMenuItemDetail", { itemId: item.id })}
-                onRemove={() => removeItem(item)}
-              />
-            ))
+            <AdaptiveGrid
+              data={items}
+              keyExtractor={(item) => item.id}
+              columns={isCompact ? 1 : 2}
+              gap={14}
+              renderItem={(item) => (
+                <TodayMenuCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => navigation.navigate("TodayMenuItemDetail", { itemId: item.id })}
+                  onRemove={() => removeItem(item)}
+                />
+              )}
+            />
           )}
         </View>
       </ScrollView>
@@ -212,7 +231,12 @@ function TodayMenuCard({ item, onPress, onRemove }: { item: TodayMenuItem; onPre
         boxShadow: "0 2px 8px rgba(0,48,20,0.06)"
       })}
     >
-      <Image source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: "100%", height: 142, backgroundColor: colors.secondary }} />
+      <ExpoImage
+        source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }}
+        style={{ width: "100%", height: 148, backgroundColor: colors.secondary }}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+      />
       <View style={{ padding: 14, gap: 11 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <View style={{ flex: 1 }}>
@@ -241,7 +265,7 @@ function TodayMenuCard({ item, onPress, onRemove }: { item: TodayMenuItem; onPre
           <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>
             Mở chi tiết
           </Text>
-          {isCooked ? null : <PrimaryButton title="Xóa" icon="trash-can-outline" variant="outline" onPress={onRemove} style={{ minHeight: 38, paddingHorizontal: 12 }} />}
+          {isCooked ? null : <PrimaryButton title="Xóa" icon="trash-can-outline" variant="outline" onPress={onRemove} style={{ minHeight: 48, paddingHorizontal: 14 }} />}
         </View>
       </View>
     </Pressable>

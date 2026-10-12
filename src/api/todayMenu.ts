@@ -70,6 +70,23 @@ export type CompleteTodayMenuItemResponse = {
   warnings: string[];
 };
 
+export type IngredientAvailability = {
+  ingredientId: string;
+  ingredientName: string;
+  requiredQuantity: number;
+  availableQuantity: number;
+  missingQuantity: number;
+  unit: string;
+  unitMismatch: boolean;
+};
+
+export type IngredientAvailabilityResponse = {
+  todayMenuItemId: string;
+  sufficient: boolean;
+  ingredients: IngredientAvailability[];
+};
+export type DailyNutrition = { date: string; targetCalories: number | null; consumedCalories: number; remainingCalories: number | null };
+
 export type AddTodayMenuItemPayload = {
   mealId?: string;
   recipeId?: string;
@@ -136,6 +153,14 @@ export const todayMenuApi = {
       pantryItems: pantry.filter(row => ids.has(row.ingredientId)).map(row => ({ ...row, ingredientName: row.ingredientName || ingredients.find(i => i.ingredientId === row.ingredientId)?.ingredientName || "Nguyên liệu" })) };
   },
 
+  ingredientAvailability(id: string) {
+    return apiRequest<IngredientAvailabilityResponse>(endpoints.todayMenu.ingredientAvailability(id), { auth: true });
+  },
+
+  addMissingIngredientsToShoppingList(id: string) {
+    return apiRequest<unknown[]>(endpoints.todayMenu.missingIngredients(id), { method: "POST", auth: true });
+  },
+
   add(payload: AddTodayMenuItemPayload) {
     return apiRequest<TodayMenuItem>(endpoints.todayMenu.create, {
       method: "POST",
@@ -161,5 +186,6 @@ export const todayMenuApi = {
 
   cookingLogs(pageIndex = 1, pageSize = 20) {
     return apiRequest<PaginatedResponse<CookingLog>>(`${endpoints.todayMenu.cookingLogs}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { auth: true });
-  }
+  },
+  dailyNutrition(date?: string) { return apiRequest<DailyNutrition>(`${endpoints.todayMenu.dailyNutrition}${date ? `?date=${encodeURIComponent(date)}` : ""}`, { auth: true }); }
 };

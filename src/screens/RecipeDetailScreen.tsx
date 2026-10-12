@@ -4,7 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { MealIngredientCheckResponse } from "@/api/recommendations";
@@ -24,6 +25,8 @@ import { useToast } from "@/context/ToastContext";
 import type { Meal, RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getCurrentMealType, getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetail">;
 
@@ -55,6 +58,7 @@ function formatDateKey(date = new Date()) {
 }
 
 export default function RecipeDetailScreen({ route, navigation }: Props) {
+  const { isLandscape } = useSizeClass();
   const toast = useToast();
   const [plannedDate, setPlannedDate] = useState(formatDateKey());
   const [meal, setMeal] = useState<Meal | null>(null);
@@ -158,17 +162,30 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   }, [navigation, recipe, toast, plannedDate, isAddingToToday, mealType, portionCount, menuNote, route.params.mealId]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
-      <ScrollView refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 34 }}>
-        <View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          paddingBottom: 48,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center"
+        }}
+      >
+        <View style={{ borderRadius: isLandscape ? 16 : 0, overflow: "hidden", marginHorizontal: isLandscape ? 16 : 0, marginTop: isLandscape ? 8 : 0 }}>
           {meal?.image ? (
-            <Image source={{ uri: normalizeRemoteImageUrl(meal.image) }} style={{ width: "100%", height: 280, backgroundColor: colors.secondary }} />
+            <ExpoImage
+              source={{ uri: normalizeRemoteImageUrl(meal.image) }}
+              style={{ width: "100%", height: isLandscape ? 220 : 280, backgroundColor: colors.secondary }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
           ) : (
-            <View style={{ width: "100%", height: 220, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: "100%", height: isLandscape ? 160 : 220, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" }}>
               <Ionicons name="restaurant-outline" size={54} color={colors.primary} />
             </View>
           )}
-
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>

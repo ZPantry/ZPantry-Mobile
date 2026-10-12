@@ -2,11 +2,11 @@ import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Alert, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { CompleteTodayMenuItemResponse, TodayMenuItemDetail } from "@/api/todayMenu";
+import type { CompleteTodayMenuItemResponse, IngredientAvailabilityResponse, TodayMenuItemDetail } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -15,6 +15,8 @@ import type { RootStackParamList } from "@/types";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getFriendlyErrorMessage, translatePantryWarning, translateStatus } from "@/utils/localize";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TodayMenuItemDetail">;
 
@@ -30,9 +32,12 @@ function splitInstructions(text?: string | null) {
 }
 
 export default function TodayMenuItemDetailScreen({ route, navigation }: Props) {
+  const { isLandscape } = useSizeClass();
   const toast = useToast();
   const [item, setItem] = useState<TodayMenuItemDetail | null>(null);
   const [completedResult, setCompletedResult] = useState<CompleteTodayMenuItemResponse | null>(null);
+  const [availability, setAvailability] = useState<IngredientAvailabilityResponse | null>(null);
+  const [isAddingMissing, setIsAddingMissing] = useState(false);
   const [pickedImage, setPickedImage] = useState<PickedUploadImage | null>(null);
   const [rating, setRating] = useState(5);
   const [note, setNote] = useState("");
@@ -45,8 +50,12 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const detail = await todayMenuApi.get(route.params.itemId);
+      const [detail, pantryAvailability] = await Promise.all([
+        todayMenuApi.get(route.params.itemId),
+        todayMenuApi.ingredientAvailability(route.params.itemId)
+      ]);
       setItem(detail);
+      setAvailability(pantryAvailability);
       setNote(detail.note || "");
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
@@ -74,13 +83,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     }
   }, [toast]);
 
-  const completeMeal = useCallback(async () => {
+  const submitCompletion = useCallback(async () => {
     if (!item || isCooked || completionLock.current) return;
-
-    if (!pickedImage) {
-      toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
-      return;
-    }
 
     completionLock.current = true;
     setIsCompleting(true);
@@ -104,16 +108,56 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     }
   }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
 
+  const completeMeal = useCallback(() => {
+    if (!item || isCooked || completionLock.current) return;
+    if (!pickedImage) {
+      toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
+      return;
+    }
+    const missing = availability?.ingredients.filter(line => line.missingQuantity > 0) ?? [];
+    if (!missing.length) {
+      void submitCompletion();
+      return;
+    }
+    Alert.alert(
+      "Pantry chưa đủ nguyên liệu",
+      `Còn thiếu ${missing.map(line => `${line.missingQuantity} ${line.unit} ${line.ingredientName}`).join(", ")}. Bạn vẫn muốn lưu nhật ký đã nấu? Chỉ lượng thực có trong pantry mới bị trừ.`,
+      [{ text: "Quay lại", style: "cancel" }, { text: "Vẫn hoàn thành", onPress: () => void submitCompletion() }]
+    );
+  }, [availability?.ingredients, isCooked, item, pickedImage, submitCompletion, toast]);
+
+  const addMissingIngredients = useCallback(async () => {
+    if (!item || isAddingMissing) return;
+    setIsAddingMissing(true);
+    try {
+      const added = await todayMenuApi.addMissingIngredientsToShoppingList(item.id);
+      toast.show(added.length ? `Đã thêm ${added.length} nguyên liệu còn thiếu vào danh sách mua.` : "Pantry đã đủ nguyên liệu cho món này.");
+    } catch (error) {
+      toast.show(getFriendlyErrorMessage(error, "Chưa thêm được nguyên liệu vào danh sách mua."), "danger");
+    } finally {
+      setIsAddingMissing(false);
+    }
+  }, [isAddingMissing, item, toast]);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadDetail} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: 34 }}
+        contentContainerStyle={{
+          paddingBottom: 48,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center"
+        }}
       >
-        <View>
-          <Image source={{ uri: normalizeRemoteImageUrl(heroImage) }} style={{ width: "100%", height: 268, backgroundColor: colors.secondary }} />
-
+        <View style={{ borderRadius: isLandscape ? 16 : 0, overflow: "hidden", marginHorizontal: isLandscape ? 16 : 0, marginTop: isLandscape ? 8 : 0 }}>
+          <ExpoImage
+            source={{ uri: normalizeRemoteImageUrl(heroImage) }}
+            style={{ width: "100%", height: isLandscape ? 220 : 268, backgroundColor: colors.secondary }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
         </View>
 
         <View style={{ padding: 22, gap: 18 }}>
@@ -158,6 +202,19 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 )}
               </Section>
 
+              {availability && !availability.sufficient ? (
+                <Section title="Nguyên liệu còn thiếu">
+                  {availability.ingredients.filter(line => line.missingQuantity > 0).map(line => (
+                    <InfoRow key={line.ingredientId} icon="alert-circle-outline" color={colors.warning}
+                      text={`${line.ingredientName}: thiếu ${line.missingQuantity} ${line.unit}${line.unitMismatch ? " (khác đơn vị trong pantry)" : ""}`} />
+                  ))}
+                  <PrimaryButton title="Thêm nguyên liệu còn thiếu vào danh sách mua" icon="cart-outline" variant="soft"
+                    loading={isAddingMissing} disabled={isAddingMissing || isCooked} onPress={addMissingIngredients} />
+                </Section>
+              ) : availability ? (
+                <InfoRow icon="checkmark-circle-outline" color={colors.success} text="Pantry hiện có đủ nguyên liệu cho món này." />
+              ) : null}
+
               {steps.length ? (
                 <Section title="Cách nấu">
                   {steps.map((step, index) => (
@@ -192,8 +249,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                         disabled={isCompleting || isCooked}
                         onPress={() => setRating(value)}
                         style={{
-                          width: 42,
-                          height: 42,
+                          width: 48,
+                          height: 48,
                           borderRadius: 14,
                           alignItems: "center",
                           justifyContent: "center",

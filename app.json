@@ -4,7 +4,7 @@
     "slug": "z-pantry-ai-meal-planner",
     "version": "1.0.0",
     "scheme": "zpantry",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true

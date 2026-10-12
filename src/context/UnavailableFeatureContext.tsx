@@ -16,8 +16,8 @@ export function UnavailableFeatureProvider({ children }: { children: ReactNode }
         <Pressable accessibilityLabel="Đóng thông báo" onPress={close} style={{ position: "absolute", inset: 0 }} />
         <View accessibilityViewIsModal style={{ width: "100%", maxWidth: 380, backgroundColor: colors.surface, borderRadius: 16, padding: 24, gap: 16 }}>
           <MaterialCommunityIcons name="clock-outline" size={32} color={colors.primaryDark} />
-          <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 21, lineHeight: 28, fontWeight: "700" }}>Chức năng này chưa khả dụng</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>{feature} đang được hoàn thiện. Bạn có thể tiếp tục sử dụng các tính năng khác.</Text>
+          <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 21, lineHeight: 28, fontWeight: "700" }}>Tính năng chưa ra mắt</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 22 }}>{feature} chưa có ở phiên bản hiện tại. Bạn có thể tiếp tục sử dụng các tính năng khác.</Text>
           <PrimaryButton title="Đã hiểu" onPress={close} />
         </View>
       </View>

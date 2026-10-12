@@ -5,9 +5,10 @@ import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, Modal, Pressable, RefreshControl, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import { ActivityIndicator, Modal, Pressable, RefreshControl, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
@@ -23,6 +24,9 @@ import { useAuth } from "@/context/AuthContext";
 import type { PantryItem, PantryStatus } from "@/types";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import PrimaryButton from "@/components/PrimaryButton";
+import { useSizeClass } from "@/hooks/useSizeClass";
+import { layoutTokens } from "@/constants/responsive";
+import AdaptiveGrid from "@/components/AdaptiveGrid";
 
 const pantryCategories = ["Tất cả", "Ngăn mát", "Ngăn đông", "Kệ bếp"];
 
@@ -88,6 +92,7 @@ function mapPantryItem(item: PantryApiItem, ingredient?: Ingredient): PantryList
 }
 
 export default function PantryScreen() {
+  const { isCompact, isLandscape } = useSizeClass();
   const [active, setActive] = useState("Tất cả");
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<PantryListItem[]>([]);
@@ -159,12 +164,20 @@ export default function PantryScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 62, paddingBottom: 24, gap: 14 }}
+        contentContainerStyle={{
+          paddingHorizontal: isCompact ? 16 : 24,
+          paddingTop: isLandscape ? 16 : isCompact ? 48 : 32,
+          paddingBottom: isCompact ? 116 : 40,
+          gap: 14,
+          maxWidth: layoutTokens.contentMaxWidth,
+          width: "100%",
+          alignSelf: "center"
+        }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <View style={{ flex: 1, gap: 5 }}><Text style={{ color: colors.text, fontSize: 25, fontWeight: "700" }}>Kho thực phẩm</Text>
             <Text style={{ color: colors.muted, fontSize: 13 }}>Quản lý nguyên liệu của {displayName}</Text></View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Thông báo hạn dùng" onPress={() => setShowExpiry(true)} style={{ padding: 12 }}><FigmaAsset asset={assets.imgContainer13} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Thông báo hạn dùng" onPress={() => setShowExpiry(true)} style={{ minWidth: 48, minHeight: 48, justifyContent: "center", alignItems: "center", padding: 12 }}><FigmaAsset asset={assets.imgContainer13} /></Pressable>
         </View>
         {errorMessage ? <><ExpiryAlertCard title={errorMessage} tone="danger" /><PrimaryButton title="Thử tải lại" onPress={loadPantry} variant="outline" /></> : null}
         {expiringItems.length ? <Pressable onPress={() => setShowExpiry(true)} accessibilityRole="button"><ExpiryAlertCard title={expiringItems.length + " thực phẩm cần chú ý hạn dùng"} /></Pressable> : null}
@@ -172,7 +185,7 @@ export default function PantryScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {items.slice(0, 8).map(item => <Pressable key={item.id} accessibilityRole="button" onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })}
               style={{ width: 104, padding: 10, gap: 5, borderRadius: 10, backgroundColor: colors.surface, alignItems: "center" }}>
-              <Image source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 56, height: 56, borderRadius: 28 }} />
+              <ExpoImage source={{ uri: normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL) }} style={{ width: 56, height: 56, borderRadius: 28 }} contentFit="cover" cachePolicy="memory-disk" />
               <Text numberOfLines={1} style={{ color: colors.text, fontSize: 12, fontWeight: "600" }}>{item.name}</Text>
               <Text style={{ color: colors.muted, fontSize: 10 }}>{item.quantity}</Text>
               <View style={{ backgroundColor: colors.successSoft, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 }}><Text style={{ color: colors.success, fontSize: 10 }}>{item.location === "Ngan dong" ? "Ngăn đông" : item.location === "Ke bep" ? "Kệ bếp" : "Tủ lạnh"}</Text></View>
@@ -185,9 +198,27 @@ export default function PantryScreen() {
             {pantryCategories.map(category => <CategoryChip key={category} label={category} active={active === category} onPress={() => setActive(category)} />)}
           </ScrollView>
           <SearchBar placeholder="Tìm thực phẩm trong kho" value={search} onChangeText={setSearch} onSubmit={() => setSearch(search.trim())} actionLabel="Tìm" />
-          {isLoading && !items.length ? <ActivityIndicator color={colors.primary} style={{ padding: 24 }} /> : filtered.length ? filtered.map(item =>
-            <PantryItemCard key={item.id} item={item} quantityControl={{ value: item.apiItem.quantity, unit: item.apiItem.unit, busy: quantityBusy || isLoading, onChange: quantity => changeQuantity(item, quantity) }} onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })} />)
-            : !errorMessage ? <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 24, gap: 12, alignItems: "center" }}>
+          {isLoading && !items.length ? <ActivityIndicator color={colors.primary} style={{ padding: 24 }} /> : filtered.length ? (
+            <AdaptiveGrid
+              data={filtered}
+              keyExtractor={item => item.id}
+              columns={isCompact ? 1 : 2}
+              gap={12}
+              renderItem={item => (
+                <PantryItemCard
+                  key={item.id}
+                  item={item}
+                  quantityControl={{
+                    value: item.apiItem.quantity,
+                    unit: item.apiItem.unit,
+                    busy: quantityBusy || isLoading,
+                    onChange: quantity => changeQuantity(item, quantity)
+                  }}
+                  onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })}
+                />
+              )}
+            />
+          ) : !errorMessage ? <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 24, gap: 12, alignItems: "center" }}>
               <MaterialCommunityIcons name="fridge-outline" size={36} color={colors.muted} />
               <Text style={{ color: colors.text, fontWeight: "600" }}>{search ? "Không tìm thấy thực phẩm" : "Chưa có thực phẩm ở mục này"}</Text>
               <PrimaryButton title="Thêm thực phẩm" onPress={() => navigation.navigate("AddIngredient")} />

@@ -2,6 +2,7 @@ import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, TextInput, View } from "react-native";
 import { colors } from "@/constants/colors";
+import { layoutTokens } from "@/constants/responsive";
 
 type Props = {
   placeholder: string;
@@ -17,7 +18,7 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
     <View
       style={{
         minHeight: 48,
-        borderRadius: 8,
+        borderRadius: 10,
         backgroundColor: colors.card,
         borderWidth: 1.5,
         borderColor: "#B7C2B9",
@@ -38,10 +39,20 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         blurOnSubmit
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
-        style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 0 }}
+        style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 14, fontWeight: "600", paddingVertical: 8 }}
       />
-      <Pressable onPress={onActionPress || onSubmit} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}>
-        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }} selectable={false}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={actionLabel}
+        onPress={onActionPress || onSubmit}
+        hitSlop={layoutTokens.hitSlop48From36}
+        style={({ pressed }) => ({ minHeight: 36, justifyContent: "center", opacity: pressed ? 0.72 : 1 })}
+      >
+        <Text
+          maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.button}
+          style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }}
+          selectable={false}
+        >
           {actionLabel}
         </Text>
       </Pressable>
