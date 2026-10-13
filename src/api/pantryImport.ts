@@ -77,15 +77,16 @@ export const pantryImportApi = {
   async analyze(source: ImportSource, file: UploadFile): Promise<ImportPreview> {
     const body = new FormData();
     body.append("image", file as Blob);
-    if (source === "AUTO") body.append("expectedType", "AUTO");
-    const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(source === "AUTO" ? endpoints.pantryImport.autoImage : source === "RECEIPT" ? endpoints.pantryImport.receipt : endpoints.pantryImport.food, {
+    const expectedType = source === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE";
+    body.append("expectedType", expectedType);
+    const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(endpoints.pantryImport.autoImage, {
       method: "POST", auth: true, body, timeoutMs: 90000
     });
-    const items = source === "AUTO" ? result.ingredients : result.items;
+    const items = result.ingredients;
     if (!Array.isArray(items)) throw new ApiError("Kết quả phân tích ảnh không hợp lệ. Vui lòng thử lại.", 502);
-    if (source === "AUTO" && result.imageType === "UNKNOWN")
+    if (result.imageType === "UNKNOWN")
       return { sourceType: "AUTO", items: [], warnings: [...(result.warnings || []), "Chưa xác định được loại ảnh. Hãy chọn ảnh thực phẩm hoặc hóa đơn rõ hơn."], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
-    return { sourceType: source === "AUTO" ? (result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE") : source, items, warnings: result.warnings || [], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
+    return { sourceType: result.imageType === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE", items, warnings: result.warnings || [], analysisId: result.analysisId, imageTypeConfidence: result.imageTypeConfidence, imageQuality: result.imageQuality, needsUserChoice: result.needsUserChoice, reason: result.reason };
   },
   confirm(items: ImportItem[], analysisId?: string, idempotencyKey: string = randomUUID()) {
     validateImportItems(items);

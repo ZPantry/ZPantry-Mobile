@@ -655,12 +655,14 @@ test('V2 sends only topK, unwraps nested AI results, and does not invent persist
 
 test('image analysis sends multipart image to Java and never confirms automatically', async () => {
   const calls = [];
-  const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => { calls.push(args); return { items: [] }; } } })('@/api/pantryImport');
+  const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => { calls.push(args); return { imageType: 'FOOD_IMAGE', ingredients: [] }; } } })('@/api/pantryImport');
   const file = new File(['synthetic'], 'food.png', { type: 'image/png' });
   await pantryImportApi.analyze('RECEIPT', file);
   await pantryImportApi.analyze('FOOD_IMAGE', file);
-  assert.deepEqual(calls.map(([route]) => route), ['/api/me/pantry-import/receipt/analyze', '/api/me/pantry-import/food-image/analyze']);
+  assert.deepEqual(calls.map(([route]) => route), ['/api/v2/ingredients/analyze-image', '/api/v2/ingredients/analyze-image']);
   assert.equal(calls[0][1].body.get('image').name, 'food.png');
+  assert.equal(calls[0][1].body.get('expectedType'), 'RECEIPT');
+  assert.equal(calls[1][1].body.get('expectedType'), 'FOOD_IMAGE');
   assert.equal(calls.every(([, options]) => options.auth && options.method === 'POST'), true);
   const items = [{ ingredientId: id, quantity: 2.5, unit: 'kg' }];
   await pantryImportApi.confirm(items);
