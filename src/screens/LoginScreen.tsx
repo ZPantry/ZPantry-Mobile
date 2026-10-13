@@ -240,9 +240,6 @@ export default function LoginScreen() {
             overflow: "hidden"
           }}
         >
-          <View pointerEvents="none" style={{ position: "absolute", width: 1638, height: 1368, left: -599, top: -622 }}>
-            <FigmaAsset asset={assets.imgVector1} style={{ width: 1638, height: 1368 }} />
-          </View>
           <View style={{ paddingTop: isLandscape ? 20 : isCompact ? 40 : 64, alignItems: "center" }}>
             <FigmaAsset asset={assets.imgLogoZPantryVer61} label="Z Pantry" />
             <Text style={{ marginTop: isLandscape ? 12 : 22, paddingHorizontal: 16, color: colors.dark, fontFamily: "Inter_700Bold", fontSize: mode === "login" ? (isCompact ? 26 : 30) : 24, lineHeight: 34, textAlign: "center", fontWeight: "700" }}>
