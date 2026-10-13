@@ -15,6 +15,7 @@ import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 
 type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string };
@@ -170,7 +171,7 @@ export default function PantryImportScreen() {
       {image && rows === null ? <Action label={busy ? "Đang nhận diện…" : "Phân tích ảnh"} onPress={analyze} disabled={busy} /> : null}
       </> : null}
       {busy ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <Text accessibilityRole="alert" selectable style={{ color: colors.danger, lineHeight: 22 }}>{error}</Text> : null}
+      {error ? isAllergyConflictMessage(error) ? <AllergyConflictBanner message={error} /> : <Text accessibilityRole="alert" selectable style={{ color: colors.danger, lineHeight: 22 }}>{error}</Text> : null}
       {retryableAiError && image && rows === null ? <Action label="Thử lại nhận diện" onPress={analyze} disabled={busy} soft /> : null}
       {analysisNotice ? <Text accessibilityRole="alert" selectable style={{ color: colors.warning, lineHeight: 22 }}>{analysisNotice} Lượt AI của bạn không bị trừ.</Text> : null}
       {warnings.map((w, index) => <Text key={index} selectable style={{ color: colors.primary }}>{w === "No food ingredients were detected." ? "Chưa nhận diện được nguyên liệu. Hãy thử ảnh rõ hơn hoặc thêm thủ công." : w}</Text>)}

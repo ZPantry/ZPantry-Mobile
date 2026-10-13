@@ -25,6 +25,7 @@ import { useToast } from "@/context/ToastContext";
 import type { Meal, RootStackParamList } from "@/types";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
 import { getCurrentMealType, getFriendlyErrorMessage, translateDifficulty } from "@/utils/localize";
+import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
 
@@ -75,6 +76,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingToToday, setIsAddingToToday] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [allergyAlert, setAllergyAlert] = useState("");
 
   const loadRecipe = useCallback(async () => {
     setIsLoading(true);
@@ -141,6 +143,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(plannedDate) || Number.isNaN(Date.parse(plannedDate)) || new Date(plannedDate).toISOString().slice(0,10) !== plannedDate) { toast.show("Vui lòng chọn đủ ngày, tháng và năm hợp lệ.", "danger"); return; }
 
     setIsAddingToToday(true);
+    setAllergyAlert("");
     try {
       const item = await todayMenuApi.add({
         recipeId: recipe.id,
@@ -155,7 +158,9 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       toast.show("Đã thêm món vào thực đơn.");
       navigation.navigate("Plan", { date: item.plannedDate || plannedDate, refreshKey: Date.now() });
     } catch (error) {
-      toast.show(getFriendlyErrorMessage(error, "Chưa thêm được món vào thực đơn."), "danger");
+      const message = getFriendlyErrorMessage(error, "Chưa thêm được món vào thực đơn.");
+      if (isAllergyConflictMessage(message)) setAllergyAlert(message);
+      toast.show(message, "danger");
     } finally {
       setIsAddingToToday(false);
     }
@@ -261,6 +266,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
               </RecipeSection>
 
               <RecipeSection title="Lên thực đơn">
+                {allergyAlert ? <AllergyConflictBanner message={allergyAlert} /> : null}
                 <DateField label="Ngày lên thực đơn" value={plannedDate} onChange={setPlannedDate} disabled={isAddingToToday} />
                 <SelectField label="Bữa ăn" value={mealType} onValueChange={setMealType} disabled={isAddingToToday} options={[{ label: "Bữa sáng", value: "BREAKFAST" }, { label: "Bữa trưa", value: "LUNCH" }, { label: "Bữa tối", value: "DINNER" }, { label: "Bữa phụ", value: "SNACK" }]} />
                 <SelectField label="Khẩu phần" value={String(portionCount)} onValueChange={setServings} disabled={isAddingToToday} options={[...new Set([1, 2, 3, 4, 6, 8, recipe?.servingSize || 1])].sort((a,b) => a-b).map(n => ({ value: String(n), label: `${n} người` }))} />

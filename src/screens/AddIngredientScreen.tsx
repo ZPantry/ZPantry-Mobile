@@ -17,6 +17,7 @@ import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 
 const storageOptions = [
   { label: "Ngăn mát", value: "fridge" },
@@ -150,7 +151,7 @@ export default function AddIngredientScreen() {
     </ScrollView>
     <View style={{ paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line, backgroundColor: colors.surface }}>
       <View style={{ maxWidth: 680, width: '100%', alignSelf: 'center', gap: 8 }}>
-        {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, lineHeight: 20 }}>{error}</Text> : null}
+        {error ? isAllergyConflictMessage(error) ? <AllergyConflictBanner message={error} /> : <Text accessibilityRole="alert" style={{ color: colors.danger, lineHeight: 20 }}>{error}</Text> : null}
         <PrimaryButton title={saving ? "Đang lưu…" : drafts.length ? `Lưu ${drafts.length} nguyên liệu vào tủ` : "Chọn nguyên liệu để lưu"} disabled={saving || !drafts.length} onPress={save} />
       </View>
     </View>
