@@ -2,7 +2,7 @@ import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, Pressable, RefreshControl, TextInput, View } from "react-native";
+import { Pressable, RefreshControl, TextInput, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -110,21 +110,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
   const completeMeal = useCallback(() => {
     if (!item || isCooked || completionLock.current) return;
-    if (!pickedImage) {
-      toast.show("Vui lòng chọn ảnh thành phẩm trước khi hoàn thành món.", "info");
-      return;
-    }
-    const missing = availability?.ingredients.filter(line => line.missingQuantity > 0) ?? [];
-    if (!missing.length) {
-      void submitCompletion();
-      return;
-    }
-    Alert.alert(
-      "Pantry chưa đủ nguyên liệu",
-      `Còn thiếu ${missing.map(line => `${line.missingQuantity} ${line.unit} ${line.ingredientName}`).join(", ")}. Bạn vẫn muốn lưu nhật ký đã nấu? Chỉ lượng thực có trong pantry mới bị trừ.`,
-      [{ text: "Quay lại", style: "cancel" }, { text: "Vẫn hoàn thành", onPress: () => void submitCompletion() }]
-    );
-  }, [availability?.ingredients, isCooked, item, pickedImage, submitCompletion, toast]);
+    void submitCompletion();
+  }, [isCooked, item, submitCompletion]);
 
   const addMissingIngredients = useCallback(async () => {
     if (!item || isAddingMissing) return;
