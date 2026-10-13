@@ -18,7 +18,7 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 
-type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string };
+type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string; quantityAutofilled: boolean };
 export default function PantryImportScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -69,7 +69,11 @@ export default function PantryImportScreen() {
   }, [method, menuDate, menuRetry]);
   const showPreview = (result: ImportPreview) => {
     if (!Array.isArray(result.items)) throw new Error("Kết quả không hợp lệ. Vui lòng thử lại.");
-    setRows(result.items.map((r, key) => ({ ...r, key, quantityText: r.quantity == null ? "" : String(r.quantity), unitText: r.unit || "" })));
+    setRows(result.items.map((r, key) => {
+      const quantityAutofilled = r.quantity == null || r.quantity <= 0;
+      const unitText = r.unit || "";
+      return { ...r, key, quantityText: quantityAutofilled ? defaultQuantityForUnit(unitText) : String(r.quantity), unitText, quantityAutofilled };
+    }));
     setWarnings(result.warnings || []);
     setAnalysisId(result.analysisId);
     confirmKey.current = undefined;
@@ -127,7 +131,9 @@ export default function PantryImportScreen() {
   };
   const patchRow = (key: number, update: Partial<Draft>) => {
     setError("");
-    setRows((current) => current?.map((r) => r.key === key ? { ...r, ...update } : r) ?? null);
+    setRows((current) => current?.map((r) => r.key === key
+      ? { ...r, ...update, quantityAutofilled: update.quantityText === undefined ? r.quantityAutofilled : false }
+      : r) ?? null);
   };
   const confirm = async () => {
     if (!rows?.length || lock.current) return;
@@ -184,7 +190,7 @@ export default function PantryImportScreen() {
               <Text style={{ color: r.ingredientId ? colors.muted : colors.primaryDark }}>{r.ingredientId ? r.canonicalIngredientName : "Cần chọn nguyên liệu tương ứng"}</Text>
               {r.reviewRequired || r.resolverStatus === "AMBIGUOUS" ? <Text style={{ color: colors.warning, fontSize: 12 }}>Cần kiểm tra lại kết quả nhận diện</Text> : null}
               {r.flags?.includes("LOW_CONFIDENCE") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>AI chưa tự tin về nguyên liệu này</Text> : null}
-              {r.flags?.includes("NO_QUANTITY") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>Hãy nhập số lượng trước khi lưu</Text> : null}
+              {r.quantityAutofilled ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>AI chưa xác định được số lượng, đã điền mức mặc định theo đơn vị. Bạn có thể chỉnh lại trước khi lưu.</Text> : null}
               {r.flags?.includes("ANOMALY") ? <Text accessibilityRole="alert" style={{ color: colors.warning, fontSize: 12 }}>Đơn vị hoặc kết quả cần kiểm tra lại</Text> : null}
               {r.sourceUnit && r.sourceUnit !== r.unit ? <Text style={{ color: colors.muted, fontSize: 12 }}>Đơn vị trên ảnh: {r.sourceUnit}</Text> : null}</View>
             <Pressable disabled={busy} accessibilityLabel={`Bỏ ${r.rawName}`} onPress={() => { setRows((current) => current?.filter((x) => x.key !== r.key) ?? null); if (editing === r.key) setEditing(null); }} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={{ color: colors.danger }}>Bỏ</Text></Pressable>
@@ -224,6 +230,10 @@ function unknownReasonMessage(reason: string) {
   return ({ BLURRY: "Ảnh bị mờ, hãy chụp lại gần hơn.", TOO_DARK: "Ảnh quá tối, hãy thêm ánh sáng.", NO_FOOD: "Không thấy thực phẩm hoặc hóa đơn trong ảnh.", NOT_SUPPORTED: "Ảnh menu, công thức hoặc món đã nấu chưa được hỗ trợ.", UNCERTAIN: "Chưa nhận diện được loại ảnh, hãy chọn thủ công." } as Record<string, string>)[reason] || "Chưa nhận diện được ảnh.";
 }
 const inputStyle = { minHeight: 48, padding: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 12, color: colors.text };
+function defaultQuantityForUnit(unit: string) {
+  const normalized = unit.trim().toLowerCase();
+  return normalized === "g" || normalized === "gram" || normalized === "ml" ? "100" : "1";
+}
 function Action({ label, onPress, disabled, soft }: { label: string; onPress: () => void; disabled?: boolean; soft?: boolean }) {
   return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={{ minHeight: 44, padding: 12, borderRadius: 12, alignItems: "center", backgroundColor: soft ? colors.card : colors.primary, borderWidth: 1, borderColor: colors.line, opacity: disabled ? 0.5 : 1 }}>
     <Text style={{ color: soft ? colors.text : colors.textDark, fontWeight: "600" }}>{label}</Text>
