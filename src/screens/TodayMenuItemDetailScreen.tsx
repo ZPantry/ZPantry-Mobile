@@ -84,7 +84,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [toast]);
 
   const submitCompletion = useCallback(async () => {
-    if (!item || isCooked || completionLock.current) return;
+    if (!item || completionLock.current) return;
 
     completionLock.current = true;
     setIsCompleting(true);
@@ -101,17 +101,14 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       await loadDetail();
     } catch (error) {
-      toast.show(getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default"), "danger");
+      const message = getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default");
+      setErrorMessage(message);
+      toast.show(message, "danger");
     } finally {
       completionLock.current = false;
       setIsCompleting(false);
     }
-  }, [isCooked, item, loadDetail, note, pickedImage?.file, rating, toast]);
-
-  const completeMeal = useCallback(() => {
-    if (!item || isCooked || completionLock.current) return;
-    void submitCompletion();
-  }, [isCooked, item, submitCompletion]);
+  }, [item, loadDetail, note, pickedImage?.file, rating, toast]);
 
   const addMissingIngredients = useCallback(async () => {
     if (!item || isAddingMissing) return;
@@ -276,7 +273,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                 {isCooked ? (
                   <InfoRow icon="checkmark-circle" color={colors.success} text="Món này đã hoàn thành. Pantry đã được xử lý ở lần xác nhận hoàn thành." />
                 ) : (
-                  <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting} onPress={completeMeal} />
+                  <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting}
+                    disabled={isCompleting} onPress={() => void submitCompletion()} />
                 )}
               </Section>
 
