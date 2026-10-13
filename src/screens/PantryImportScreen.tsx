@@ -196,7 +196,14 @@ export default function PantryImportScreen() {
             {searching ? <ActivityIndicator color={colors.primary} /> : null}
             {searchError ? <Pressable onPress={() => setSearchRetry((v) => v + 1)}><Text style={{ color: colors.danger }}>{searchError} Nhấn để thử lại.</Text></Pressable> : null}
             {!searching && !searchError && !matches.length ? <Text style={{ color: colors.muted }}>Không tìm thấy. Thử tên khác hoặc bỏ dòng này.</Text> : null}
-            {matches.map((i) => <Pressable disabled={busy} key={i.id} onPress={() => { patchRow(r.key, { ingredientId: i.id, canonicalIngredientName: i.name, resolverStatus: "RESOLVED" }); setEditing(null); }} style={{ minHeight: 44, padding: 10, borderBottomWidth: 1, borderColor: colors.line }}>
+            {matches.map((i) => <Pressable disabled={busy} key={i.id} onPress={() => {
+              patchRow(r.key, {
+                ingredientId: i.id, canonicalIngredientName: i.name, resolverStatus: "RESOLVED",
+                unitText: r.unitText.trim() || i.unit || i.defaultUnit || "piece",
+                quantityText: r.quantityText.trim() || "1"
+              });
+              setEditing(null);
+            }} style={{ minHeight: 44, padding: 10, borderBottomWidth: 1, borderColor: colors.line }}>
               <Text style={{ color: colors.text }}>{i.name} · đơn vị danh mục: {i.unit}</Text>
             </Pressable>)}
           </View> : null}
