@@ -2,7 +2,7 @@
   "expo": {
     "name": "Z-Pantry",
     "slug": "z-pantry-ai-meal-planner",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "zpantry",
     "icon": "./assets/images/icon.png",
     "orientation": "default",
