@@ -26,7 +26,7 @@ export default function PantryImportScreen() {
   const imageMethod = method === "FOOD_IMAGE" || method === "RECEIPT";
   const toast = useToast();
   const warnLowQuota = useQuotaWarning();
-  const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "AUTO");
+  const [source, setSource] = useState<ImportSource>(method === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE");
   const [menuDate, setMenuDate] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -158,7 +158,7 @@ export default function PantryImportScreen() {
       {imageMethod ? <>
       <View pointerEvents={busy || rows !== null ? "none" : "auto"}>
         <SelectField label="Bạn muốn nhận diện gì?" value={source} onValueChange={(v) => setSource(v as ImportSource)} options={[
-          { value: "AUTO", label: "Tự nhận diện loại ảnh" }, { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
+          { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
         ]} />
       </View>
       {image ? <Image source={{ uri: image.uri }} resizeMode="contain" style={{ height: 210, borderRadius: 18, backgroundColor: colors.card }} /> :
