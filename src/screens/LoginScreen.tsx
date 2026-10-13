@@ -14,7 +14,6 @@ import { useUnavailableFeature } from "@/context/UnavailableFeatureContext";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { getFriendlyErrorMessage } from "@/utils/localize";
-import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import KeyboardSafeView from "@/components/KeyboardSafeView";
 
@@ -32,7 +31,6 @@ export default function LoginScreen() {
   const { isLandscape, isCompact } = useSizeClass();
 
   const { signIn } = useAuth();
-  const google = useGoogleSignIn();
   const showUnavailable = useUnavailableFeature();
   const [mode, setMode] = useState<AuthMode>("login");
   const [fullName, setFullName] = useState("");
@@ -168,30 +166,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (requestInFlight.current) return;
-    if (mode === "register" && !acceptedTerms) {
-      setSuccessMessage("");
-      setAuthMessage("Vui lòng đồng ý điều khoản dịch vụ trước khi đăng nhập.");
-      return;
-    }
-    requestInFlight.current = true;
-    setIsSubmitting(true);
-    setAuthMessage("");
-    setSuccessMessage("");
-    try {
-      const idToken = await google.getIdToken();
-      if (!idToken) return; // Closing the provider dialog is not a login failure.
-      const session = await authApi.google(idToken);
-      await signIn(session, rememberMe);
-    } catch (error) {
-      handleApiError(error);
-    } finally {
-      requestInFlight.current = false;
-      setIsSubmitting(false);
-    }
-  };
-
   const handleVerifyOtp = async () => {
     if (requestInFlight.current) return;
     const validationError = validateOtp();
@@ -297,14 +271,6 @@ export default function LoginScreen() {
           <Text style={{ color: "#424843", fontSize: 14 }}>{mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}</Text>
           <Text style={{ color: "#0D2818", fontSize: 15, fontWeight: "700" }}>{mode === "login" ? "Đăng ký ngay" : "Đăng nhập ngay"}</Text><FigmaAsset asset={assets.imgContainer5} />
         </Pressable>
-        {mode !== "otp" ? <View style={{ marginTop: 32, marginHorizontal: 9, gap: 28 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}><View style={{ flex: 1, height: 1, backgroundColor: colors.line }} /><Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", letterSpacing: 0.55 }}>HOẶC TIẾP TỤC VỚI</Text><View style={{ flex: 1, height: 1, backgroundColor: colors.line }} /></View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Đăng nhập bằng Google" accessibilityState={{ disabled: isSubmitting || !google.ready, busy: isSubmitting }} disabled={isSubmitting || !google.ready} onPress={handleGoogleLogin}
-            style={({ pressed }) => ({ alignSelf: "center", width: 114, height: 48, borderRadius: 12, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", boxShadow: "0 1px 1px rgba(0,0,0,0.1)", opacity: !google.ready || isSubmitting ? 0.5 : pressed ? 0.75 : 1 })}>
-            <FigmaAsset asset={assets.imgSvg} />
-          </Pressable>
-          {!google.ready ? <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>Google chưa được cấu hình trên phiên bản này.</Text> : null}
-        </View> : null}
       </ScrollView>
       </KeyboardSafeView>
     </SafeAreaView>
