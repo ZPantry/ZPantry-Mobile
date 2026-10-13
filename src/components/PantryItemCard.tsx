@@ -14,6 +14,8 @@ type Props = {
   item: PantryItem;
   onPress?: () => void;
   quantityControl?: { value: number; unit: string; busy: boolean; onChange: (value: number) => void };
+  selection?: { selected: boolean; onToggle: () => void };
+  onQuickDelete?: () => void;
 };
 
 function statusCopy(status: PantryItem["status"]) {
@@ -34,15 +36,15 @@ function statusIcon(status: PantryItem["status"]): keyof typeof Ionicons.glyphMa
   return "time";
 }
 
-export default function PantryItemCard({ item, onPress, quantityControl }: Props) {
+export default function PantryItemCard({ item, onPress, quantityControl, selection, onQuickDelete }: Props) {
   const color = statusColor(item.status);
   const imageUrl = normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Thực phẩm ${item.name}`}
-      onPress={onPress}
+      accessibilityLabel={selection ? `${selection.selected ? "Bỏ chọn" : "Chọn"} thực phẩm ${item.name}` : `Thực phẩm ${item.name}`}
+      onPress={selection ? selection.onToggle : onPress}
       style={({ pressed }) => ({
         backgroundColor: colors.white,
         borderRadius: 14,
@@ -92,7 +94,11 @@ export default function PantryItemCard({ item, onPress, quantityControl }: Props
         </View>
       </View>
 
-      {quantityControl ? (
+      {selection ? (
+        <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: selection.selected ? colors.primary : colors.line, backgroundColor: selection.selected ? colors.primary : colors.white, alignItems: "center", justifyContent: "center" }}>
+          {selection.selected ? <Ionicons name="checkmark" size={19} color={colors.white} /> : null}
+        </View>
+      ) : quantityControl ? (
         <View style={{ alignItems: 'center', gap: 6 }}>
           <Text maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.badge} style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
             {quantityControl.value} {quantityControl.unit}
@@ -126,6 +132,15 @@ export default function PantryItemCard({ item, onPress, quantityControl }: Props
               </Pressable>
             ))}
           </View>
+          {onQuickDelete ? <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Xóa ${item.name}`}
+            onPress={event => { event.stopPropagation(); onQuickDelete(); }}
+            hitSlop={layoutTokens.hitSlop48From32}
+            style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 8, backgroundColor: "#FFF0F0", alignItems: "center", justifyContent: "center", opacity: pressed ? 0.72 : 1 })}
+          >
+            <Ionicons name="trash-outline" size={17} color={colors.danger} />
+          </Pressable> : null}
         </View>
       ) : (
         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>

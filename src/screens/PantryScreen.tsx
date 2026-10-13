@@ -21,6 +21,7 @@ import ExpiryAlertCard from "@/components/ExpiryAlertCard";
 import PantryItemCard from "@/components/PantryItemCard";
 import { colors } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import type { PantryItem, PantryStatus } from "@/types";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -93,12 +94,17 @@ function mapPantryItem(item: PantryApiItem, ingredient?: Ingredient): PantryList
 
 export default function PantryScreen() {
   const { isCompact, isLandscape } = useSizeClass();
+  const toast = useToast();
   const [active, setActive] = useState("Tất cả");
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<PantryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [quantityBusy, setQuantityBusy] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [isDeletingItems, setIsDeletingItems] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const quantityLock = useRef(false);
   const navigation = useNavigation<any>();
   const { user, onboardingStep } = useAuth();
@@ -142,6 +148,49 @@ export default function PantryScreen() {
     } finally {
       quantityLock.current = false;
       setQuantityBusy(false);
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(current => !current);
+    setSelectedItemIds(new Set());
+  };
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItemIds(current => {
+      const next = new Set(current);
+      if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
+      return next;
+    });
+  };
+
+  const requestDelete = (itemIds: string[]) => {
+    if (!itemIds.length || isDeletingItems) return;
+    setSelectedItemIds(new Set(itemIds));
+    setShowDeleteConfirm(true);
+  };
+
+  const deleteSelectedItems = async () => {
+    const itemIds = [...selectedItemIds];
+    if (!itemIds.length || isDeletingItems) return;
+    setIsDeletingItems(true);
+    setErrorMessage("");
+    try {
+      const outcomes = await Promise.allSettled(itemIds.map(itemId => pantryApi.removeItem(itemId)));
+      const deletedIds = new Set(itemIds.filter((_, index) => outcomes[index].status === "fulfilled"));
+      const failedCount = itemIds.length - deletedIds.size;
+      if (deletedIds.size) setItems(current => current.filter(item => !deletedIds.has(item.id)));
+      if (failedCount) {
+        setSelectedItemIds(new Set(itemIds.filter(itemId => !deletedIds.has(itemId))));
+        setErrorMessage(`Chưa xóa được ${failedCount} thực phẩm. Vui lòng thử lại.`);
+      } else {
+        setSelectedItemIds(new Set());
+        setSelectionMode(false);
+        toast.show(`Đã xóa ${deletedIds.size} thực phẩm khỏi tủ lạnh.`);
+      }
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeletingItems(false);
     }
   };
 
@@ -193,7 +242,17 @@ export default function PantryScreen() {
           </ScrollView>
         </View> : null}
         <View style={{ gap: 12 }}>
-          <SectionHeading title="Sản phẩm trong kho" action="Thêm mới" onPress={() => navigation.navigate("AddIngredient")} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ flex: 1 }}><SectionHeading title="Sản phẩm trong kho" /></View>
+            <Pressable accessibilityRole="button" accessibilityLabel={selectionMode ? "Hủy chọn xóa" : "Chọn nhiều thực phẩm để xóa"} onPress={toggleSelectionMode}
+              style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 10, borderRadius: 9, backgroundColor: selectionMode ? "#FFF0F0" : colors.surface, borderWidth: 1, borderColor: selectionMode ? colors.danger : colors.line, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+              <Text style={{ color: selectionMode ? colors.danger : colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{selectionMode ? "Hủy" : "Chọn xóa"}</Text>
+            </Pressable>
+            {!selectionMode ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm thực phẩm" onPress={() => navigation.navigate("AddIngredient")}
+              style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 10, borderRadius: 9, backgroundColor: colors.primary, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+              <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }}>Thêm mới</Text>
+            </Pressable> : null}
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {pantryCategories.map(category => <CategoryChip key={category} label={category} active={active === category} onPress={() => setActive(category)} />)}
           </ScrollView>
@@ -214,6 +273,8 @@ export default function PantryScreen() {
                     busy: quantityBusy || isLoading,
                     onChange: quantity => changeQuantity(item, quantity)
                   }}
+                  selection={selectionMode ? { selected: selectedItemIds.has(item.id), onToggle: () => toggleItemSelection(item.id) } : undefined}
+                  onQuickDelete={!selectionMode ? () => requestDelete([item.id]) : undefined}
                   onPress={() => navigation.navigate("PantryItemDetail", { pantryItem: item.apiItem, ingredient: item.ingredient })}
                 />
               )}
@@ -231,6 +292,9 @@ export default function PantryScreen() {
           <ActionRow icon="silverware-fork-knife" title="Thêm bằng thực đơn" onPress={() => navigation.navigate("PantryImport", { method: "MENU" })} />
         </View>
       </ScrollView>
+      {selectionMode && selectedItemIds.size ? <View style={{ position: "absolute", left: isCompact ? 16 : 24, right: isCompact ? 16 : 24, bottom: 18 }}>
+        <PrimaryButton title={`Xóa ${selectedItemIds.size} thực phẩm`} icon="trash-can-outline" loading={isDeletingItems} onPress={() => requestDelete([...selectedItemIds])} style={{ backgroundColor: colors.danger }} />
+      </View> : null}
       <Modal transparent visible={showExpiry} animationType="fade" onRequestClose={() => setShowExpiry(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 }}>
           <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxHeight: "75%", maxWidth: 520, width: "100%", alignSelf: "center" }}>
@@ -242,6 +306,18 @@ export default function PantryScreen() {
               </View>) : <Text style={{ color: colors.text }}>Chưa có thực phẩm sắp hết hạn.</Text>}
             </ScrollView>
             <PrimaryButton title="Đóng thông báo" onPress={() => setShowExpiry(false)} />
+          </View>
+        </View>
+      </Modal>
+      <Modal transparent visible={showDeleteConfirm} animationType="fade" onRequestClose={() => !isDeletingItems && setShowDeleteConfirm(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: colors.background, borderRadius: 18, padding: 20, gap: 16, maxWidth: 420, width: "100%", alignSelf: "center" }}>
+            <MaterialCommunityIcons name="trash-can-outline" size={30} color={colors.danger} />
+            <View style={{ gap: 6 }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "700" }}>Xóa thực phẩm?</Text><Text style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{selectedItemIds.size === 1 ? "Thực phẩm này" : `${selectedItemIds.size} thực phẩm`} sẽ bị xóa khỏi tủ lạnh của bạn.</Text></View>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={{ flex: 1 }}><PrimaryButton title="Hủy" variant="outline" disabled={isDeletingItems} onPress={() => setShowDeleteConfirm(false)} /></View>
+              <View style={{ flex: 1 }}><PrimaryButton title="Xóa" icon="trash-can-outline" loading={isDeletingItems} onPress={() => void deleteSelectedItems()} style={{ backgroundColor: colors.danger }} /></View>
+            </View>
           </View>
         </View>
       </Modal>
