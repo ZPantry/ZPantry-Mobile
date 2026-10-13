@@ -1,5 +1,4 @@
 import FixedBackHeader from "@/components/FixedBackHeader";
-import AiChefChat from "@/components/AiChefChat";
 import FigmaAsset from '@/components/FigmaAsset';
 import { homeAssets, pantryAssets, exploreAssets, profileAssets, loginAssets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -274,7 +273,6 @@ export default function AppNavigator() {
         </>
       )}
     </Stack.Navigator>
-    {isAuthenticated && !isAdmin ? <AiChefChat /> : null}
     </View>
   );
 }

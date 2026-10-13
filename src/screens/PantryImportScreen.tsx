@@ -45,6 +45,7 @@ export default function PantryImportScreen() {
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [error, setError] = useState("");
+  const [retryableAiError, setRetryableAiError] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<Ingredient[]>([]);
@@ -76,7 +77,7 @@ export default function PantryImportScreen() {
   };
   const prepare = async () => {
     if (lock.current) return;
-    lock.current = true; setBusy(true); setError(""); setEditing(null);
+    lock.current = true; setBusy(true); setError(""); setRetryableAiError(false); setEditing(null);
     try {
       showPreview(await pantryImportApi.fromMenu(meals.filter(meal => selectedMeals.includes(meal.id))));
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tạo được danh sách nguyên liệu. Vui lòng thử lại.")); }
@@ -116,7 +117,11 @@ export default function PantryImportScreen() {
       const result = await pantryImportApi.analyze(source, image.file);
       void warnLowQuota("OCR");
       showPreview(result);
-    } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa phân tích được ảnh. Vui lòng thử lại.")); }
+    } catch (e) {
+      const message = getFriendlyErrorMessage(e, "Chưa phân tích được ảnh. Vui lòng thử lại.");
+      setRetryableAiError(message.includes("Lượt của bạn không bị trừ"));
+      setError(message);
+    }
     finally { lock.current = false; setBusy(false); }
   };
   const patchRow = (key: number, update: Partial<Draft>) => {
@@ -166,6 +171,7 @@ export default function PantryImportScreen() {
       </> : null}
       {busy ? <ActivityIndicator color={colors.primary} /> : null}
       {error ? <Text accessibilityRole="alert" selectable style={{ color: colors.danger, lineHeight: 22 }}>{error}</Text> : null}
+      {retryableAiError && image && rows === null ? <Action label="Thử lại nhận diện" onPress={analyze} disabled={busy} soft /> : null}
       {analysisNotice ? <Text accessibilityRole="alert" selectable style={{ color: colors.warning, lineHeight: 22 }}>{analysisNotice} Lượt AI của bạn không bị trừ.</Text> : null}
       {warnings.map((w, index) => <Text key={index} selectable style={{ color: colors.primary }}>{w === "No food ingredients were detected." ? "Chưa nhận diện được nguyên liệu. Hãy thử ảnh rõ hơn hoặc thêm thủ công." : w}</Text>)}
       {rows !== null ? <>

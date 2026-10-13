@@ -50,6 +50,12 @@ export function getMessage(body: unknown, fallback: string) {
     return body.message;
   }
 
+  // Additive AI failure envelope: keep the machine-readable code for retry UI.
+  if (isObject(body) && isObject(body.error) && typeof body.error.code === "string") {
+    const message = typeof body.error.message === "string" ? body.error.message : fallback;
+    return `${body.error.code}: ${message}`;
+  }
+
   if (isObject(body) && Array.isArray(body.errors) && body.errors.length > 0) {
     return body.errors
       .map((error) => {

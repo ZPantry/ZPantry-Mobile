@@ -72,6 +72,8 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
   const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
   const lower = rawMessage.toLowerCase();
 
+  if (lower.includes("ai_unavailable") || lower.includes("ai_timeout")) return "Hệ thống AI đang quá tải. Lượt của bạn không bị trừ. Bạn có thể thử lại.";
+
   if (lower.includes("media storage is not configured")) return "Máy chủ chưa cấu hình lưu ảnh thành phẩm. Vui lòng liên hệ quản trị viên.";
   if (status === 503 && lower.includes("ai service")) return "Đầu bếp AI hiện chưa kết nối được dịch vụ trả lời. Vui lòng thử lại sau.";
 

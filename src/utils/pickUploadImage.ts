@@ -26,7 +26,8 @@ export async function pickUploadImage(filePrefix: string, allowsEditing = true):
     mediaTypes: ["images"],
     allowsEditing,
     aspect: [4, 3],
-    quality: 0.85
+    // Native pickers re-encode JPEG where supported, keeping OCR uploads smaller.
+    quality: 0.8
   });
 
   if (result.canceled || !result.assets[0]) {
