@@ -5,21 +5,25 @@ import PrimaryButton from "@/components/PrimaryButton";
 import { ingredientsApi, type IngredientAlias } from "@/api/ingredients";
 import { colors } from "@/constants/colors";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import { parseAliasBatch } from "@/utils/aliasBatch";
 
 export default function IngredientAliases({ ingredientId, disabled }: { ingredientId: string; disabled: boolean }) {
   const [aliases, setAliases] = useState<IngredientAlias[]>([]);
   const [draft, setDraft] = useState("");
+  const [bulkDraft, setBulkDraft] = useState("");
+  const [bulkResult, setBulkResult] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const [retry, setRetry] = useState(0);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const lock = useRef(false);
   useEffect(() => {
     let active = true;
-    setLoading(true); setError("");
+    setLoading(true); setError(""); setLoadFailed(false);
     ingredientsApi.aliases(ingredientId).then(rows => { if (active) setAliases(rows); })
-      .catch(e => { if (active) setError(getFriendlyErrorMessage(e, "Chưa tải được tên gọi khác.")); })
+      .catch(e => { if (active) { setError(getFriendlyErrorMessage(e, "Chưa tải được tên gọi khác.")); setLoadFailed(true); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [ingredientId, retry]);
@@ -40,6 +44,39 @@ export default function IngredientAliases({ ingredientId, disabled }: { ingredie
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được tên gọi. Vui lòng thử lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
+  const addBulkAliases = async () => {
+    if (lock.current || disabled) return;
+    const parsed = parseAliasBatch(bulkDraft, aliases.map(alias => alias.aliasName));
+    if (parsed.tooLong.length) {
+      setError(`Mỗi tên gọi tối đa 200 ký tự. Cần sửa: ${parsed.tooLong.join(", ")}.`);
+      return;
+    }
+    if (!parsed.candidates.length) {
+      setError("Chưa có tên gọi mới hợp lệ để thêm.");
+      return;
+    }
+    lock.current = true; setBusy(true); setError(""); setBulkResult("");
+    const added: IngredientAlias[] = [];
+    const failed: string[] = [];
+    try {
+      for (const aliasName of parsed.candidates) {
+        try {
+          added.push(await ingredientsApi.addAlias(ingredientId, aliasName));
+        } catch {
+          failed.push(aliasName);
+        }
+      }
+      if (added.length) setAliases(rows => [...rows, ...added]);
+      setBulkDraft(failed.join("\n"));
+      const skipped = parsed.duplicates.length + parsed.existing.length;
+      const result = [
+        added.length ? `Đã thêm ${added.length} tên gọi.` : "Chưa thêm được tên gọi nào.",
+        skipped ? `Bỏ qua ${skipped} tên trùng.` : "",
+        failed.length ? `Chưa lưu được: ${failed.join(", ")}.` : ""
+      ].filter(Boolean).join(" ");
+      setBulkResult(result);
+    } finally { lock.current = false; setBusy(false); }
+  };
   return <View style={{ borderRadius: 18, backgroundColor: colors.surface, padding: 18, gap: 12, borderWidth: 1, borderColor: colors.line }}>
     <Text style={{ color: colors.dark, fontSize: 19, fontWeight: "700" }}>Tên gọi khác</Text>
     <Text style={{ color: colors.muted, lineHeight: 21 }}>Thêm tên thường dùng hoặc tên trên hóa đơn để hỗ trợ nhận diện đúng nguyên liệu.</Text>
@@ -57,7 +94,16 @@ export default function IngredientAliases({ ingredientId, disabled }: { ingredie
       </View> : null}
     </View>)}
     <View style={{ backgroundColor: colors.input, borderRadius: 12 }}><TextInput accessibilityLabel="Tên gọi khác" editable={!disabled && !busy && !loading} value={draft} onChangeText={setDraft} maxLength={200} placeholder="Ví dụ: cà rốt Đà Lạt" placeholderTextColor={colors.muted} style={{ minHeight: 48, padding: 12, borderRadius: 12, color: colors.text }} /></View>
-    {error ? <><Text selectable accessibilityRole="alert" style={{ color: colors.danger, lineHeight: 21 }}>{error}</Text><PrimaryButton title="Tải lại tên gọi" variant="outline" disabled={busy || disabled} onPress={() => setRetry(v => v + 1)} /></> : null}
+    {error ? <><Text selectable accessibilityRole="alert" style={{ color: colors.danger, lineHeight: 21 }}>{error}</Text>{loadFailed ? <PrimaryButton title="Tải lại tên gọi" variant="outline" disabled={busy || disabled} onPress={() => setRetry(v => v + 1)} /> : null}</> : null}
     <PrimaryButton title="Thêm tên gọi" variant="soft" disabled={disabled || loading || !draft.trim()} loading={busy} onPress={() => mutate()} />
+    <View style={{ borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 14, gap: 8 }}>
+      <Text style={{ color: colors.dark, fontSize: 16, fontWeight: "700" }}>Nhập nhiều tên gọi</Text>
+      <Text style={{ color: colors.muted, lineHeight: 20 }}>Mỗi tên một dòng hoặc ngăn cách bằng dấu phẩy. Tên trùng sẽ được bỏ qua.</Text>
+      <View style={{ backgroundColor: colors.input, borderRadius: 12 }}>
+        <TextInput accessibilityLabel="Danh sách tên gọi khác" editable={!disabled && !busy && !loading} value={bulkDraft} onChangeText={setBulkDraft} maxLength={10000} multiline textAlignVertical="top" placeholder={"Ví dụ:\ncà rốt Đà Lạt\ncarrot\ncarrot organic"} placeholderTextColor={colors.muted} style={{ minHeight: 116, padding: 12, borderRadius: 12, color: colors.text }} />
+      </View>
+      {bulkResult ? <Text selectable accessibilityRole="alert" style={{ color: bulkResult.startsWith("Đã thêm") ? colors.primary : colors.danger, lineHeight: 21 }}>{bulkResult}</Text> : null}
+      <PrimaryButton title="Thêm danh sách tên gọi" variant="soft" disabled={disabled || loading || !bulkDraft.trim()} loading={busy} onPress={addBulkAliases} />
+    </View>
   </View>;
 }

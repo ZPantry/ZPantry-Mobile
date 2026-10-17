@@ -90,6 +90,15 @@ test('ingredient aliases encode paths and reject empty or overlong names', async
   assert.throws(() => ingredientsApi.addAlias(id, 'a'.repeat(201)));
 });
 
+test('bulk alias entry keeps valid rows and reports duplicate, existing, and overlong rows', () => {
+  const { parseAliasBatch } = load('@/utils/aliasBatch');
+  const batch = parseAliasBatch('  carrot\nCarrot\nca rot, carrot organic; ' + 'x'.repeat(201), ['Cà rốt', 'carrot']);
+  assert.deepEqual(batch.candidates, ['carrot organic']);
+  assert.deepEqual(batch.duplicates, ['Carrot']);
+  assert.deepEqual(batch.existing, ['carrot', 'ca rot']);
+  assert.equal(batch.tooLong.length, 1);
+});
+
 test('unified image analysis adapts ingredients and refuses unknown images without pantry mutation', async () => {
   const calls = []; let result = { imageType: 'RECEIPT', ingredients: [{ rawName: 'carrot', quantity: 1, unit: 'g', reviewRequired: true }], warnings: ['check'] };
   const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => { calls.push(args); return result; } } })('@/api/pantryImport');
