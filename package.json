@@ -1,6 +1,6 @@
 {
   "name": "z-pantry-ai-meal-planner",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "private": true,
   "main": "expo/AppEntry",
   "scripts": {
