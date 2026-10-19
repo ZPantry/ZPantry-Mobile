@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
   const errors = [], calls = [], aliases = [];
   let failBatch = true;
   let failReset = true, failAlias = true, failMenu = true, failComplete = true, completed = false;
-  const out = path.resolve(process.env.LOGIC_FIXES_ONLY ? 'work/logic-fixes-2026-10-07' : 'work/swagger-review-2026-10-04'); fs.mkdirSync(out, { recursive: true });
+  const out = path.resolve(process.env.UI_TEST_OUTPUT || (process.env.LOGIC_FIXES_ONLY ? 'work/logic-fixes-2026-10-07' : 'work/swagger-review-2026-10-04')); fs.mkdirSync(out, { recursive: true });
   async function open(role, width = 390, step) {
     const page = await browser.newPage({ viewport: { width, height: 844 } });
     page.setDefaultTimeout(15000); page.on('pageerror', e => errors.push(e.message));
@@ -52,7 +52,6 @@ const server = http.createServer((req, res) => {
       if (p === `/api/recipes/${rid}`) return ok(recipe);
       if (p === '/api/me/pantry') return paged([{ id: iid, ingredientId: iid, ingredientName: ingredient.name, quantity: 0.1, unit: 'kg', expiredAt: null }]);
       if (p === '/api/recommendations/meals') return ok({ items: [{ recipeId: rid, recipeName: recipe.name, score: 0.8 }] });
-      if (p === '/api/recommendations/chat') return ok({ answer: 'Bạn có thể nấu canh cà rốt.', recommendations: [{ recipeId: rid, recipeName: recipe.name, score: 80, matchingIngredients: ['Cà rốt'] }] });
       if (p === '/api/recommendations/v2/meals') return ok({ recommendationId: recid, items: [{ recipeId: rid, recipeName: recipe.name, score: 0.8 }] });
       if (p === `/api/recommendations/${recid}/feedback`) return ok(null);
       if (p === '/api/recommendations/missing-ingredients') return ok({ missingIngredients: [] });
@@ -63,6 +62,7 @@ const server = http.createServer((req, res) => {
         return ok({ id: 'menu-1', ...body, status: 'PLANNED' });
       }
       if (p === '/api/me/today-menu/items/menu-1') return ok({ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' });
+      if (p === '/api/me/today-menu/items/menu-1/ingredient-availability') return ok({ todayMenuItemId: 'menu-1', sufficient: true, ingredients: [{ ingredientId: iid, ingredientName: ingredient.name, requiredQuantity: 400, availableQuantity: 500, missingQuantity: 0, unit: 'g', unitMismatch: false }] });
       if (p === '/api/me/today-menu') return paged(url.searchParams.get('date') === '2026-10-05' ? [{ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' }] : []);
       if (p === '/api/me/today-menu/items/menu-1/complete') {
         assert.match(req.headers()['content-type'], /multipart\/form-data/);
@@ -149,16 +149,18 @@ const server = http.createServer((req, res) => {
     await user.getByText('Canh cà rốt', { exact: true }).last().click();
     await user.getByText('Hoàn thành món', { exact: true }).waitFor();
     await user.getByText('Cà rốt: 400 g', { exact: true }).waitFor();
-    const completionChooser = user.waitForEvent('filechooser');
-    await user.getByRole('button', { name: 'Chọn ảnh thành phẩm', exact: true }).click();
-    await (await completionChooser).setFiles({ name: 'cooked.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(out, 'reset-mobile.png')) });
+    const [completionChooser] = await Promise.all([
+      user.waitForEvent('filechooser'),
+      user.getByRole('button', { name: 'Thêm ảnh thành phẩm (không bắt buộc)', exact: true }).click()
+    ]);
+    await completionChooser.setFiles({ name: 'cooked.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(out, 'reset-mobile.png')) });
     await user.getByLabel('Ghi chú sau khi nấu', { exact: true }).fill('Đã nấu xong');
     await user.getByRole('button', { name: 'Hoàn thành và lưu nhật ký', exact: true }).click();
-    await user.getByText('Dịch vụ tải ảnh đang gặp sự cố.', { exact: false }).waitFor();
+    await user.getByText('Dịch vụ tải ảnh đang gặp sự cố.', { exact: false }).first().waitFor();
     assert.equal(await user.getByLabel('Ghi chú sau khi nấu', { exact: true }).inputValue(), 'Đã nấu xong');
     await user.getByRole('button', { name: 'Đổi ảnh thành phẩm', exact: true }).waitFor();
     await user.getByRole('button', { name: 'Hoàn thành và lưu nhật ký', exact: true }).click();
-    await user.getByText('Nhật ký đã lưu', { exact: true }).waitFor();
+    await user.getByText('Món đã hoàn thành', { exact: true }).last().waitFor();
     assert.equal(calls.filter(c => c.p.endsWith('/complete')).length, 2);
     const menuCalls = calls.filter(c => c.p === '/api/me/today-menu/items' && c.method === 'POST');
     assert.equal(menuCalls.length, 2); assert.equal(menuCalls[1].body.servingSize, 4); assert.equal(menuCalls[1].body.mealType, 'DINNER'); assert.equal(menuCalls[1].body.note, 'Ít muối');
@@ -173,33 +175,21 @@ const server = http.createServer((req, res) => {
     await importer.getByRole('button', { name: 'Chọn ảnh từ thư viện', exact: true }).click();
     await (await chooser).setFiles({ name: 'food.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(out, 'reset-mobile.png')) });
     await importer.getByRole('button', { name: 'Phân tích ảnh', exact: true }).click();
-    await importer.getByText('Cần kiểm tra lại kết quả nhận diện', { exact: true }).waitFor();
+    await importer.getByText('Cần xác nhận', { exact: true }).waitFor();
     assert.equal(calls.filter(c => c.p === '/api/me/pantry-import/confirm').length, 0);
     await importer.getByRole('button', { name: 'Xác nhận lưu 1 nguyên liệu', exact: true }).click();
     await importer.getByRole('button', { name: 'Thêm nhanh', exact: true }).waitFor();
     assert.equal(calls.filter(c => c.p === '/api/me/pantry-import/confirm').length, 1); await importer.close();
 
-    const ux = await open('USER', 375);
-    const aiBefore = await ux.getByTestId('draggable-ai').boundingBox();
-    assert.equal(aiBefore.width, 56);
-    await ux.mouse.move(aiBefore.x + 28, aiBefore.y + 27); await ux.mouse.down();
-    await ux.mouse.move(40, 280, { steps: 15 }); await ux.mouse.up();
-    const aiAfter = await ux.getByTestId('draggable-ai').boundingBox();
-    assert.ok(Math.abs(aiAfter.x - aiBefore.x) > 40 && Math.abs(aiAfter.y - aiBefore.y) > 40, JSON.stringify({ aiBefore, aiAfter, style: await ux.getByTestId("draggable-ai").getAttribute("style"), errors }));
-    assert.equal(await ux.getByText('Đầu bếp Z-Pantry', { exact: true }).count(), 0);
-    await ux.getByRole('button', { name: 'Mở chat đầu bếp AI', exact: true }).click();
-    await ux.getByLabel('Tin nhắn cho đầu bếp AI').fill('Tôi có cà rốt, hãy gợi ý món');
-    await ux.getByRole('button', { name: 'Gửi tin nhắn AI', exact: true }).click();
-    await ux.getByRole('button', { name: 'Xem công thức Canh cà rốt', exact: true }).waitFor();
-    assert.equal(calls.filter(c => c.p === '/api/recommendations/chat').at(-1).body.message, 'Tôi có cà rốt, hãy gợi ý món');
-    await ux.screenshot({ path: path.join(out, 'chat-mobile.png'), animations: 'disabled' });
-    await ux.getByRole('button', { name: 'Đóng chat AI', exact: true }).click();
+    // The current app uses meal suggestions; the old floating chat is unmounted.
+    assert.equal(calls.some(c => c.p === '/api/recommendations/chat'), false);
     if (process.env.LOGIC_FIXES_ONLY) {
       assert.deepEqual(errors, []);
-      fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ status: 'passed', scope: 'USER permissions, selected menu date, completion upload failure/retry, AI chat', errors }, null, 2));
-      console.log('PASS: USER cannot create recipes; menu opens the selected date; upload keeps drafts on failure and succeeds on retry; AI chat uses the new endpoint; no browser runtime errors.');
+      fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ status: 'passed', scope: 'USER permissions, selected menu date, completion upload failure/retry, image import confirmation', errors }, null, 2));
+      console.log('PASS: USER permissions, selected menu date, completion upload failure/retry and image import confirmation; no browser runtime errors.');
       return;
     }
+    const ux = await open('USER', 375);
     await ux.getByRole('tab', { name: 'Cá nhân', exact: true }).click();
     await ux.getByText('Cài đặt khẩu vị & Dị ứng', { exact: true }).click();
     await ux.getByLabel('Ngày sinh · Năm').selectOption('2000');

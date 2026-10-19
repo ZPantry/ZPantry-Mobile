@@ -203,13 +203,14 @@ export const recommendationsApi = {
   async chat(message: string) {
     const text = message.trim();
     if (!text || text.length > 2000) throw new ApiError("Vui lòng nhập câu hỏi từ 1 đến 2000 ký tự.", 400);
-    const response = await apiRequest<unknown>("/api/recommendations/chat", {
-      method: "POST", auth: true, body: JSON.stringify({ message: text }), timeoutMs: 60000
-    });
-    const body = unwrapEnvelope<{ answer?: string; recommendations?: RawMealRecommendation[] }>(response);
-    if (!body || typeof body.answer !== "string" || !body.answer.trim() || !Array.isArray(body.recommendations))
-      throw new ApiError("Phản hồi đầu bếp AI chưa đầy đủ. Vui lòng thử lại.", 502);
-    return { answer: body.answer, recommendations: body.recommendations.map(normalizeRecommendation) };
+    // Java exposes meal suggestions, without a general-purpose /chat endpoint.
+    const result = await recommendationsApi.suggestMeals({ inputIngredientText: text, topK: 3 });
+    return {
+      answer: result.recommendations.length
+        ? `Tìm thấy ${result.recommendations.length} món gợi ý. Chọn món bên dưới để xem công thức.`
+        : "Chưa tìm thấy món phù hợp. Hãy mô tả rõ hơn nguyên liệu bạn đang có.",
+      recommendations: result.recommendations
+    };
   },
   get(id: string) { return apiRequest<RecommendationRecord>(endpoints.recommendations.item(id), { auth: true }); },
   feedback(id: string, payload: RecommendationFeedback) {

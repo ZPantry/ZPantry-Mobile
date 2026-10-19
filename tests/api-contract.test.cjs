@@ -174,10 +174,11 @@ test('text pantry parsing sends only JSON text and requires explicit confirmatio
   const calls = [];
   const { pantryImportApi } = loader({ '@/api/client': { ApiError, apiRequest: async (...args) => {
     calls.push(args);
-    return [{ name: 'Cà rốt', quantity: 2, unit: 'piece', ingredientId: id, ingredientName: 'Cà rốt', matched: true },
-      { name: 'rau lạ', quantity: null, unit: null, ingredientId: null, ingredientName: null, matched: false }];
+    return [{ rawName: 'Cà rốt', normalizedName: 'ca rot', quantity: 2, unit: 'piece', ingredientId: id, canonicalIngredientName: 'Cà rốt', resolverStatus: 'RESOLVED', reviewRequired: false, flags: [], candidates: [] },
+      { rawName: 'rau lạ', normalizedName: 'rau la', quantity: null, unit: null, ingredientId: null, canonicalIngredientName: null, resolverStatus: 'UNRESOLVED', reviewRequired: true }];
   } } })('@/api/pantryImport');
   await assert.rejects(pantryImportApi.parseText('  '));
+  await assert.rejects(pantryImportApi.parseText('a'.repeat(2001)));
   assert.equal(calls.length, 0);
   const result = await pantryImportApi.parseText('  2 củ cà rốt, rau lạ  ');
   assert.equal(calls.length, 1);
@@ -185,6 +186,10 @@ test('text pantry parsing sends only JSON text and requires explicit confirmatio
   assert.deepEqual(JSON.parse(calls[0][1].body), { text: '2 củ cà rốt, rau lạ' });
   assert.equal(calls[0][1].auth, true);
   assert.equal(result.items[0].resolverStatus, 'RESOLVED');
+  assert.equal(result.items[0].ingredientId, id);
+  assert.equal(result.items[0].rawName, 'Cà rốt');
+  assert.equal(result.items[0].canonicalIngredientName, 'Cà rốt');
+  assert.equal(result.items[1].reviewRequired, true);
   assert.equal(result.items[1].ingredientId, null);
   assert.equal(result.items[1].quantity, null);
 });
@@ -208,7 +213,10 @@ test('menu preview reads each recipe once and never writes pantry before confirm
     '@/api/recipes': { recipesApi: { get: async recipeId => { readIds.push(recipeId); return { name: 'Canh', servingSize: 1, ingredients: [{ ingredientId: id, ingredientName: 'Rau', quantity: 50, unit: 'g' }] }; } } }
   })('@/api/pantryImport');
   const preview = await pantryImportApi.fromMenu([{ recipeId: 'r', servingSize: 2 }, { recipeId: 'r', servingSize: 3 }]);
-  assert.deepEqual(readIds, ['r']); assert.equal(preview.items[0].quantity, 250); assert.deepEqual(writes, []);
+  assert.deepEqual(readIds, ['r']);
+  const legacy = await pantryImportApi.fromMenu([{ mealId: 'r', recipeId: null, servingSize: 2 }, { recipeId: 'r', servingSize: 3 }]);
+  assert.deepEqual(legacy.items, preview.items);
+  assert.deepEqual(readIds, ['r', 'r']); assert.equal(preview.items[0].quantity, 250); assert.deepEqual(writes, []);
   await assert.rejects(pantryImportApi.fromMenu([{ recipeId: null, servingSize: 1 }]), /chưa liên kết/);
 });
 
@@ -601,11 +609,11 @@ test('native completion uploads file bytes and preserves text fields, filename a
   const formLoad = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return {}; } } });
   const { todayMenuApi } = formLoad('@/api/todayMenu');
   const nativeImage = { uri: 'file:///cache/cooked-meal.jpg', name: 'meal.jpg', type: 'image/jpeg' };
-  await todayMenuApi.complete(id, { cookedAt: '2026-10-19T12:00:00', rating: 4, note: 'Đã nấu', imageFile: nativeImage });
+  await todayMenuApi.complete(id, { cookedAt: '2026-10-19T12:00:00Z', rating: 4, note: 'Đã nấu', imageFile: nativeImage });
   const [route, options] = calls[0];
   assert.equal(route, `/api/me/today-menu/items/${id}/complete`);
   assert.equal(options.method, 'POST');
-  assert.equal(options.body.get('cookedAt'), '2026-10-19T12:00:00');
+  assert.equal(options.body.get('cookedAt'), '2026-10-19T12:00:00Z');
   assert.equal(options.body.get('rating'), '4');
   assert.equal(options.body.get('note'), 'Đã nấu');
   const image = options.body.get('imageFile');
@@ -620,6 +628,7 @@ test('native completion uploads file bytes and preserves text fields, filename a
   assert.doesNotMatch(wire, /\[object Object\]/);
   await todayMenuApi.complete(id, { rating: 5, note: '' });
   assert.equal(calls[1][1].body.has('imageFile'), false);
+  assert.equal(calls[1][1].body.has('cookedAt'), false);
 });
 
 test('shared upload converts native files, preserves browser MIME and rejects missing local files', async () => {
@@ -641,6 +650,64 @@ test('today-menu completion form uses Spring model attribute field names', () =>
   }
   for (const staleField of ['CookedAt', 'Rating', 'Note', 'ImageFile']) {
     assert.doesNotMatch(source, new RegExp(`"${staleField}"`));
+  }
+});
+
+test('menu detail resolves legacy mealId using the same recipe fallback as Java', async () => {
+  const reads = [];
+  const { todayMenuApi } = loader({
+    '@/api/client': { apiRequest: async route => { reads.push(route); return { id, mealId: 'recipe-id', recipeId: null, servingSize: 4 }; } },
+    '@/api/recipes': { recipesApi: { get: async recipeId => { reads.push(recipeId); return { servingSize: 2, ingredients: [{ ingredientId: 'carrot', quantity: 100, unit: 'g' }] }; } } },
+    '@/api/pantry': { pantryApi: { all: async () => [] } }
+  })('@/api/todayMenu');
+  const detail = await todayMenuApi.get(id);
+  assert.equal(reads[1], 'recipe-id');
+  assert.equal(detail.requiredIngredients[0].quantity, 200);
+});
+
+test('completion keeps Java warnings visible and prevents a second submit after success', async () => {
+  for (const warnings of [[], ['Completion image could not be uploaded.']]) {
+    const state = []; let cursor = 0; let initialized = false;
+    const effects = [], navigations = [], notices = [], writes = [];
+    const react = {
+      useState(initial) { const index = cursor++; if (!(index in state)) state[index] = initial; return [state[index], next => { state[index] = typeof next === 'function' ? next(state[index]) : next; }]; },
+      useRef(initial) { const index = cursor++; return state[index] ||= { current: initial }; },
+      useMemo: fn => fn(), useCallback: fn => fn,
+      useEffect: fn => { if (!initialized) effects.push(fn); }
+    };
+    const jsx = (type, props) => ({ type, props });
+    const mocks = {
+      react, 'react/jsx-runtime': { jsx, jsxs: jsx },
+      'react-native': Object.fromEntries(['ActivityIndicator', 'Pressable', 'RefreshControl', 'TextInput', 'View'].map(name => [name, name])),
+      'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+      '@expo/vector-icons': { Ionicons: 'Icon', MaterialCommunityIcons: 'Icon' },
+      'expo-image': { Image: 'Image' },
+      '@/hooks/useSizeClass': { useSizeClass: () => ({ isLandscape: false }) },
+      '@/context/ToastContext': { useToast: () => ({ show: (...args) => notices.push(args) }) },
+      '@/utils/pickUploadImage': { pickUploadImage: async () => null },
+      '@/api/todayMenu': { todayMenuApi: {
+        get: async () => ({ id, mealName: 'Canh', status: 'Planned', servingSize: 1, recipe: { ingredients: [] }, requiredIngredients: [], pantryItems: [] }),
+        ingredientAvailability: async () => ({ sufficient: true, ingredients: [] }),
+        complete: async (...args) => { writes.push(args); return { cookingLog: { cookedAt: '2026-10-19T00:00:00Z' }, warnings, consumedIngredients: [], updatedPantryItems: [] }; }
+      } }
+    };
+    for (const name of ['AppText', 'PrimaryButton', 'ScreenScrollView']) mocks[`@/components/${name}`] = { __esModule: true, default: name };
+    const Screen = loader(mocks)('@/screens/TodayMenuItemDetailScreen').default;
+    const render = () => { cursor = 0; return Screen({ route: { params: { itemId: id } }, navigation: { replace: (...args) => navigations.push(args) } }); };
+    const flatten = node => Array.isArray(node) ? node.flatMap(flatten) : !node || typeof node !== 'object' ? [] : [node, ...flatten(node.props?.children)];
+    render(); initialized = true; effects.forEach(fn => fn());
+    await new Promise(resolve => setImmediate(resolve));
+    const button = flatten(render()).find(node => node.type === 'PrimaryButton' && node.props.title === 'Hoàn thành và lưu nhật ký');
+    assert.ok(button);
+    button.props.onPress(); await new Promise(resolve => setImmediate(resolve));
+    const result = flatten(render());
+    assert.equal(writes.length, 1);
+    assert.equal(result.some(node => node.type === 'PrimaryButton' && node.props.title === 'Hoàn thành và lưu nhật ký'), false);
+    assert.equal(navigations.length, warnings.length ? 0 : 1);
+    if (warnings.length) {
+      assert.equal(notices.at(-1)[1], 'info');
+      assert.ok(result.some(node => node.props?.text === 'Món ăn đã được hoàn thành nhưng ảnh chưa tải lên được.'));
+    }
   }
 });
 
@@ -727,6 +794,8 @@ test('image analysis sends multipart image to Java and never confirms automatica
   await pantryImportApi.confirm(items);
   assert.deepEqual(JSON.parse(calls[2][1].body), { items });
   assert.equal(calls[2][0], '/api/me/pantry-import/confirm');
+  await pantryImportApi.analyze('AUTO', file);
+  assert.equal(calls[3][1].body.get('expectedType'), 'AUTO');
 });
 
 test('pantry confirmation keeps its idempotency key when retrying a failed request', async () => {
@@ -861,6 +930,10 @@ test('ingredient quantity formats base quantities and uses unit or API steps', (
     assert.equal(getIngredientQuantityStep({}, alias), step);
   }
   assert.equal(getIngredientQuantityStep({ quantityStep: 10 }, 'g'), 10);
+  assert.equal(getIngredientQuantityStep({ defaultQuantity: 250 }, 'g'), 250);
+  assert.equal(getIngredientQuantityStep({ defaultQuantity: 2 }, 'piece'), 2);
+  assert.equal(getIngredientQuantityStep({ defaultQuantity: 250, quantityStep: 10 }, 'g'), 250);
+  assert.equal(getIngredientQuantityStep({ defaultQuantity: 0 }, 'g'), 100);
   for (const quantityStep of [null, undefined, 0, -1, NaN, Infinity]) {
     assert.equal(getIngredientQuantityStep({ quantityStep }, 'g'), 100);
   }

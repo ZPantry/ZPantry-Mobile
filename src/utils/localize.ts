@@ -105,6 +105,7 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
 
 export function translatePantryWarning(message: string) {
   const value = message.trim();
+  if (value === "Completion image could not be uploaded.") return "Món ăn đã được hoàn thành nhưng ảnh chưa tải lên được.";
   const missingMatch = value.match(/^Missing pantry item for (.+)\.$/i);
   if (missingMatch) return `Thiếu nguyên liệu trong tủ: ${missingMatch[1]}.`;
 

@@ -15,6 +15,7 @@ export type ImportPreviewItem = {
   reviewRequired?: boolean;
   sourceUnit?: string | null;
   flags?: Array<"LOW_CONFIDENCE" | "NO_QUANTITY" | "ANOMALY">;
+  candidates?: Array<{ ingredientId: string; name: string; unit: string; matchScore: number }>;
 };
 export type ImportPreview = { sourceType: ImportMethod; items: ImportPreviewItem[]; warnings: string[]; analysisId?: string; imageTypeConfidence?: number | null; imageQuality?: "GOOD" | "LOW" | "UNREADABLE"; needsUserChoice?: boolean; reason?: string | null };
 export type ImportItem = { ingredientId: string; quantity: number; unit: string };
@@ -59,28 +60,23 @@ export function validateImportItems(items: ImportItem[]) {
 
 export const pantryImportApi = {
   async parseText(text: string): Promise<ImportPreview> {
-    if (!text.trim()) throw new ApiError("Nhập tên và số lượng thực phẩm trước khi phân tích.", 400);
-    const result = await apiRequest<Array<{ name: string; quantity: number | null; unit: string | null; ingredientId: string | null; ingredientName: string | null; matched: boolean }>>(
+    if (!text.trim() || text.trim().length > 2000) throw new ApiError("Nhập tên và số lượng thực phẩm từ 1 đến 2000 ký tự.", 400);
+    const result = await apiRequest<ImportPreviewItem[]>(
       endpoints.pantryImport.text, { method: "POST", auth: true, body: JSON.stringify({ text: text.trim() }), timeoutMs: 90000 }
     );
     if (!Array.isArray(result)) throw new ApiError("Kết quả phân tích văn bản không hợp lệ.", 502);
-    return { sourceType: "TEXT", warnings: [], items: result.map(item => ({
-      rawName: item.name, normalizedName: item.name, quantity: item.quantity, unit: item.unit,
-      ingredientId: item.matched ? item.ingredientId : null, canonicalIngredientName: item.ingredientName,
-      resolverStatus: item.matched && item.ingredientId ? "RESOLVED" : "UNRESOLVED", price: null, confidence: null
-    })) };
+    return { sourceType: "TEXT", warnings: [], items: result };
   },
   async fromMenu(meals: TodayMenuItem[]): Promise<ImportPreview> {
     if (!meals.length) throw new ApiError("Chọn ít nhất một món trong thực đơn.", 400);
-    if (meals.some(meal => !meal.recipeId)) throw new ApiError("Có món chưa liên kết với công thức. Hãy chọn món khác.", 400);
-    const recipes = new Map(await Promise.all([...new Set(meals.map(meal => meal.recipeId!))].map(async id => [id, await recipesApi.get(id)] as const)));
-    return buildMenuPreview(meals.map(meal => ({ recipe: recipes.get(meal.recipeId!)!, servingSize: meal.servingSize })));
+    if (meals.some(meal => !(meal.recipeId || meal.mealId))) throw new ApiError("Có món chưa liên kết với công thức. Hãy chọn món khác.", 400);
+    const recipes = new Map(await Promise.all([...new Set(meals.map(meal => (meal.recipeId || meal.mealId)!))].map(async id => [id, await recipesApi.get(id)] as const)));
+    return buildMenuPreview(meals.map(meal => ({ recipe: recipes.get((meal.recipeId || meal.mealId)!)!, servingSize: meal.servingSize })));
   },
   async analyze(source: ImportSource, file: UploadFile): Promise<ImportPreview> {
     const body = new FormData();
     appendUploadFile(body, "image", file);
-    const expectedType = source === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE";
-    body.append("expectedType", expectedType);
+    body.append("expectedType", source);
     const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(endpoints.pantryImport.autoImage, {
       method: "POST", auth: true, body, timeoutMs: 90000
     });

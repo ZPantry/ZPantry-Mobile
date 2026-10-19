@@ -24,9 +24,11 @@ export function getQuantityStep(unit: string): number {
   return normalized === 'g' || normalized === 'ml' ? 100 : 1;
 }
 
-export function getIngredientQuantityStep(ingredient: Pick<Ingredient, 'quantityStep'>, unit: string): number {
-  const step = ingredient.quantityStep;
-  return typeof step === 'number' && Number.isFinite(step) && step > 0 ? step : getQuantityStep(unit);
+export function getIngredientQuantityStep(ingredient: Pick<Ingredient, 'quantityStep' | 'defaultQuantity'>, unit: string): number {
+  for (const step of [ingredient.defaultQuantity, ingredient.quantityStep]) {
+    if (typeof step === 'number' && Number.isFinite(step) && step > 0) return step;
+  }
+  return getQuantityStep(unit);
 }
 
 export function formatIngredientQuantity(quantity: number, unit: string): string {

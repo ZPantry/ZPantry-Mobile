@@ -40,6 +40,8 @@ Browser tests dùng phản hồi API giả lập, không thay đổi backend Ren
 
 Xem [đối chiếu API và giới hạn kiểm chứng](docs/api-sync-2026-10-04.md). Swagger là nguồn contract; API có dữ liệu dạng mở vẫn cần kiểm tra bằng tài khoản thật và dữ liệu thực tế.
 
+Đối chiếu mới nhất với source Java local: [báo cáo 2026-10-19](docs/java-backend-contract-2026-10-19.md), gồm các điểm đã sửa trên FE và giới hạn kiểm chứng.
+
 ## APK Android
 
 Tải APK và SHA-256 tại [GitHub Releases](https://github.com/ZPantry/ZPantry-Mobile/releases). File APK được lưu ở Releases vì kích thước vượt giới hạn file Git thông thường.

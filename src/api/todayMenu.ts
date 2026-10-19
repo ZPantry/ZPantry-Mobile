@@ -7,7 +7,7 @@ import { collectPages } from "@/api/pagination";
 import { appendUploadFile } from "@/api/uploadFile";
 
 export type PantryUsageLog = {
-  id: string;
+  id?: string;
   ingredientId: string;
   ingredientName: string;
   quantityUsed: number;
@@ -67,7 +67,7 @@ export type CookingLog = {
 export type CompleteTodayMenuItemResponse = {
   cookingLog: CookingLog;
   consumedIngredients: PantryUsageLog[];
-  updatedPantryItems: TodayMenuPantryItem[];
+  updatedPantryItems: Array<Pick<TodayMenuPantryItem, "id" | "ingredientId" | "quantity">>;
   warnings: string[];
 };
 
@@ -100,7 +100,7 @@ export type AddTodayMenuItemPayload = {
 
 export type CompleteTodayMenuItemPayload = {
   imageFile?: UploadFile | null;
-  cookedAt: string;
+  cookedAt?: string;
   rating?: number;
   note?: string;
 };
@@ -133,9 +133,10 @@ export const todayMenuApi = {
 
   async get(id: string): Promise<TodayMenuItemDetail> {
     const item = await apiRequest<TodayMenuItemDetail>(endpoints.todayMenu.item(id), { auth: true });
+    const recipeId = item.recipeId || item.mealId;
     // Current Java detail returns menu metadata. Compose its documented endpoints.
     const [recipe, pantry] = await Promise.all([
-      item.recipe ?? (item.recipeId ? recipesApi.get(item.recipeId) : Promise.resolve(null)),
+      item.recipe ?? (recipeId ? recipesApi.get(recipeId) : Promise.resolve(null)),
       item.pantryItems ?? pantryApi.all()
     ]);
     const ingredients = recipe?.ingredients ?? [];

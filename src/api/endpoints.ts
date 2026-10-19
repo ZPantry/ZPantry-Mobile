@@ -1,4 +1,4 @@
-// Routes checked against the deployed OpenAPI contract on 2026-10-04.
+// Routes checked against the local Java backend (d7bbdee) on 2026-10-19.
 // ingredients.item supports PUT/DELETE; Java has no GET ingredient detail route.
 const item = (base: string, id: string) => `${base}/${encodeURIComponent(id)}`;
 

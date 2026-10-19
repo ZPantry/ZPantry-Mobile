@@ -98,6 +98,10 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       setCompletedResult(result);
       setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
         imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
+      if (result.warnings?.length) {
+        toast.show("Đã lưu nhật ký. Vui lòng xem các cảnh báo bên dưới.", "info");
+        return;
+      }
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
       // The completion response is persisted before redirecting. Replace the detail screen so a
       // completed meal cannot be submitted a second time while the user checks today's menu/log.
@@ -282,7 +286,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               </Section>
 
               {completedResult?.warnings?.length ? (
-                <Section title="Cảnh báo pantry">
+                <Section title="Lưu ý sau khi hoàn thành">
                   {completedResult.warnings.map((warning) => (
                     <InfoRow key={warning} icon="warning-outline" color={colors.warning} text={translatePantryWarning(warning)} />
                   ))}
@@ -291,8 +295,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
               {completedResult?.consumedIngredients?.length ? (
                 <Section title="Nguyên liệu đã trừ">
-                  {completedResult.consumedIngredients.map((log) => (
-                    <InfoRow key={log.id} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />
+                  {completedResult.consumedIngredients.map((log, index) => (
+                    <InfoRow key={log.id || `${log.ingredientId}-${index}`} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />
                   ))}
                 </Section>
               ) : null}
@@ -316,7 +320,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
           <View style={{ width: "100%", maxWidth: 320, borderRadius: 18, padding: 24, gap: 12, alignItems: "center", backgroundColor: colors.card }}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700", textAlign: "center" }}>Đang lưu nhật ký nấu ăn…</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "center" }}>Vui lòng chờ, màn hình sẽ tự chuyển về Thực đơn sau khi hoàn tất.</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "center" }}>Vui lòng chờ trong khi món ăn được lưu.</Text>
           </View>
         </View>
       ) : null}
