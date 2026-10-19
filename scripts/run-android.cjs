@@ -38,6 +38,17 @@ if (runtime.status !== 0 || compiler.status !== 0 || !version || Number(version[
 }
 
 console.log(`Android build: ${versionText.split(/\r?\n/)[0]}`);
+// Older local release builds eagerly converted a missing signing env var to a
+// File during Gradle configuration, which also blocked unrelated debug builds.
+const gradlePath = path.join(root, 'android', 'app', 'build.gradle');
+if (fs.existsSync(gradlePath)) {
+  const gradle = fs.readFileSync(gradlePath, 'utf8');
+  const repaired = gradle.replace(
+    "storeFile file(System.getenv('ZPANTRY_RELEASE_KEYSTORE'))",
+    "storeFile System.getenv('ZPANTRY_RELEASE_KEYSTORE') ? file(System.getenv('ZPANTRY_RELEASE_KEYSTORE')) : null"
+  );
+  if (repaired !== gradle) fs.writeFileSync(gradlePath, repaired);
+}
 const expoCli = path.join(path.dirname(require.resolve('expo/package.json')), 'bin', 'cli');
 const child = spawn(process.execPath, [expoCli, 'run:android', ...process.argv.slice(2)], {
   cwd: root, env, stdio: 'inherit'
