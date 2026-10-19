@@ -185,17 +185,38 @@ export default function PantryImportScreen() {
       </> : null}
       {imageMethod ? <>
       <View pointerEvents={busy || rows !== null ? "none" : "auto"}>
-        <SelectField label="Bạn muốn nhận diện gì?" value={source} onValueChange={(v) => setSource(v as ImportSource)} options={[
-          { value: "FOOD_IMAGE", label: "Ảnh thực phẩm" }, { value: "RECEIPT", label: "Hóa đơn mua hàng" }
-        ]} />
+        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 17 }}>Bạn muốn nhận diện gì?</Text>
+        <View accessibilityRole="radiogroup" style={{ flexDirection: "row", gap: 12, marginTop: 10 }}>
+          {([
+            { value: "FOOD_IMAGE" as const, label: "Ảnh thực phẩm", icon: "food-apple-outline" as const },
+            { value: "RECEIPT" as const, label: "Hóa đơn", icon: "receipt-text-outline" as const }
+          ]).map((option) => {
+            const selected = source === option.value;
+            return <Pressable key={option.value} accessibilityRole="radio" accessibilityLabel={option.label} accessibilityState={{ selected }}
+              onPress={() => { setSource(option.value); setError(""); }}
+              style={{ flex: 1, minHeight: 100, padding: 14, borderRadius: 20, alignItems: "center", justifyContent: "center", gap: 7,
+                borderWidth: selected ? 2 : 1, borderColor: selected ? colors.primary : colors.line,
+                backgroundColor: selected ? colors.secondary : colors.surface }}>
+              <MaterialCommunityIcons name={option.icon} size={30} color={selected ? colors.primaryDark : colors.muted} />
+              <Text style={{ color: selected ? colors.primaryDark : colors.muted, fontWeight: "700", textAlign: "center" }}>{option.label}</Text>
+              {selected ? <View style={{ position: "absolute", right: 10, top: 10, width: 20, height: 20, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary }}>
+                <MaterialCommunityIcons name="check" size={14} color={colors.surface} />
+              </View> : null}
+            </Pressable>;
+          })}
+        </View>
+      </View>
+      <View style={{ backgroundColor: colors.card, padding: 18, borderRadius: 20, gap: 6, borderWidth: 1, borderColor: colors.line }}>
+        <Text style={{ color: colors.text, fontWeight: "700", fontSize: 17 }}>Một ảnh, nhiều nguyên liệu</Text>
+        <Text style={{ color: colors.muted, lineHeight: 21 }}>{source === "RECEIPT"
+          ? "Giữ nguyên toàn bộ tên và số lượng, không bị cắt mép. JPG, PNG, WEBP · tối đa 10 MB."
+          : "Chụp rõ, đủ sáng. Một ảnh có thể chứa nhiều nguyên liệu. JPG, PNG, WEBP · tối đa 10 MB."}</Text>
       </View>
       {image ? <Image source={{ uri: image.uri }} resizeMode="contain" style={{ height: 210, borderRadius: 18, backgroundColor: colors.card }} /> :
-        <View style={{ backgroundColor: colors.card, padding: 28, borderRadius: 18, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "600", fontSize: 18 }}>Một ảnh, nhiều nguyên liệu</Text>
-          <Text style={{ color: colors.muted, lineHeight: 21 }}>Chọn ảnh rõ, đủ sáng. Với hóa đơn, giữ nguyên toàn bộ tên và số lượng. JPG, PNG, WEBP · tối đa 10 MB.</Text>
-        </View>}
-      <Action label={image ? "Chọn ảnh khác" : "Chọn ảnh từ thư viện"} onPress={choose} disabled={busy} soft />
+        null}
+      <Action label={image ? "Chọn ảnh khác" : "Chọn ảnh từ thư viện"} onPress={choose} disabled={busy} soft={Boolean(image)} />
       {image && rows === null ? <Action label={busy ? "Đang nhận diện…" : "Phân tích ảnh"} onPress={analyze} disabled={busy} /> : null}
+      {rows === null ? <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} /> : null}
       </> : null}
       {busy ? <ActivityIndicator color={colors.primary} /> : null}
       {error ? isAllergyConflictMessage(error) ? <AllergyConflictBanner message={error} /> : <Text accessibilityRole="alert" selectable style={{ color: colors.danger, lineHeight: 22 }}>{error}</Text> : null}
@@ -262,7 +283,7 @@ export default function PantryImportScreen() {
         <Action label={busy ? "Đang lưu…" : `Xác nhận lưu ${rows.length} nguyên liệu`} onPress={confirm} disabled={busy || !rows.length} />
         <Action label="Chỉnh lại nguồn nhập" soft disabled={busy} onPress={() => { setRows(null); setEditing(null); setError(""); setWarnings([]); setAttemptedConfirm(false); }} />
       </> : null}
-      <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} />
+      {!imageMethod ? <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} /> : null}
     </ScrollView>
   </KeyboardSafeView></SafeAreaView>;
 }

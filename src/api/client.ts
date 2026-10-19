@@ -3,6 +3,7 @@ import { ApiError, getMessage, unwrapEnvelope } from "@/api/response";
 export { ApiError } from "@/api/response";
 export type { ApiMessageResponse, PaginatedResponse } from "@/api/response";
 import { authStorage } from "@/utils/authStorage";
+import { fetch as expoFetch } from "expo/fetch";
 import { Platform } from "react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -85,7 +86,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   let response: Response;
   try {
-    response = await fetch(url, {
+    // Expo's fetch supports Expo File blobs in Android multipart requests;
+    // retain the platform fetch for ordinary JSON requests and their existing behavior.
+    const requestFetch = isFormData ? expoFetch : fetch;
+    response = await requestFetch(url, {
       ...fetchOptions,
       signal: timeoutController.signal,
       headers: requestHeaders
@@ -109,6 +113,14 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     return unwrapEnvelope<T>(body, response.status);
   } catch (error) {
     if (error instanceof ApiError) throw error;
+    // Do not log request headers or bodies: they may contain access tokens or photos.
+    // This is deliberately enough context to diagnose native multipart failures in logcat.
+    console.warn("api_request_failed", {
+      method: fetchOptions.method || "GET",
+      path,
+      multipart: isFormData,
+      reason: error instanceof Error ? error.message : String(error)
+    });
     if (timeoutController.signal.aborted) {
       throw new ApiError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.", 0);
     }

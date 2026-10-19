@@ -11,6 +11,16 @@ function loader(mocks = {}) {
   function load(name, parent = path.resolve('src')) {
     if (Object.hasOwn(mocks, name)) return mocks[name];
     if (name === 'expo-crypto') return { randomUUID: require('node:crypto').randomUUID };
+    if (name === 'expo/fetch') return { fetch: global.fetch };
+    if (name === 'expo-file-system') {
+      return { File: class ExpoFile extends Blob {
+        constructor(uri) {
+          super(['test-native-file']);
+          Object.defineProperty(this, 'uri', { value: uri });
+          Object.defineProperty(this, 'exists', { value: true });
+        }
+      } };
+    }
     const tsFile = name.startsWith('@/') ? path.resolve('src', name.slice(2) + '.ts') : path.resolve(parent, name + '.ts');
     const file = fs.existsSync(tsFile) ? tsFile : tsFile.replace(/\.ts$/, '.tsx');
     if (cache.has(file)) return cache.get(file).exports;
@@ -109,7 +119,9 @@ test('unified image analysis adapts ingredients and refuses unknown images witho
   assert.equal(preview.sourceType, 'RECEIPT'); assert.equal(preview.items[0].reviewRequired, true);
   result = { imageType: 'UNKNOWN', ingredients: [], warnings: [] };
   assert.deepEqual((await pantryImportApi.analyze('AUTO', file)).items, []);
-  assert.equal(calls.length, 2);
+  await pantryImportApi.analyze('FOOD_IMAGE', { uri: 'file:///cache/pantry-photo.jpg', name: 'pantry-photo.jpg', type: 'image/jpeg' });
+  assert.equal(calls[2][1].body.get('image').name, 'pantry-photo.jpg');
+  assert.equal(calls.length, 3);
 });
 
 test('subscription quota display uses server-owned remaining, used, and reset values', () => {
