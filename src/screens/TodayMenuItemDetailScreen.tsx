@@ -219,7 +219,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : null}
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
-                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Chọn ảnh thành phẩm"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
+                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Thêm ảnh thành phẩm (không bắt buộc)"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
+                {!pickedImage && !isCooked ? <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }} selectable>Bạn có thể bỏ qua ảnh và hoàn thành món ngay.</Text> : null}
                 {pickedImage ? <ExpoImage source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
                 <View style={{ gap: 10 }}>
