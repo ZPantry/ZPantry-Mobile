@@ -3,7 +3,6 @@ import type { Ingredient } from "@/api/ingredients";
 import type { PantryApiItem } from "@/api/pantry";
 import type { MealRecommendation, PersonalizedRecommendationOptions } from "@/api/recommendations";
 import type { Recipe } from "@/api/recipes";
-import type { AdminUser } from "@/api/users";
 
 export type PantryStatus = "safe" | "warning" | "danger";
 
@@ -64,16 +63,11 @@ export type RootStackParamList = {
   PantryImport: { method?: "TEXT" | "MENU" | "FOOD_IMAGE" | "RECEIPT" } | undefined;
   QuickAdd: undefined;
   ManualMealSuggestion: undefined;
-  CreateRecipe: undefined;
   CookingHistory: undefined;
   AccountSettings: undefined;
   Subscription: { paymentOutcome?: "success" | "cancel" } | undefined;
   InteractiveGuide: { isReplay?: boolean } | undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
-  AdminManagement: { initialTab?: "users" | "recipes" | "ingredients"; showBackButton?: boolean } | undefined;
-  AdminUserForm: { user: AdminUser };
-  AdminRecipeForm: { recipe?: Recipe } | undefined;
-  AdminIngredientForm: { ingredient?: Ingredient } | undefined;
   AddIngredient: undefined;
   PantryItemDetail: { pantryItem: PantryApiItem; ingredient?: Ingredient };
   MealRecommendationResults: {

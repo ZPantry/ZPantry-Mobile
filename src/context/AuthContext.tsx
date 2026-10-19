@@ -6,6 +6,9 @@ import { authStorage, type StoredUser } from "@/utils/authStorage";
 import { restoreSession } from "@/api/client";
 import { usersApi } from "@/api/users";
 
+const isAdminRole = (role?: string) => ["admin", "super_admin"].includes((role || "").toLowerCase());
+const adminOnlyMessage = "Tài khoản quản trị chỉ đăng nhập trên ZPantry-Frontend.";
+
 type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -41,6 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     restoreSession()
       .then(async (session) => {
+        if (isAdminRole(session?.user?.role)) {
+          await authStorage.clearSession();
+          session = null;
+        }
         if (isMounted) {
           setUser(session?.user ?? null);
           if (session?.user?.userId) {
@@ -75,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       onboardingStep,
       async signIn(session, remember = true) {
+        if (isAdminRole(session.role)) throw new Error(adminOnlyMessage);
         await authStorage.saveSession(session, remember);
         
         // Retrieve the fully constructed user (which will now have userId extracted from JWT if missing)
