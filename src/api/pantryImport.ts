@@ -3,7 +3,7 @@ import { endpoints } from "@/api/endpoints";
 import { recipesApi, type Recipe, type UploadFile } from "@/api/recipes";
 import type { TodayMenuItem } from "@/api/todayMenu";
 import { randomUUID } from "expo-crypto";
-import { File as ExpoFile } from "expo-file-system";
+import { appendUploadFile } from "@/api/uploadFile";
 
 export type ImportSource = "RECEIPT" | "FOOD_IMAGE" | "AUTO";
 export type ImportMethod = ImportSource | "TEXT" | "MENU";
@@ -57,21 +57,6 @@ export function validateImportItems(items: ImportItem[]) {
   }
 }
 
-function appendAnalysisImage(form: FormData, file: UploadFile) {
-  if (typeof File !== "undefined" && file instanceof File) {
-    form.append("image", file);
-    return;
-  }
-
-  // ImagePicker gives Android a URI descriptor, not a browser File.  Passing that
-  // descriptor to the legacy React Native fetch bridge can fail before any HTTP
-  // request is sent. Expo File is a real Blob backed by the selected local URI.
-  const nativeUpload = file as Extract<UploadFile, { uri: string; name: string; type: string }>;
-  const nativeFile = new ExpoFile(nativeUpload.uri);
-  if (!nativeFile.exists) throw new ApiError("Không tìm thấy ảnh đã chọn. Hãy chọn lại ảnh.", 400);
-  form.append("image", nativeFile, nativeUpload.name || "pantry-image.jpg");
-}
-
 export const pantryImportApi = {
   async parseText(text: string): Promise<ImportPreview> {
     if (!text.trim()) throw new ApiError("Nhập tên và số lượng thực phẩm trước khi phân tích.", 400);
@@ -93,7 +78,7 @@ export const pantryImportApi = {
   },
   async analyze(source: ImportSource, file: UploadFile): Promise<ImportPreview> {
     const body = new FormData();
-    appendAnalysisImage(body, file);
+    appendUploadFile(body, "image", file);
     const expectedType = source === "RECEIPT" ? "RECEIPT" : "FOOD_IMAGE";
     body.append("expectedType", expectedType);
     const result = await apiRequest<ImportPreview & { imageType?: string; ingredients?: ImportPreviewItem[] }>(endpoints.pantryImport.autoImage, {

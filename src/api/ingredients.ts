@@ -4,6 +4,7 @@ import type { UploadFile } from "@/api/recipes";
 import type { FoodAllergen } from "@/api/profile";
 import { withUploadedImage } from "@/api/media";
 import { collectPages } from "@/api/pagination";
+import { appendUploadFile } from "@/api/uploadFile";
 
 export type Ingredient = {
   allergens?: FoodAllergen[];
@@ -32,15 +33,6 @@ function appendText(formData: FormData, key: string, value: string | number | bo
   formData.append(key, value === null || value === undefined ? "" : String(value));
 }
 
-function appendFile(formData: FormData, key: string, file: UploadFile) {
-  if (typeof File !== "undefined" && file instanceof File) {
-    formData.append(key, file);
-    return;
-  }
-
-  formData.append(key, file as unknown as Blob);
-}
-
 export function createIngredientFormData(payload: IngredientPayload) {
   const formData = new FormData();
   appendText(formData, "name", payload.name);
@@ -55,7 +47,7 @@ export function createIngredientFormData(payload: IngredientPayload) {
   appendText(formData, "imageUrl", payload.imageUrl || "");
 
   if (payload.imageFile) {
-    appendFile(formData, "imageFile", payload.imageFile);
+    appendUploadFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;

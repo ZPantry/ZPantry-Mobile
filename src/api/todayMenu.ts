@@ -4,6 +4,7 @@ import type { Recipe, RecipeIngredient, UploadFile } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import { pantryApi } from "@/api/pantry";
 import { collectPages } from "@/api/pagination";
+import { appendUploadFile } from "@/api/uploadFile";
 
 export type PantryUsageLog = {
   id: string;
@@ -110,15 +111,6 @@ function appendText(formData: FormData, key: string, value: string | number | nu
   }
 }
 
-function appendFile(formData: FormData, key: string, file: UploadFile) {
-  if (typeof File !== "undefined" && file instanceof File) {
-    formData.append(key, file);
-    return;
-  }
-
-  formData.append(key, file as unknown as Blob);
-}
-
 function createCompleteFormData(payload: CompleteTodayMenuItemPayload) {
   const formData = new FormData();
   appendText(formData, "cookedAt", payload.cookedAt);
@@ -126,7 +118,7 @@ function createCompleteFormData(payload: CompleteTodayMenuItemPayload) {
   appendText(formData, "note", payload.note);
 
   if (payload.imageFile) {
-    appendFile(formData, "imageFile", payload.imageFile);
+    appendUploadFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;

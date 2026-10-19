@@ -1,6 +1,7 @@
 import { apiRequest } from "@/api/client";
 import { endpoints } from "@/api/endpoints";
 import type { UploadFile } from "@/api/recipes";
+import { appendUploadFile } from "@/api/uploadFile";
 
 // Upload first, then include the returned URL in one JSON catalog mutation.
 // This keeps allergen arrays (including []) intact; ingredient multipart omits them.
@@ -8,7 +9,7 @@ export async function withUploadedImage<T extends { imageFile?: UploadFile | nul
   const { imageFile, ...body } = payload;
   if (!imageFile) return body;
   const form = new FormData();
-  form.append("file", imageFile as Blob);
+  appendUploadFile(form, "file", imageFile);
   const imageUrl = await apiRequest<string>(endpoints.media.upload, { method: "POST", auth: true, body: form });
   return { ...body, imageUrl };
 }

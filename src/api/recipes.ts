@@ -3,6 +3,7 @@ import { apiRequest, type ApiMessageResponse, type PaginatedResponse } from "@/a
 import type { FoodAllergen } from "@/api/profile";
 import { withUploadedImage } from "@/api/media";
 import { collectPages } from "@/api/pagination";
+import { appendUploadFile } from "@/api/uploadFile";
 
 export type RecipeIngredientPayload = {
   ingredientId: string;
@@ -65,15 +66,6 @@ function appendText(formData: FormData, key: string, value: string | number | bo
   formData.append(key, value === null || value === undefined ? "" : String(value));
 }
 
-function appendFile(formData: FormData, key: string, file: UploadFile) {
-  if (typeof File !== "undefined" && file instanceof File) {
-    formData.append(key, file);
-    return;
-  }
-
-  formData.append(key, file as unknown as Blob);
-}
-
 export function createRecipeFormData(payload: RecipePayload) {
   const formData = new FormData();
   appendText(formData, "name", payload.name);
@@ -101,7 +93,7 @@ export function createRecipeFormData(payload: RecipePayload) {
   );
 
   if (payload.imageFile) {
-    appendFile(formData, "imageFile", payload.imageFile);
+    appendUploadFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;

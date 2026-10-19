@@ -596,6 +596,44 @@ test('admin multipart forms use the Java API camelCase field names', () => {
   ]);
 });
 
+test('native completion uploads file bytes and preserves text fields, filename and optional image', async () => {
+  const calls = [];
+  const formLoad = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return {}; } } });
+  const { todayMenuApi } = formLoad('@/api/todayMenu');
+  const nativeImage = { uri: 'file:///cache/cooked-meal.jpg', name: 'meal.jpg', type: 'image/jpeg' };
+  await todayMenuApi.complete(id, { cookedAt: '2026-10-19T12:00:00', rating: 4, note: 'Đã nấu', imageFile: nativeImage });
+  const [route, options] = calls[0];
+  assert.equal(route, `/api/me/today-menu/items/${id}/complete`);
+  assert.equal(options.method, 'POST');
+  assert.equal(options.body.get('cookedAt'), '2026-10-19T12:00:00');
+  assert.equal(options.body.get('rating'), '4');
+  assert.equal(options.body.get('note'), 'Đã nấu');
+  const image = options.body.get('imageFile');
+  assert.ok(image instanceof Blob);
+  assert.equal(image.name, 'meal.jpg');
+  assert.equal(image.type, 'image/jpeg');
+  assert.equal(await image.text(), 'test-native-file');
+  // Exercise real multipart serialization; descriptors must never become [object Object].
+  const wire = await new Response(options.body).text();
+  assert.match(wire, /filename="meal.jpg"/);
+  assert.match(wire, /test-native-file/);
+  assert.doesNotMatch(wire, /\[object Object\]/);
+  await todayMenuApi.complete(id, { rating: 5, note: '' });
+  assert.equal(calls[1][1].body.has('imageFile'), false);
+});
+
+test('shared upload converts native files, preserves browser MIME and rejects missing local files', async () => {
+  const { appendUploadFile } = loader()('@/api/uploadFile');
+  const browserImage = new File(['browser-image'], 'photo.png', { type: 'image/png' });
+  const form = new FormData();
+  appendUploadFile(form, 'image', browserImage);
+  assert.equal(form.get('image').type, 'image/png');
+  assert.equal(await form.get('image').text(), 'browser-image');
+  const missing = loader({ 'expo-file-system': { File: class { exists = false; } } })('@/api/uploadFile');
+  assert.throws(() => missing.appendUploadFile(form, 'missing', { uri: 'file:///missing.jpg', name: 'missing.jpg', type: 'image/jpeg' }), /Không tìm thấy ảnh/);
+  assert.equal(form.has('missing'), false);
+});
+
 test('today-menu completion form uses Spring model attribute field names', () => {
   const source = fs.readFileSync(path.resolve('src/api/todayMenu.ts'), 'utf8');
   for (const field of ['cookedAt', 'rating', 'note', 'imageFile']) {
