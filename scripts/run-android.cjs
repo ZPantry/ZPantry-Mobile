@@ -14,6 +14,9 @@ try {
 
 // Machine-specific paths stay out of Git and do not change system Java settings.
 const env = { ...process.env };
+// Expo forwards this port with adb for attached Android devices/emulators.
+// Avoid routing Metro assets through a LAN address blocked by Windows Firewall.
+env.REACT_NATIVE_PACKAGER_HOSTNAME ||= '127.0.0.1';
 if (config.javaHome) env.JAVA_HOME = config.javaHome;
 if (config.androidHome) env.ANDROID_HOME = config.androidHome;
 const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') || 'PATH';

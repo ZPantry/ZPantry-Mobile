@@ -16,6 +16,8 @@ Nếu đã có `.env`, giữ lại cấu hình Google OAuth. Backend mặc đị
 
 Chạy Android bằng `npm run android`. Script đồng bộ cấu hình native rồi build, cài và mở **Z-Pantry Dev** (`com.zpantry.app.dev`), cài song song với APK release (`com.zpantry.app`) để tránh xung đột chữ ký và giữ dữ liệu bản release. Bản Dev dùng Metro để tải code mới; giữ terminal chạy và nhấn `r` khi cần tải lại. Dữ liệu đăng nhập của hai bản độc lập. Google OAuth Android cho bản Dev cần đăng ký package `com.zpantry.app.dev` và SHA-1 của debug keystore trong Google Cloud.
 
+Nếu đã đóng Metro, chạy lại `npm run android` hoặc `npm run start` rồi mở bản Dev. Không đóng terminal Metro trong khi kiểm thử: bản Dev còn tải JavaScript và ảnh từ server này. Các font chữ, Ionicons và MaterialCommunityIcons được nhúng vào bản Android qua plugin `expo-font`; thay đổi danh sách font cần chạy lại `npm run android`, chỉ reload JavaScript chưa cập nhật font native.
+
 ## Luồng chính
 
 - Đăng ký → xác thực email → đăng nhập; quên mật khẩu → OTP → đặt mật khẩu mới.
