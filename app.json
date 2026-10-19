@@ -23,6 +23,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      "./plugins/with-android-development",
       "expo-status-bar",
       "expo-web-browser",
       [

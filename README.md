@@ -14,6 +14,8 @@ Nếu đã có `.env`, giữ lại cấu hình Google OAuth. Backend mặc đị
 
 `npm run start` mở Metro. Google Sign-In trên native cần development build và cấu hình client ID theo `app.config.js`.
 
+Chạy Android bằng `npm run android`. Script đồng bộ cấu hình native rồi build, cài và mở **Z-Pantry Dev** (`com.zpantry.app.dev`), cài song song với APK release (`com.zpantry.app`) để tránh xung đột chữ ký và giữ dữ liệu bản release. Bản Dev dùng Metro để tải code mới; giữ terminal chạy và nhấn `r` khi cần tải lại. Dữ liệu đăng nhập của hai bản độc lập. Google OAuth Android cho bản Dev cần đăng ký package `com.zpantry.app.dev` và SHA-1 của debug keystore trong Google Cloud.
+
 ## Luồng chính
 
 - Đăng ký → xác thực email → đăng nhập; quên mật khẩu → OTP → đặt mật khẩu mới.
