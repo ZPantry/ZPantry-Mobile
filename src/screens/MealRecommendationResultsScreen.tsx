@@ -161,12 +161,6 @@ function RecommendationCard({ recommendation, onPress, onAnalyze }: { recommenda
 
       <IngredientLine title="Đã có" items={recommendation.matchedIngredients} tone="success" />
       <IngredientLine title="Còn thiếu" items={recommendation.missingIngredients} tone="warning" />
-      <IngredientLine title="Nên dùng sớm" items={recommendation.expiringSoonIngredients} tone="warning" />
-
-      {recommendation.reasons?.length ? <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.textDark, fontSize: 13, fontWeight: "700" }} selectable>Lý do xếp hạng</Text>
-        {recommendation.reasons.map(reason => <Text key={reason} style={{ color: colors.mutedDark, fontSize: 12, lineHeight: 18 }} selectable>• {reason}</Text>)}
-      </View> : null}
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }} selectable>

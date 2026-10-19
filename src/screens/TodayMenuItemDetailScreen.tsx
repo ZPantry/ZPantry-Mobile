@@ -2,7 +2,7 @@ import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Pressable, RefreshControl, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -99,7 +99,9 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
         imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
       toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
-      await loadDetail();
+      // The completion response is persisted before redirecting. Replace the detail screen so a
+      // completed meal cannot be submitted a second time while the user checks today's menu/log.
+      navigation.replace("Plan", { refreshKey: Date.now() });
     } catch (error) {
       const message = getFriendlyErrorMessage(error, "Chưa hoàn thành được món.", pickedImage?.file ? "imageUpload" : "default");
       setErrorMessage(message);
@@ -108,7 +110,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       completionLock.current = false;
       setIsCompleting(false);
     }
-  }, [item, loadDetail, note, pickedImage?.file, rating, toast]);
+  }, [item, navigation, note, pickedImage?.file, rating, toast]);
 
   const addMissingIngredients = useCallback(async () => {
     if (!item || isAddingMissing) return;
@@ -304,6 +306,19 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
           )}
         </View>
       </ScrollView>
+      {isCompleting ? (
+        <View
+          accessibilityViewIsModal
+          accessibilityRole="progressbar"
+          style={{ position: "absolute", inset: 0, backgroundColor: "rgba(31, 41, 55, 0.42)", alignItems: "center", justifyContent: "center", padding: 24 }}
+        >
+          <View style={{ width: "100%", maxWidth: 320, borderRadius: 18, padding: 24, gap: 12, alignItems: "center", backgroundColor: colors.card }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700", textAlign: "center" }}>Đang lưu nhật ký nấu ăn…</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "center" }}>Vui lòng chờ, màn hình sẽ tự chuyển về Thực đơn sau khi hoàn tất.</Text>
+          </View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

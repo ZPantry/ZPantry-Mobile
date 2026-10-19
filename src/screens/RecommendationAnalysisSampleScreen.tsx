@@ -18,7 +18,6 @@ export default function RecommendationAnalysisSampleScreen({ route, navigation }
     if (!first) return "Chưa có món để phân tích.";
     const parts = [`${first.name} đang đứng đầu danh sách.`];
     if (first.matchedIngredients.length) parts.push(`Bạn đã có ${first.matchedIngredients.join(", ")}.`);
-    if (first.expiringSoonIngredients.length) parts.push(`Nên ưu tiên dùng sớm: ${first.expiringSoonIngredients.join(", ")}.`);
     if (first.missingIngredients.length) parts.push(`Cần bổ sung: ${first.missingIngredients.join(", ")}.`);
     return parts.join(" ");
   }, [first]);
