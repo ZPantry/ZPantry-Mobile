@@ -15,7 +15,8 @@ import { ingredientsApi, type Ingredient } from "@/api/ingredients";
 import SelectField from "@/components/SelectField";
 import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
-import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
+import { captureUploadImage, pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
+import PrimaryButton from "@/components/PrimaryButton";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import { getIngredientQuantityStep } from "@/utils/ingredientQuantity";
 import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
@@ -120,18 +121,18 @@ export default function PantryImportScreen() {
     }, 300);
     return () => { active = false; clearTimeout(timer); };
   }, [editing, query, searchRetry]);
-  const choose = async () => {
+  const choose = async (fromCamera = false) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError("");
     try {
-      const chosen = await pickUploadImage("pantry-import", false);
+      const chosen = await (fromCamera ? captureUploadImage("pantry-import") : pickUploadImage("pantry-import", false));
       if (!chosen) return;
       if (!chosen.mimeType || !["image/jpeg", "image/png", "image/webp"].includes(chosen.mimeType)) {
         setError("Chọn ảnh JPG, PNG hoặc WEBP. Ảnh HEIC cần chuyển định dạng trước."); return;
       }
       if (chosen.size !== undefined && chosen.size > 10 * 1024 * 1024) { setError("Ảnh vượt quá 10 MB. Hãy chọn ảnh nhỏ hơn."); return; }
-      setImage(chosen); setRows(null); setWarnings([]); setAnalysisNotice(""); setAnalysisId(undefined); confirmKey.current = undefined; setEditing(null); setAttemptedConfirm(false);
-    } catch (e) { setError(e instanceof Error ? e.message : "Chưa chọn được ảnh."); }
+      setImage(chosen); setRows(null); setWarnings([]); setAnalysisNotice(""); setAnalysisId(undefined); confirmKey.current = undefined; setEditing(null); setAttemptedConfirm(false); setRetryableAiError(false);
+    } catch (e) { setError(e instanceof Error ? e.message : fromCamera ? "Chưa chụp được ảnh. Vui lòng thử lại hoặc chọn ảnh từ thư viện." : "Chưa chọn được ảnh."); }
     finally { lock.current = false; setBusy(false); }
   };
   const analyze = async () => {
@@ -171,7 +172,7 @@ export default function PantryImportScreen() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 22, paddingBottom: 48, gap: 18, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <Text style={{ color: colors.text, fontWeight: "700", fontSize: 26 }}>{method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
-      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "MENU" ? "Chọn món" : "Chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
+      <Text style={{ color: colors.muted, lineHeight: 22 }}>1. {method === "MENU" ? "Chọn món" : "Chụp hoặc chọn ảnh"}  →  2. Kiểm tra  →  3. Lưu vào tủ</Text>
       {method === "MENU" ? <>
         <Text style={{ color: colors.text }}>Ngày thực đơn</Text>
         <DateField label="Ngày thực đơn" value={menuDate} onChange={setMenuDate} disabled={busy || rows !== null} />
@@ -214,7 +215,8 @@ export default function PantryImportScreen() {
       </View>
       {image ? <Image source={{ uri: image.uri }} resizeMode="contain" style={{ height: 210, borderRadius: 18, backgroundColor: colors.card }} /> :
         null}
-      <Action label={image ? "Chọn ảnh khác" : "Chọn ảnh từ thư viện"} onPress={choose} disabled={busy} soft={Boolean(image)} />
+      <PrimaryButton title={image ? "Chụp lại ảnh" : "Chụp ảnh"} icon="camera-outline" onPress={() => choose(true)} disabled={busy} variant={image ? "soft" : "solid"} />
+      <PrimaryButton title={image ? "Chọn ảnh khác từ thư viện" : "Chọn ảnh từ thư viện"} icon="image-outline" onPress={() => choose()} disabled={busy} variant="outline" />
       {image && rows === null ? <Action label={busy ? "Đang nhận diện…" : "Phân tích ảnh"} onPress={analyze} disabled={busy} /> : null}
       {rows === null ? <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} /> : null}
       </> : null}
