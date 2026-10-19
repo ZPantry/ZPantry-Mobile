@@ -49,14 +49,14 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom", "left", "right"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "left", "right"]}>
       <ScrollView
         testID="profile-scroll"
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{
           paddingHorizontal: isCompact ? 16 : 24,
-          paddingTop: isLandscape ? 16 : isCompact ? 52 : 32,
-          paddingBottom: isCompact ? 116 : 40,
+          paddingTop: isCompact ? 20 : 24,
+          paddingBottom: 32,
           gap: 18,
           maxWidth: 680,
           width: "100%",
@@ -67,12 +67,12 @@ export default function ProfileScreen() {
           <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.surface2, borderWidth: 4, borderColor: "#FFDBBD", alignItems: "center", justifyContent: "center" }}>
             <FigmaAsset asset={assets.imgNguynThuyLinh} style={{ borderRadius: 44 }} />
           </View>
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>{displayName}</Text>
+          <Text style={{ color: colors.text, fontSize: 24, fontWeight: "700", textAlign: "center" }}>{displayName}</Text>
           <View style={{ backgroundColor: "#FFDCC6", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, flexDirection: "row", gap: 6, alignItems: "center" }}>
             <FigmaAsset asset={assets.imgContainer1} /><Text style={{ color: "#311300", fontSize: 11, fontWeight: "600" }}>{isPremium ? "Thành viên Premium" : "Thành viên Z-Pantry"}</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
-            <FigmaAsset asset={assets.imgContainer2} /><Text selectable style={{ color: colors.muted, fontSize: 12 }}>{displayEmail}</Text>
+            <FigmaAsset asset={assets.imgContainer2} /><Text selectable style={{ flexShrink: 1, color: colors.muted, fontSize: 12 }}>{displayEmail}</Text>
           </View>
         </View>
         <View style={{ padding: 20, borderRadius: 12, backgroundColor: "#00291A", gap: 16, overflow: "hidden" }}>

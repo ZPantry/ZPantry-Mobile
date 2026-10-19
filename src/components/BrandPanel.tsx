@@ -23,7 +23,7 @@ export function BrandPanel({ eyebrow, title, description, children, asset }: {
     borderCurve: "continuous", gap: spacing.md, overflow: "hidden" }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
       {asset ? <FigmaAsset asset={asset} /> : <MaterialCommunityIcons name="chef-hat" size={18} color={colors.secondary} />}
-      <Text style={{ color: colors.onDarkMuted, fontSize: 11, fontWeight: "600", letterSpacing: 0.6 }}>{eyebrow}</Text>
+      <Text style={{ flex: 1, color: colors.onDarkMuted, fontSize: 11, fontWeight: "600", letterSpacing: 0.6 }}>{eyebrow}</Text>
     </View>
     <Text style={{ color: colors.onDark, fontSize: 20, lineHeight: 27, fontWeight: "700" }}>{title}</Text>
     <Text style={{ color: colors.onDarkMuted, fontSize: 12, lineHeight: 19 }}>{description}</Text>

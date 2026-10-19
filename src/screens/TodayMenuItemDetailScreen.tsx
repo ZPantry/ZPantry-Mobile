@@ -126,7 +126,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [isAddingMissing, item, toast]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadDetail} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"

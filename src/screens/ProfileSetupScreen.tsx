@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import { authStorage } from "@/utils/authStorage";
 import FigmaAsset, { type DesignAsset } from '@/components/FigmaAsset';
 import { surveyAssets as assets } from '@/constants/figmaAssets';
@@ -91,7 +92,7 @@ export default function ProfileSetupScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được hồ sơ. Các thông tin bạn nhập vẫn được giữ lại.")); }
     finally { busy.current = false; setSaving(false); }
   };
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}><KeyboardSafeView>
     <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16, paddingTop: 16, paddingBottom: 40, gap: 22, width: "100%", maxWidth: 680, alignSelf: "center" }}>
       <View style={{ gap: 8 }}><Text style={{ color: colors.text, fontSize: 24, fontWeight: "700" }}>Khẩu vị & Thể trạng của bạn</Text>
@@ -158,7 +159,7 @@ export default function ProfileSetupScreen() {
         <Text style={{ color: colors.white, fontWeight: "700", fontSize: 16 }}>{saving ? "Đang lưu hồ sơ…" : editing ? "Lưu hồ sơ" : "Hoàn tất & Khám phá Pantry"}</Text>
       </Pressable>
     </ScrollView>
-  </SafeAreaView>;
+  </KeyboardSafeView></SafeAreaView>;
 }
 function SurveyLabel({ title, asset }: { title: string; asset: DesignAsset }) {
   return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><FigmaAsset asset={asset} /><Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', flex: 1 }}>{title}</Text></View>;

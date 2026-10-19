@@ -66,7 +66,7 @@ export default function ForgotPasswordScreen({ navigation }: NativeStackScreenPr
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa đặt lại được mật khẩu. Kiểm tra mã OTP rồi thử lại.", "auth")); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <SafeAreaView edges={["left", "right", "bottom", "top"]} style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
     <KeyboardSafeView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, maxWidth: 480, width: "100%", alignSelf: "center", padding: 24, paddingBottom: 48, gap: 24 }}>
 

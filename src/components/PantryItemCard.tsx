@@ -1,4 +1,5 @@
 import Text from "@/components/AppText";
+import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
@@ -37,11 +38,14 @@ function statusIcon(status: PantryItem["status"]): keyof typeof Ionicons.glyphMa
 }
 
 export default function PantryItemCard({ item, onPress, quantityControl, selection, onQuickDelete }: Props) {
+  const [cardWidth, setCardWidth] = useState(0);
+  const narrow = cardWidth < 380;
   const color = statusColor(item.status);
   const imageUrl = normalizeRemoteImageUrl(item.imageUrl || FALLBACK_FOOD_IMAGE_URL);
 
   return (
     <Pressable
+      onLayout={event => setCardWidth(event.nativeEvent.layout.width)}
       accessibilityRole="button"
       accessibilityLabel={selection ? `${selection.selected ? "Bỏ chọn" : "Chọn"} thực phẩm ${item.name}` : `Thực phẩm ${item.name}`}
       onPress={selection ? selection.onToggle : onPress}
@@ -51,6 +55,7 @@ export default function PantryItemCard({ item, onPress, quantityControl, selecti
         borderCurve: "continuous",
         padding: 10,
         flexDirection: "row",
+        flexWrap: "wrap",
         alignItems: "center",
         gap: 10,
         borderWidth: 1,
@@ -67,8 +72,8 @@ export default function PantryItemCard({ item, onPress, quantityControl, selecti
       />
 
       <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Text numberOfLines={1} style={{ flex: 1, color: colors.textDark, fontSize: 15, lineHeight: 20, fontWeight: "600" }} selectable>
+        <View style={{ flexDirection: narrow ? "column" : "row", alignItems: narrow ? "flex-start" : "center", gap: 6 }}>
+          <Text numberOfLines={2} style={{ flexShrink: 1, ...(narrow ? {} : { flex: 1 }), color: colors.textDark, fontSize: 15, lineHeight: 20, fontWeight: "600" }} selectable>
             {item.name}
           </Text>
           <View style={{ borderRadius: 999, backgroundColor: `${color}18`, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -99,8 +104,8 @@ export default function PantryItemCard({ item, onPress, quantityControl, selecti
           {selection.selected ? <Ionicons name="checkmark" size={19} color={colors.white} /> : null}
         </View>
       ) : quantityControl ? (
-        <View style={{ alignItems: 'center', gap: 6 }}>
-          <Text maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.badge} style={{ color: colors.text, fontSize: 11, fontWeight: '600' }}>
+        <View style={{ alignItems: 'center', gap: narrow ? 12 : 6, ...(narrow ? { width: '100%', flexDirection: 'row', borderTopWidth: 1, borderColor: colors.line, paddingTop: 10 } as const : {}) }}>
+          <Text maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.badge} style={{ flexShrink: 1, ...(narrow ? { flex: 1 } : {}), color: colors.text, fontSize: 12, fontWeight: '600' }}>
             {quantityControl.value} {quantityControl.unit}
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -117,8 +122,8 @@ export default function PantryItemCard({ item, onPress, quantityControl, selecti
                   quantityControl.onChange(quantityControl.value + delta);
                 }}
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 48,
+                  height: 48,
                   borderRadius: 8,
                   borderWidth: delta < 0 ? 1 : 0,
                   borderColor: colors.line,
@@ -137,7 +142,7 @@ export default function PantryItemCard({ item, onPress, quantityControl, selecti
             accessibilityLabel={`Xóa ${item.name}`}
             onPress={event => { event.stopPropagation(); onQuickDelete(); }}
             hitSlop={layoutTokens.hitSlop48From32}
-            style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 8, backgroundColor: "#FFF0F0", alignItems: "center", justifyContent: "center", opacity: pressed ? 0.72 : 1 })}
+            style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 8, backgroundColor: "#FFF0F0", alignItems: "center", justifyContent: "center", opacity: pressed ? 0.72 : 1 })}
           >
             <Ionicons name="trash-outline" size={17} color={colors.danger} />
           </Pressable> : null}

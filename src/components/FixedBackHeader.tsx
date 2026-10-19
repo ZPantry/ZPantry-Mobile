@@ -17,7 +17,7 @@ export default function FixedBackHeader({ navigation, route }: NativeStackHeader
   };
 
   return (
-    <SafeAreaView edges={['top']} style={{ backgroundColor: colors.background }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: colors.background }}>
       <View
         testID="fixed-back-header"
         style={{

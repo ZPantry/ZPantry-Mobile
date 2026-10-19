@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import ExpiryDaysField from "@/components/ExpiryDaysField";
 import { expiryDateFromDays } from "@/utils/expiryDays";
@@ -83,7 +84,7 @@ export default function AddIngredientScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được nguyên liệu. Danh sách đã chọn vẫn được giữ lại.")); }
     finally { lock.current = false; setSaving(false); }
   };
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}><KeyboardSafeView>
     <ScrollView keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
       contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 24, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <View style={{ gap: 6 }}>
@@ -155,7 +156,7 @@ export default function AddIngredientScreen() {
         <PrimaryButton title={saving ? "Đang lưu…" : drafts.length ? `Lưu ${drafts.length} nguyên liệu vào tủ` : "Chọn nguyên liệu để lưu"} disabled={saving || !drafts.length} onPress={save} />
       </View>
     </View>
-  </SafeAreaView>;
+  </KeyboardSafeView></SafeAreaView>;
 }
 
 function QuantityButton({ name, label, disabled, onPress }: { name: 'plus' | 'minus'; label: string; disabled: boolean; onPress: () => void }) {

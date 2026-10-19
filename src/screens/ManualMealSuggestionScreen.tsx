@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
@@ -215,7 +216,7 @@ export default function ManualMealSuggestionScreen() {
   const recommendationCount = recommendations.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <FlatList
         data={recommendations}
         keyboardShouldPersistTaps="handled"
@@ -428,7 +429,7 @@ export default function ManualMealSuggestionScreen() {
         }
         renderItem={({ item }) => <RecommendationCard recommendation={item} onPress={() => navigation.navigate("RecipeDetail", { recipeId: item.recipeId, recommendationId: item.recommendationId, mealId: item.persistedMeal ? item.mealId : undefined })} />}
       />
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

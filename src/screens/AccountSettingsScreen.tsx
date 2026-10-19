@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import Text from "@/components/AppText";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
@@ -34,7 +35,7 @@ export default function AccountSettingsScreen() {
     } catch(e) {setMessage(getFriendlyErrorMessage(e,"Chưa lưu được tài khoản."));}
     finally {setBusy(false);}
   }
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{flex:1,backgroundColor:colors.background}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:22,gap:18}}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{flex:1,backgroundColor:colors.background}}><KeyboardSafeView><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:22,gap:18}}>
     <Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Thông tin tài khoản</Text>
     <Text style={{color:colors.muted}}>{user?.email}</Text>
     {[
@@ -45,5 +46,5 @@ export default function AccountSettingsScreen() {
     {message ? <Text accessibilityRole="alert" style={{color:failed?colors.danger:colors.success}}>{message}</Text> : null}
     <PrimaryButton title={busy?"Đang lưu…":"Lưu tài khoản"} onPress={save} disabled={busy}/>
     <PrimaryButton title="Gói Z-Pantry & giới hạn" variant="outline" onPress={() => navigation.navigate("Subscription")}/>
-  </ScrollView></SafeAreaView>;
+  </ScrollView></KeyboardSafeView></SafeAreaView>;
 }

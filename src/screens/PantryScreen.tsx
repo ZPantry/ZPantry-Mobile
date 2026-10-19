@@ -209,14 +209,14 @@ export default function PantryScreen() {
   }, [expiryKey, onboardingStep]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "left", "right"]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPantry} tintColor={colors.primary} />}
         contentContainerStyle={{
           paddingHorizontal: isCompact ? 16 : 24,
-          paddingTop: isLandscape ? 16 : isCompact ? 48 : 32,
-          paddingBottom: isCompact ? 116 : 40,
+          paddingTop: isCompact ? 20 : 24,
+          paddingBottom: selectionMode && selectedItemIds.size ? 112 : 32,
           gap: 14,
           maxWidth: layoutTokens.contentMaxWidth,
           width: "100%",
@@ -242,14 +242,14 @@ export default function PantryScreen() {
           </ScrollView>
         </View> : null}
         <View style={{ gap: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View style={{ flex: 1 }}><SectionHeading title="Sản phẩm trong kho" /></View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+            <View style={{ flexBasis: "100%" }}><SectionHeading title="Sản phẩm trong kho" /></View>
             <Pressable accessibilityRole="button" accessibilityLabel={selectionMode ? "Hủy chọn xóa" : "Chọn nhiều thực phẩm để xóa"} onPress={toggleSelectionMode}
-              style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 10, borderRadius: 9, backgroundColor: selectionMode ? "#FFF0F0" : colors.surface, borderWidth: 1, borderColor: selectionMode ? colors.danger : colors.line, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+              style={({ pressed }) => ({ minHeight: 48, paddingHorizontal: 12, borderRadius: 9, backgroundColor: selectionMode ? "#FFF0F0" : colors.surface, borderWidth: 1, borderColor: selectionMode ? colors.danger : colors.line, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
               <Text style={{ color: selectionMode ? colors.danger : colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{selectionMode ? "Hủy" : "Chọn xóa"}</Text>
             </Pressable>
             {!selectionMode ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm thực phẩm" onPress={() => navigation.navigate("AddIngredient")}
-              style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 10, borderRadius: 9, backgroundColor: colors.primary, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
+              style={({ pressed }) => ({ minHeight: 48, paddingHorizontal: 12, borderRadius: 9, backgroundColor: colors.primary, justifyContent: "center", opacity: pressed ? 0.76 : 1 })}>
               <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }}>Thêm mới</Text>
             </Pressable> : null}
           </View>

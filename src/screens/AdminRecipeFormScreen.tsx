@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -231,7 +232,7 @@ export default function AdminRecipeFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa công thức" : "Tạo công thức"} subtitle="Quản lý metadata, ảnh và nguyên liệu cho recipe" />
         {!form.id ? <Pressable accessibilityRole="button" onPress={() => navigation.navigate("CreateRecipe")} style={{ paddingVertical: 12 }}>
@@ -352,7 +353,7 @@ export default function AdminRecipeFormScreen() {
         </View>
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu công thức" : "Tạo công thức"} onSave={saveRecipe} onCancel={() => navigation.goBack()} />
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -236,7 +237,7 @@ export default function CreateRecipeScreen() {
   }, [searchText]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
@@ -438,7 +439,7 @@ export default function CreateRecipeScreen() {
           <PrimaryButton title={isSaving ? "Đang lưu…" : "Tạo công thức"} icon="content-save" disabled={isSaving || !canCreate} onPress={submitRecipe} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

@@ -41,7 +41,7 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         placeholderTextColor={colors.muted}
         style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 14, fontWeight: "600", paddingVertical: 8 }}
       />
-      <Pressable
+      {onActionPress || onSubmit ? <Pressable
         accessibilityRole="button"
         accessibilityLabel={actionLabel}
         onPress={onActionPress || onSubmit}
@@ -55,7 +55,7 @@ export default function SearchBar({ placeholder, actionLabel = "Tìm kiếm", va
         >
           {actionLabel}
         </Text>
-      </Pressable>
+      </Pressable> : null}
     </View>
   );
 }

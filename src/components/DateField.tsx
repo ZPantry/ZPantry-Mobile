@@ -12,7 +12,7 @@ const parts = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.split('-') : ['',
 /** Keep date-only API values independent of the device timezone. */
 export default function DateField({ label, value, onChange, disabled, optional, birthday }: Props) {
   const [draft, setDraft] = useState(() => parts(value));
-  useEffect(() => { if (/^\d{4}-\d{2}-\d{2}$/.test(value)) setDraft(parts(value)); }, [value]);
+  useEffect(() => { if (!value || /^\d{4}-\d{2}-\d{2}$/.test(value)) setDraft(parts(value)); }, [value]);
   const [year, month, day] = draft;
   const now = new Date();
   const endYear = birthday ? now.getFullYear() : now.getFullYear() + 20;
@@ -32,7 +32,7 @@ export default function DateField({ label, value, onChange, disabled, optional, 
   return (
     <View style={{ gap: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+        <Text style={{ flex: 1, color: colors.text, fontWeight: '600', fontSize: 13 }}>{label}</Text>
         {optional && draft.some(Boolean) ? (
           <Pressable
             accessibilityRole="button"
@@ -51,7 +51,7 @@ export default function DateField({ label, value, onChange, disabled, optional, 
           <SelectField label={`${label} · Ngày`} displayLabel="Ngày" value={day} disabled={disabled} onValueChange={v => update(2, v)} options={[{ value: '', label: 'Ngày' }, ...Array.from({ length: days }, (_, i) => ({ value: pad(i + 1), label: pad(i + 1) }))]} />
         </View>
         <View style={{ flex: 1.1, minWidth: 0 }}>
-          <SelectField label={`${label} · Tháng`} displayLabel="Tháng" value={month} disabled={disabled} onValueChange={v => update(1, v)} options={[{ value: '', label: 'Tháng' }, ...Array.from({ length: 12 }, (_, i) => ({ value: pad(i + 1), label: `Tháng ${pad(i + 1)}` }))]} />
+          <SelectField label={`${label} · Tháng`} displayLabel="Tháng" value={month} disabled={disabled} onValueChange={v => update(1, v)} options={[{ value: '', label: '—' }, ...Array.from({ length: 12 }, (_, i) => ({ value: pad(i + 1), label: pad(i + 1) }))]} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <SelectField label={`${label} · Năm`} displayLabel="Năm" value={year} disabled={disabled} onValueChange={v => update(0, v)} options={[{ value: '', label: 'Năm' }, ...Array.from({ length: endYear - startYear + 1 }, (_, i) => ({ value: String(endYear - i), label: String(endYear - i) }))]} />

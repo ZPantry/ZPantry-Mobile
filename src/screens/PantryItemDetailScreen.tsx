@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import ExpiryDaysField from "@/components/ExpiryDaysField";
 import { expiryDateFromDays, remainingExpiryDays } from "@/utils/expiryDays";
@@ -184,7 +185,7 @@ export default function PantryItemDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 42 }}>
         <View style={{ height: 312, backgroundColor: colors.surface }}>
           <Image source={{ uri: imageUrl }} resizeMode="cover" style={{ width: "100%", height: "100%" }} />
@@ -389,7 +390,7 @@ export default function PantryItemDetailScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

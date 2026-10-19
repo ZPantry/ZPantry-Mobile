@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -161,7 +162,7 @@ export default function AdminIngredientFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16 }}>
         <AdminFormHeader title={form.id ? "Sửa nguyên liệu" : "Tạo nguyên liệu"} subtitle="Quản lý nutrition, unit và ảnh hiển thị" />
 
@@ -219,7 +220,7 @@ export default function AdminIngredientFormScreen() {
         <FormActions isSaving={isSaving} saveLabel={form.id ? "Lưu nguyên liệu" : "Tạo nguyên liệu"} onSave={saveIngredient} onCancel={() => navigation.goBack()} />
         {form.id ? <IngredientAliases ingredientId={form.id} disabled={isSaving} /> : <Text style={{ color: colors.muted, lineHeight: 21 }}>Sau khi tạo nguyên liệu, mở lại để thêm các tên gọi khác.</Text>}
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

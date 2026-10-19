@@ -8,7 +8,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
+import { Keyboard, Pressable, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
@@ -59,8 +59,15 @@ const tabMeta = {
 
 function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBarProps & { isPremium: boolean }) {
   const insets = useSafeAreaInsets();
-  const { isCompact, isSmallDevice, width } = useSizeClass();
-  const isTopNav = !isCompact;
+  const { isSmallDevice, width } = useSizeClass();
+  const isTopNav = width >= 840;
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+  if (keyboardVisible && !isTopNav) return null;
 
   return (
     <View
@@ -71,7 +78,9 @@ function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBar
         borderBottomWidth: isTopNav ? 1 : 0,
         borderColor: colors.line,
         paddingBottom: isTopNav ? 0 : Math.max(insets.bottom, 8),
-        paddingTop: isTopNav ? 0 : 6
+        paddingTop: isTopNav ? insets.top : 6,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
       }}
     >
       <View
@@ -131,6 +140,7 @@ function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBar
               }}
               style={({ pressed }) => ({
                 flex: isTopNav ? undefined : 1,
+                minWidth: 0,
                 minHeight: 52,
                 paddingHorizontal: isTopNav ? 14 : isSmallDevice ? 2 : 4,
                 alignItems: "center",
@@ -148,11 +158,15 @@ function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBar
                 <Ionicons name="calendar-outline" size={21} color={color} />
               )}
               <Text
-                numberOfLines={1}
+                numberOfLines={isTopNav ? 1 : 2}
                 maxFontSizeMultiplier={layoutTokens.maxFontScaleCaps.tabBar}
                 style={{
                   color,
                   fontSize: isTopNav ? 13 : isSmallDevice ? 10 : 11,
+                  maxWidth: "100%",
+                  textAlign: "center",
+                  minHeight: isTopNav ? undefined : 28,
+                  lineHeight: isTopNav ? undefined : 14,
                   fontWeight: focused ? "700" : "500"
                 }}
               >
@@ -167,7 +181,7 @@ function BrandTabBar({ state, descriptors, navigation, isPremium }: BottomTabBar
 }
 
 function Tabs() {
-  const { isCompact } = useSizeClass();
+  const { width } = useSizeClass();
   const [isPremium, setIsPremium] = useState(false);
   const refreshSubscription = useCallback(async () => {
     try {
@@ -183,7 +197,8 @@ function Tabs() {
       tabBar={(props) => <BrandTabBar {...props} isPremium={isPremium} />}
       screenOptions={{
         headerShown: false,
-        tabBarPosition: !isCompact ? "top" : "bottom"
+        tabBarPosition: width >= 840 ? "top" : "bottom",
+        tabBarHideOnKeyboard: true
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Hôm nay" }} />

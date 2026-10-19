@@ -849,7 +849,7 @@ test('Add Ingredient controls keep independent base quantities and save only on 
     '@/api/ingredients': { ingredientsApi: { all: async () => items } },
     '@/api/pantry': { pantryApi: { saveItems: async items => { writes.push(items); if (failSave) throw new Error('Network unavailable'); } } }
   };
-  for (const name of ['AppInput', 'ExpiryDaysField', 'AppText', 'ScreenScrollView', 'CategoryChip', 'PrimaryButton', 'SearchBar']) mocks[`@/components/${name}`] = { __esModule: true, default: name };
+  for (const name of ['KeyboardSafeView', 'AppInput', 'ExpiryDaysField', 'AppText', 'ScreenScrollView', 'CategoryChip', 'PrimaryButton', 'SearchBar']) mocks[`@/components/${name}`] = { __esModule: true, default: name };
   const Screen = loader(mocks)('@/screens/AddIngredientScreen').default;
   function render() { cursor = 0; const tree = Screen(); initialized = true; return tree; }
   function nodes(tree) {

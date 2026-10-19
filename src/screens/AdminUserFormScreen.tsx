@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import Text from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -83,7 +84,7 @@ export default function AdminUserFormScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}><KeyboardSafeView>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 22, paddingBottom: 42, gap: 16, maxWidth: 720 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
 
@@ -146,7 +147,7 @@ export default function AdminUserFormScreen() {
           </Pressable>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardSafeView></SafeAreaView>
   );
 }
 

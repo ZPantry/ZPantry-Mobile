@@ -1,3 +1,4 @@
+import ModalBackdrop from "@/components/ModalBackdrop";
 import Text from "@/components/AppText";
 import { canManageUsers, assignableRoles } from "@/utils/roles";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -558,7 +559,7 @@ function ConfirmDeleteModal({ target, isSaving, onCancel, onConfirm }: { target:
   const label = target?.type === "users" ? "user" : target?.type === "recipes" ? "công thức" : "nguyên liệu";
   return (
     <Modal transparent visible={Boolean(target)} animationType="fade" onRequestClose={onCancel}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.58)", padding: 22, justifyContent: "center" }}>
+      <ModalBackdrop>
         <View style={{ borderRadius: 18, backgroundColor: colors.white, padding: 18, gap: 14 }}>
           <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: "rgba(255,77,79,0.14)", alignItems: "center", justifyContent: "center" }}>
             <MaterialCommunityIcons name="trash-can-outline" size={30} color={colors.danger} />
@@ -582,7 +583,7 @@ function ConfirmDeleteModal({ target, isSaving, onCancel, onConfirm }: { target:
             </Pressable>
           </View>
         </View>
-      </View>
+      </ModalBackdrop>
     </Modal>
   );
 }

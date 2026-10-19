@@ -79,11 +79,11 @@ export default function MealSuggestionScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tạo được gợi ý. Vui lòng thử lại.")); }
     finally { busy.current = false; setSuggesting(false); }
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom", "left", "right"]}>
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "left", "right"]}>
     <ScrollView refreshControl={<RefreshControl refreshing={loading || catalogLoading} onRefresh={() => { void load(); void loadCatalog(); }} tintColor={colors.primary} />}
       contentContainerStyle={{
-        paddingTop: isLandscape ? 16 : isCompact ? 52 : 32,
-        paddingBottom: isCompact ? 116 : 40,
+        paddingTop: isCompact ? 20 : 24,
+        paddingBottom: 32,
         paddingHorizontal: isCompact ? 16 : 24,
         gap: 20,
         maxWidth: layoutTokens.contentMaxWidth,

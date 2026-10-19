@@ -1,3 +1,4 @@
+import KeyboardSafeView from "@/components/KeyboardSafeView";
 import AppInput from "@/components/AppInput";
 import DateField from "@/components/DateField";
 import Text from "@/components/AppText";
@@ -166,7 +167,7 @@ export default function PantryImportScreen() {
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được. Bản chỉnh sửa vẫn được giữ lại.")); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: colors.background }}><KeyboardSafeView>
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 22, paddingBottom: 48, gap: 18, maxWidth: 720, width: "100%", alignSelf: "center" }}>
       <Text style={{ color: colors.text, fontWeight: "700", fontSize: 26 }}>{method === "MENU" ? "Thêm bằng thực đơn" : "Thêm nguyên liệu từ ảnh"}</Text>
@@ -263,7 +264,7 @@ export default function PantryImportScreen() {
       </> : null}
       <Action soft label="Thêm thủ công" onPress={() => navigation.navigate("AddIngredient")} disabled={busy} />
     </ScrollView>
-  </SafeAreaView>;
+  </KeyboardSafeView></SafeAreaView>;
 }
 function unknownReasonMessage(reason: string) {
   return ({ BLURRY: "Ảnh bị mờ, hãy chụp lại gần hơn.", TOO_DARK: "Ảnh quá tối, hãy thêm ánh sáng.", NO_FOOD: "Không thấy thực phẩm hoặc hóa đơn trong ảnh.", NOT_SUPPORTED: "Ảnh menu, công thức hoặc món đã nấu chưa được hỗ trợ.", UNCERTAIN: "Chưa nhận diện được loại ảnh, hãy chọn thủ công." } as Record<string, string>)[reason] || "Chưa nhận diện được ảnh.";

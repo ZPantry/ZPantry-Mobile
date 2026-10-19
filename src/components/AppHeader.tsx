@@ -10,7 +10,7 @@ type Props = {
 export default function AppHeader({ title = "Z-Pantry", subtitle }: Props) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-      <View>
+      <View style={{ flex: 1, minWidth: 0 }}>
         {title === "Z-Pantry" ? (
           <Image source={require("../../assets/images/z-pantry-logo.png")} resizeMode="contain" style={{ width: 156, height: 50 }} />
         ) : (

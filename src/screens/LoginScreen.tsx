@@ -223,7 +223,7 @@ export default function LoginScreen() {
             {mode === "otp" ? "Nhập mã xác thực gồm 6 chữ số" : "Bắt đầu cảm hứng cho bữa ăn cùng Z-Pantry"}
           </Text> : null}
         </View>
-        <View style={{ marginHorizontal: 19, marginTop: 26, padding: 24, borderRadius: 12, backgroundColor: colors.surface, boxShadow: "0 20px 25px -5px rgba(13,40,24,0.05), 0 8px 10px -6px rgba(13,40,24,0.05)" }}>
+        <View style={{ marginHorizontal: isCompact ? 0 : 19, marginTop: 26, padding: isCompact ? 16 : 24, borderRadius: 12, backgroundColor: colors.surface, boxShadow: "0 20px 25px -5px rgba(13,40,24,0.05), 0 8px 10px -6px rgba(13,40,24,0.05)" }}>
           {mode === "register" ? <View style={{ marginBottom: 16 }}><AuthInput icon="person" label="Họ và tên" placeholder="Nguyễn Văn A" value={fullName} onChangeText={setFullName} editable={!isSubmitting} /></View> : null}
           {mode !== "otp" ? <AuthInput icon="mail" label="Email" placeholder="bepviet@pantry.vn" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!isSubmitting} /> : (
             <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "center" }}>Mã xác thực được gửi đến{"\n"}<Text style={{ color: colors.text, fontWeight: "600" }}>{verificationEmail}</Text></Text>
@@ -248,9 +248,9 @@ export default function LoginScreen() {
             </View>
             <View style={{ marginTop: 20 }}><CheckboxLine label="Tôi đồng ý với Điều khoản dịch vụ & Chính sách bảo mật của Pantry." checked={acceptedTerms} disabled={isSubmitting} onPress={() => setAcceptedTerms(v => !v)} /></View>
           </View> : null}
-          {mode === "login" ? <View style={{ marginTop: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          {mode === "login" ? <View style={{ marginTop: 20, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <CheckboxLine label="Ghi nhớ đăng nhập" checked={rememberMe} disabled={isSubmitting} onPress={() => setRememberMe(v => !v)} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Quên mật khẩu" disabled={isSubmitting} onPress={() => navigation.navigate("ForgotPassword")} hitSlop={10}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }}>Quên mật khẩu?</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Quên mật khẩu" style={{ minHeight: 48, justifyContent: "center" }} disabled={isSubmitting} onPress={() => navigation.navigate("ForgotPassword")} hitSlop={10}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }}>Quên mật khẩu?</Text></Pressable>
           </View> : null}
           {authMessage ? <View style={{ marginTop: 16 }}><Message text={authMessage} tone="danger" /></View> : null}
           {successMessage ? <View style={{ marginTop: 16 }}><Message text={successMessage} tone="success" /></View> : null}
@@ -267,7 +267,7 @@ export default function LoginScreen() {
             <Text style={{ color: colors.primaryDark, fontSize: 12 }}>{resendSeconds > 0 ? "Gửi lại mã sau " + resendSeconds + "s" : "Gửi lại mã OTP · Sắp có"}</Text>
           </Pressable> : null}
         </View>
-        <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={() => setModeAndClearMessages(mode === "login" ? "register" : "login")} style={{ minHeight: 44, marginTop: 36, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={() => setModeAndClearMessages(mode === "login" ? "register" : "login")} style={{ minHeight: 48, marginTop: 24, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <Text style={{ color: "#424843", fontSize: 14 }}>{mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}</Text>
           <Text style={{ color: "#0D2818", fontSize: 15, fontWeight: "700" }}>{mode === "login" ? "Đăng ký ngay" : "Đăng nhập ngay"}</Text><FigmaAsset asset={assets.imgContainer5} />
         </Pressable>
@@ -279,7 +279,7 @@ export default function LoginScreen() {
 
 const labelStyle = { color: colors.text, fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 13, lineHeight: 16 };
 const inputStyle = { minHeight: 48, borderRadius: 8, backgroundColor: fieldGlass, flexDirection: "row" as const, alignItems: "center" as const, paddingHorizontal: 16, gap: 12 };
-const textInputStyle = { flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0, color: colors.text, fontFamily: "BeVietnamPro_400Regular", fontSize: 14, paddingVertical: 12 };
+const textInputStyle = { flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0, color: colors.text, fontFamily: "BeVietnamPro_400Regular", fontSize: 16, paddingVertical: 12 };
 
 function AuthInput({ label, icon, value, placeholder, onChangeText, keyboardType, autoCapitalize, editable = true }: AuthInputProps) {
   return <View style={{ gap: 4 }}>
@@ -292,7 +292,7 @@ function AuthInput({ label, icon, value, placeholder, onChangeText, keyboardType
 }
 type AuthInputProps = { editable?: boolean; label: string; icon: ComponentProps<typeof Ionicons>["name"]; value: string; placeholder: string; onChangeText: (value: string) => void; keyboardType?: ComponentProps<typeof TextInput>["keyboardType"]; autoCapitalize?: ComponentProps<typeof TextInput>["autoCapitalize"] };
 function CheckboxLine({ label, checked, onPress, disabled = false }: { label: string; checked: boolean; onPress: () => void; disabled?: boolean }) {
-  return <Pressable accessibilityRole="checkbox" accessibilityLabel={label} aria-checked={checked} accessibilityState={{ checked, disabled }} disabled={disabled} onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 }}>
+  return <Pressable accessibilityRole="checkbox" accessibilityLabel={label} aria-checked={checked} accessibilityState={{ checked, disabled }} disabled={disabled} onPress={onPress} style={{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 }}>
     <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 1, borderColor: "#EF9D1F", backgroundColor: checked ? "#0D2818" : colors.surface, alignItems: "center", justifyContent: "center" }}>
       {checked ? <FigmaAsset asset={assets.imgContainer6} style={{ width: 10.188, height: 7.516 }} /> : null}
     </View><Text style={{ flexShrink: 1, color: "#424843", fontSize: 12, lineHeight: 18 }}>{label}</Text>

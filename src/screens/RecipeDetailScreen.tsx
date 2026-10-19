@@ -167,7 +167,7 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
   }, [navigation, recipe, toast, plannedDate, isAddingToToday, mealType, portionCount, menuNote, route.params.mealId]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom", "top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["left", "right", "bottom"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRecipe} tintColor={colors.primary} />}
         contentInsetAdjustmentBehavior="automatic"

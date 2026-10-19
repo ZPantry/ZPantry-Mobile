@@ -1,3 +1,4 @@
+import ModalBackdrop from "@/components/ModalBackdrop";
 import Text from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ActivityIndicator, Modal, Pressable, View } from "react-native";
@@ -14,7 +15,7 @@ type LogoutConfirmModalProps = {
 export default function LogoutConfirmModal({ visible, isSigningOut = false, onStay, onConfirm }: LogoutConfirmModalProps) {
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onStay}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.62)", padding: 20, justifyContent: "center" }}>
+      <ModalBackdrop>
         <View
           accessibilityViewIsModal
           style={{
@@ -83,7 +84,7 @@ export default function LogoutConfirmModal({ visible, isSigningOut = false, onSt
             </Pressable>
           </View>
         </View>
-      </View>
+      </ModalBackdrop>
     </Modal>
   );
 }

@@ -35,3 +35,11 @@ node tests/swagger-flows.web.cjs
 Browser tests dùng phản hồi API giả lập, không thay đổi backend Render. Ảnh kiểm tra và kết quả nằm trong `work/swagger-review-2026-10-04/`.
 
 Xem [đối chiếu API và giới hạn kiểm chứng](docs/api-sync-2026-10-04.md). Swagger là nguồn contract; API có dữ liệu dạng mở vẫn cần kiểm tra bằng tài khoản thật và dữ liệu thực tế.
+
+## APK Android
+
+Tải APK và SHA-256 tại [GitHub Releases](https://github.com/ZPantry/ZPantry-Mobile/releases). File APK được lưu ở Releases vì kích thước vượt giới hạn file Git thông thường.
+
+Build local trên Windows bằng `npm run build:apk`. Cần Android SDK/JDK được cấu hình trong `.android.local.json` và chữ ký tải qua `eas credentials -p android` vào `credentials.json`. Hai file cấu hình local cùng keystore đều được bỏ qua bởi Git. Script dùng template Expo SDK 56 cố định, đồng bộ native từ `app.json`, ký bản release và tạo `outputs/apk/<version>/` kèm `SHA256SUMS.txt`.
+
+Trước khi phát hành, chạy TypeScript, API tests, export web và `tests/mobile-layout.web.cjs`; sau build phải xác minh chữ ký, phiên bản và khởi động APK không cần Metro. Xem [kiểm tra bản 1.0.4](docs/android-release-1.0.4.md) để biết kết quả và giới hạn.

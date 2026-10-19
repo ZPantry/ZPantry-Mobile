@@ -27,7 +27,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
@@ -72,8 +72,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const displayName = userDisplayName(user);
-  const { width, isCompact, isLandscape, isExpanded } = useSizeClass();
-  const insets = useSafeAreaInsets();
+  const { isCompact } = useSizeClass();
   const [showAddMethods, setShowAddMethods] = useState(false);
   const [recipes, setRecipes] = useState<Meal[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryApiItem[]>([]);
@@ -156,12 +155,12 @@ export default function HomeScreen() {
   }, [navigation, pantryItems, warnLowQuota]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "left", "right"]}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadHome} tintColor={colors.primary} />}
         contentContainerStyle={{
-          paddingTop: isLandscape ? 18 : isCompact ? 52 : 32,
-          paddingBottom: isCompact ? 116 : 76,
+          paddingTop: isCompact ? 20 : 24,
+          paddingBottom: 32,
           gap: 18,
           maxWidth: layoutTokens.contentMaxWidth,
           width: "100%",
@@ -219,6 +218,7 @@ export default function HomeScreen() {
         <View style={{ position: 'relative', marginTop: 2 }}>
           <ActionRow asset={assets.imgContainer1} icon="silverware-fork-knife" title="Hôm nay nấu gì?" subtitle={isLoading ? 'Đang kiểm tra tủ của bạn…' : pantryItems.length + ' nguyên liệu trong tủ · khám phá món phù hợp'} onPress={() => navigation.navigate('MealSuggestion')} />
         </View>
+        <PrimaryButton title="Gợi ý món ăn nhanh bằng AI" icon="chef-hat" loading={quickSuggesting} onPress={() => void quickSuggest()} />
         <View style={{ gap: 12 }}>
           <SectionHeading title="Món ngon tuần này 🔥" action="Khám phá" onPress={() => navigation.navigate("MealSuggestion")} />
           <SearchBar placeholder="Tìm món ăn hoặc nguyên liệu" actionLabel="Tìm" value={searchText} onChangeText={setSearchText} onSubmit={() => setSearchText(searchText.trim())} />
@@ -249,31 +249,7 @@ export default function HomeScreen() {
         </View>
         <ActionRow icon="calendar-outline" title="Lên thực đơn hôm nay" subtitle="Sắp xếp bữa ăn và theo dõi những món đã nấu." onPress={() => navigation.navigate("Plan")} />
       </ScrollView>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Gợi ý món ăn nhanh bằng AI"
-        accessibilityHint="Tự động gợi ý món từ pantry hoặc hồ sơ ăn uống"
-        disabled={quickSuggesting}
-        onPress={() => void quickSuggest()}
-        style={({ pressed }) => ({
-          position: "absolute",
-          right: isExpanded ? Math.max(20, Math.floor((width - layoutTokens.contentMaxWidth) / 2) + 20) : 18,
-          bottom: (isCompact ? 72 : 24) + Math.max(insets.bottom, 12),
-          width: 58,
-          height: 58,
-          borderRadius: 29,
-          backgroundColor: colors.primary,
-          alignItems: "center",
-          justifyContent: "center",
-          borderWidth: 3,
-          borderColor: colors.surface,
-          opacity: quickSuggesting ? 0.7 : pressed ? 0.78 : 1,
-          transform: [{ scale: pressed ? 0.94 : 1 }],
-          boxShadow: "0 5px 16px rgba(184,92,10,0.34)"
-        })}
-      >
-        {quickSuggesting ? <ActivityIndicator color={colors.white} /> : <MaterialCommunityIcons name="chef-hat" size={27} color={colors.white} />}
-      </Pressable>
+
     </SafeAreaView>
   );
 }

@@ -13,6 +13,11 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.apk
+/credentials.json
+/scratch/pre-apk-*
+/scratch/release-*
+/scratch/ui-build.log
 *.p8
 *.p12
 *.key
