@@ -13,12 +13,15 @@ function loader(mocks = {}) {
     if (name === 'expo-crypto') return { randomUUID: require('node:crypto').randomUUID };
     if (name === 'expo/fetch') return { fetch: global.fetch };
     if (name === 'expo-file-system') {
-      return { File: class ExpoFile extends Blob {
+      return { File: class ExpoFile {
         constructor(uri) {
-          super(['test-native-file']);
-          Object.defineProperty(this, 'uri', { value: uri });
-          Object.defineProperty(this, 'exists', { value: true });
+          this.uri = uri;
+          this.exists = true;
+          this.name = uri.split('/').at(-1);
+          this.type = 'image/jpeg';
         }
+        async bytes() { return new TextEncoder().encode('test-native-file'); }
+        slice() { throw new Error("Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported"); }
       } };
     }
     const tsFile = name.startsWith('@/') ? path.resolve('src', name.slice(2) + '.ts') : path.resolve(parent, name + '.ts');
@@ -40,6 +43,24 @@ const { unwrapEnvelope, getMessage, ApiError } = load('@/api/response');
 const { resolveApiBaseUrl } = load('@/api/baseUrl');
 const { canUpdateUser, buildUserUpdate } = load('@/utils/userProfile');
 const id = '55f2f378-692a-4268-924e-e8c648190e32';
+
+// Use Expo's actual native FormData patch/encoder, not Node's browser FormData.
+// FileSystem.File implements Blob but does not inherit from RN's Blob class.
+function expoNativeModule(relative) {
+  const file = path.resolve('node_modules/expo/src', relative);
+  const { outputText } = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
+  });
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', outputText)(() => ({ blobToArrayBufferAsync: blob => blob.arrayBuffer() }), module, module.exports);
+  return module.exports;
+}
+async function withNativeFormData(run) {
+  const original = global.FormData;
+  class NativeFormData { _parts = []; }
+  global.FormData = expoNativeModule('winter/FormData.ts').installFormDataPatch(NativeFormData);
+  try { return await run(); } finally { global.FormData = original; }
+}
 
 test('password recovery sends the deployed schema and rejects invalid reset before writing', async () => {
   const calls = [];
@@ -119,7 +140,7 @@ test('unified image analysis adapts ingredients and refuses unknown images witho
   assert.equal(preview.sourceType, 'RECEIPT'); assert.equal(preview.items[0].reviewRequired, true);
   result = { imageType: 'UNKNOWN', ingredients: [], warnings: [] };
   assert.deepEqual((await pantryImportApi.analyze('AUTO', file)).items, []);
-  await pantryImportApi.analyze('FOOD_IMAGE', { uri: 'file:///cache/pantry-photo.jpg', name: 'pantry-photo.jpg', type: 'image/jpeg' });
+  await withNativeFormData(() => pantryImportApi.analyze('FOOD_IMAGE', { uri: 'file:///cache/pantry-photo.jpg', name: 'pantry-photo.jpg', type: 'image/jpeg' }));
   assert.equal(calls[2][1].body.get('image').name, 'pantry-photo.jpg');
   assert.equal(calls.length, 3);
 });
@@ -568,6 +589,8 @@ test('registration failures explain duplicate email and unavailable OTP delivery
   assert.match(getFriendlyErrorMessage(new ApiError('Email already exists.', 500), 'fallback', 'auth'), /đã được đăng ký/);
   assert.match(getFriendlyErrorMessage(new ApiError('Email delivery is not configured', 500), 'fallback', 'auth'), /chưa cấu hình gửi mã OTP/);
   assert.match(getFriendlyErrorMessage(new ApiError('Failed to fetch', 0), 'fallback', 'auth'), /Không thể kết nối tới máy chủ/);
+  assert.equal(getFriendlyErrorMessage(new Error('Không đọc được ảnh đã chọn.'), 'fallback', 'imageUpload'), 'Không đọc được ảnh đã chọn.');
+  assert.equal(getFriendlyErrorMessage(new ApiError('Không chuẩn bị được ảnh đã chọn.', 400), 'fallback', 'imageUpload'), 'Không chuẩn bị được ảnh đã chọn.');
   assert.equal(getFriendlyErrorMessage(new ApiError('Internal secret detail', 500), 'fallback', 'auth'), 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.');
 });
 
@@ -604,7 +627,7 @@ test('admin multipart forms use the Java API camelCase field names', () => {
   ]);
 });
 
-test('native completion uploads file bytes and preserves text fields, filename and optional image', async () => {
+test('native completion uploads file bytes without constructing unsupported RN Blobs', async () => withNativeFormData(async () => {
   const calls = [];
   const formLoad = loader({ '@/api/client': { apiRequest: async (...args) => { calls.push(args); return {}; } } });
   const { todayMenuApi } = formLoad('@/api/todayMenu');
@@ -617,19 +640,32 @@ test('native completion uploads file bytes and preserves text fields, filename a
   assert.equal(options.body.get('rating'), '4');
   assert.equal(options.body.get('note'), 'Đã nấu');
   const image = options.body.get('imageFile');
-  assert.ok(image instanceof Blob);
+  assert.equal(typeof image.bytes, 'function');
   assert.equal(image.name, 'meal.jpg');
   assert.equal(image.type, 'image/jpeg');
-  assert.equal(await image.text(), 'test-native-file');
+  assert.equal(new TextDecoder().decode(await image.bytes()), 'test-native-file');
   // Exercise real multipart serialization; descriptors must never become [object Object].
-  const wire = await new Response(options.body).text();
+  const encoded = await expoNativeModule('winter/fetch/convertFormData.ts').convertFormDataAsync(options.body);
+  const wire = new TextDecoder().decode(encoded.body);
+  assert.match(wire, /content-type: image\/jpeg/i);
   assert.match(wire, /filename="meal.jpg"/);
   assert.match(wire, /test-native-file/);
   assert.doesNotMatch(wire, /\[object Object\]/);
   await todayMenuApi.complete(id, { rating: 5, note: '' });
   assert.equal(calls[1][1].body.has('imageFile'), false);
   assert.equal(calls[1][1].body.has('cookedAt'), false);
-});
+  assert.equal(calls[1][1].body.get('note'), '');
+}));
+
+test('native file read failures remain image errors rather than network errors', async () => withNativeFormData(async () => {
+  const { appendUploadFile } = loader({ 'expo-file-system': { File: class {
+    exists = true;
+    async bytes() { throw new Error('local file disappeared'); }
+  } } })('@/api/uploadFile');
+  const form = new FormData();
+  appendUploadFile(form, 'imageFile', { uri: 'file:///cache/missing.jpg', name: 'meal.jpg', type: 'image/jpeg' });
+  await assert.rejects(expoNativeModule('winter/fetch/convertFormData.ts').convertFormDataAsync(form), error => error.status === 400 && /Không đọc được ảnh/.test(error.message));
+}));
 
 test('shared upload converts native files, preserves browser MIME and rejects missing local files', async () => {
   const { appendUploadFile } = loader()('@/api/uploadFile');
@@ -665,8 +701,36 @@ test('menu detail resolves legacy mealId using the same recipe fallback as Java'
   assert.equal(detail.requiredIngredients[0].quantity, 200);
 });
 
-test('completion keeps Java warnings visible and prevents a second submit after success', async () => {
-  for (const warnings of [[], ['Completion image could not be uploaded.']]) {
+test('completed menu detail loads its saved cooking log across history pages without pantry reads', async () => {
+  const reads = [];
+  const saved = { id: 'saved-log', todayMenuItemId: id, recipeId: 'same-recipe', cookedAt: '2026-10-19T00:00:00Z', rating: 2, note: 'Ghi chú sau khi nấu', imageUrl: 'https://example.invalid/cooked.jpg' };
+  const { todayMenuApi } = loader({
+    '@/api/client': { apiRequest: async route => {
+      reads.push(route);
+      if (route === `/api/me/today-menu/items/${id}`) return { id, recipeId: 'same-recipe', status: 'Cooked', note: 'Ghi chú lên thực đơn' };
+      if (route.includes('pageIndex=1')) return { data: [{ ...saved, todayMenuItemId: 'different-menu', note: 'Không được lấy bản ghi này' }], hasNextPage: true };
+      return { data: [saved], hasNextPage: true };
+    } },
+    '@/api/recipes': { recipesApi: { get: () => { throw new Error('Must not load recipe for saved log'); } } },
+    '@/api/pantry': { pantryApi: { all: () => { throw new Error('Must not load pantry after completion'); } } }
+  })('@/api/todayMenu');
+  const result = await todayMenuApi.get(id);
+  assert.deepEqual(result.cookingLog, saved);
+  assert.equal(result.imageUrl, saved.imageUrl);
+  assert.equal(reads.length, 3);
+  assert.match(reads[2], /pageIndex=2/);
+});
+
+test('missing cooking history remains absent instead of inventing saved ratings or notes', async () => {
+  const { todayMenuApi } = loader({ '@/api/client': { apiRequest: async route => route.includes('cooking-logs')
+    ? { data: [], hasNextPage: false }
+    : { id, status: 'COOKED', note: 'Planning note is not a cooking note' }
+  } })('@/api/todayMenu');
+  assert.equal((await todayMenuApi.get(id)).cookingLog, null);
+});
+
+test('completion hides pantry processing details, reports image failure and prevents repeat submission', async () => {
+  for (const warnings of [[], ['Completion image could not be uploaded.'], ['Not enough pantry quantity for Carrot.']]) {
     const state = []; let cursor = 0; let initialized = false;
     const effects = [], navigations = [], notices = [], writes = [];
     const react = {
@@ -703,10 +767,13 @@ test('completion keeps Java warnings visible and prevents a second submit after 
     const result = flatten(render());
     assert.equal(writes.length, 1);
     assert.equal(result.some(node => node.type === 'PrimaryButton' && node.props.title === 'Hoàn thành và lưu nhật ký'), false);
-    assert.equal(navigations.length, warnings.length ? 0 : 1);
-    if (warnings.length) {
+    assert.equal(navigations.length, 1);
+    assert.equal(result.some(node => ['Nguyên liệu đã trừ', 'Lưu ý sau khi hoàn thành', 'Nguyên liệu trong tủ', 'Nguyên liệu còn thiếu'].includes(node.props?.title)), false);
+    if (warnings.includes('Completion image could not be uploaded.')) {
       assert.equal(notices.at(-1)[1], 'info');
-      assert.ok(result.some(node => node.props?.text === 'Món ăn đã được hoàn thành nhưng ảnh chưa tải lên được.'));
+      assert.match(notices.at(-1)[0], /ảnh chưa tải lên/);
+    } else {
+      assert.equal(notices.at(-1)[1], 'success');
     }
   }
 });

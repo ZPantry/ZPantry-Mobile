@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import Text from "@/components/AppText";
-import { Host, Picker } from "@expo/ui";
+import SelectControl from './SelectControl';
 import { View } from "react-native";
 import { colors } from "@/constants/colors";
 
@@ -22,6 +22,7 @@ type Props = {
 };
 
 export default function SelectField({ label, value, options, onValueChange, hint, error, displayLabel, disabled = false }: Props) {
+  const [focused, setFocused] = useState(false);
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     document.querySelectorAll('select[data-testid]').forEach(el => { if (el.getAttribute('data-testid') === `select-${label}`) el.setAttribute('aria-label', label); });
@@ -36,22 +37,16 @@ export default function SelectField({ label, value, options, onValueChange, hint
       </Text>
       <View
         style={{
-          minHeight: 48,
+          minHeight: 56,
           borderRadius: 12,
           overflow: "hidden",
-          backgroundColor: value ? colors.secondary : colors.input,
+          backgroundColor: disabled ? colors.background : colors.input,
           borderWidth: 1,
-          borderColor: error ? colors.danger : colors.line,
+          borderColor: error ? colors.danger : focused ? colors.primary : colors.inputBorder,
           justifyContent: "center"
         }}
       >
-        <Host style={{ width: "100%", minHeight: 46 }} seedColor={colors.primary} colorScheme="light">
-          <Picker testID={`select-${label}`} selectedValue={value} onValueChange={onValueChange} appearance="menu" enabled={!disabled}>
-            {displayedOptions.map((option) => (
-              <Picker.Item key={option.value} label={option.label} value={option.value} />
-            ))}
-          </Picker>
-        </Host>
+        <SelectControl label={label} value={value} options={displayedOptions} onValueChange={onValueChange} disabled={disabled} onFocusChange={setFocused} />
       </View>
       {error ? (
         <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 12, lineHeight: 16 }} selectable>

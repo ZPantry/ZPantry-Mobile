@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, TextInput, View } from "r
 import { Image as ExpoImage } from "expo-image";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { CompleteTodayMenuItemResponse, IngredientAvailabilityResponse, TodayMenuItemDetail } from "@/api/todayMenu";
+import type { IngredientAvailabilityResponse, TodayMenuItemDetail } from "@/api/todayMenu";
 import { todayMenuApi } from "@/api/todayMenu";
 import PrimaryButton from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
@@ -14,7 +14,7 @@ import { useToast } from "@/context/ToastContext";
 import type { RootStackParamList } from "@/types";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { FALLBACK_FOOD_IMAGE_URL, normalizeRemoteImageUrl } from "@/utils/image";
-import { getFriendlyErrorMessage, translatePantryWarning, translateStatus } from "@/utils/localize";
+import { getFriendlyErrorMessage, translateStatus } from "@/utils/localize";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
 
@@ -35,11 +35,10 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   const { isLandscape } = useSizeClass();
   const toast = useToast();
   const [item, setItem] = useState<TodayMenuItemDetail | null>(null);
-  const [completedResult, setCompletedResult] = useState<CompleteTodayMenuItemResponse | null>(null);
   const [availability, setAvailability] = useState<IngredientAvailabilityResponse | null>(null);
   const [isAddingMissing, setIsAddingMissing] = useState(false);
   const [pickedImage, setPickedImage] = useState<PickedUploadImage | null>(null);
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<number | null>(5);
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -50,13 +49,14 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [detail, pantryAvailability] = await Promise.all([
-        todayMenuApi.get(route.params.itemId),
-        todayMenuApi.ingredientAvailability(route.params.itemId)
-      ]);
+      const detail = await todayMenuApi.get(route.params.itemId);
+      const cooked = ["cooked", "completed"].includes(detail.status.toLowerCase());
       setItem(detail);
-      setAvailability(pantryAvailability);
-      setNote(detail.note || "");
+      setPickedImage(null);
+      setRating(cooked ? detail.cookingLog?.rating ?? null : 5);
+      setNote(cooked ? detail.cookingLog?.note ?? "" : detail.note || "");
+      setAvailability(null);
+      if (!cooked) setAvailability(await todayMenuApi.ingredientAvailability(route.params.itemId));
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tải được chi tiết món trong thực đơn."));
     } finally {
@@ -84,7 +84,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
   }, [toast]);
 
   const submitCompletion = useCallback(async () => {
-    if (!item || completionLock.current) return;
+    if (!item || isCooked || completionLock.current) return;
 
     completionLock.current = true;
     setIsCompleting(true);
@@ -92,17 +92,13 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       const result = await todayMenuApi.complete(item.id, {
         imageFile: pickedImage?.file || null,
         cookedAt: new Date().toISOString(),
-        rating,
+        rating: rating ?? undefined,
         note
       });
-      setCompletedResult(result);
       setItem(current => current ? { ...current, status: "COOKED", cookedAt: result.cookingLog.cookedAt,
-        imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
-      if (result.warnings?.length) {
-        toast.show("Đã lưu nhật ký. Vui lòng xem các cảnh báo bên dưới.", "info");
-        return;
-      }
-      toast.show("Đã hoàn thành món và lưu nhật ký nấu ăn.");
+        cookingLog: result.cookingLog, imageUrl: result.cookingLog.imageUrl || current.imageUrl } : current);
+      const imageFailed = result.warnings?.includes("Completion image could not be uploaded.");
+      toast.show(imageFailed ? "Đã lưu nhật ký, nhưng ảnh chưa tải lên được." : "Đã hoàn thành món và lưu nhật ký nấu ăn.", imageFailed ? "info" : "success");
       // The completion response is persisted before redirecting. Replace the detail screen so a
       // completed meal cannot be submitted a second time while the user checks today's menu/log.
       navigation.replace("Plan", { refreshKey: Date.now() });
@@ -114,7 +110,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
       completionLock.current = false;
       setIsCompleting(false);
     }
-  }, [item, navigation, note, pickedImage?.file, rating, toast]);
+  }, [isCooked, item, navigation, note, pickedImage?.file, rating, toast]);
 
   const addMissingIngredients = useCallback(async () => {
     if (!item || isAddingMissing) return;
@@ -172,6 +168,7 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
 
           {item ? (
             <>
+              {!isCooked ? <>
               <Section title="Nguyên liệu cần dùng">
                 {item.requiredIngredients?.length ? (
                   item.requiredIngredients.map((ingredient) => (
@@ -204,8 +201,9 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : availability ? (
                 <InfoRow icon="checkmark-circle-outline" color={colors.success} text="Pantry hiện có đủ nguyên liệu cho món này." />
               ) : null}
+              </> : null}
 
-              {steps.length ? (
+              {!isCooked && steps.length ? (
                 <Section title="Cách nấu">
                   {steps.map((step, index) => (
                     <View key={`${index}-${step}`} style={{ flexDirection: "row", gap: 12 }}>
@@ -223,7 +221,8 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
               ) : null}
 
               <Section title={isCooked ? "Nhật ký đã lưu" : "Hoàn thành món"}>
-                <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Thêm ảnh thành phẩm (không bắt buộc)"} icon="image-plus" variant="soft" disabled={isCompleting || isCooked} onPress={chooseImage} />
+                {!isCooked ? <PrimaryButton title={pickedImage ? "Đổi ảnh thành phẩm" : "Thêm ảnh thành phẩm (không bắt buộc)"} icon="image-plus" variant="soft" disabled={isCompleting} onPress={chooseImage} /> : null}
+                {isCooked && !item.cookingLog ? <Text style={{ color: colors.muted }}>Chưa tìm thấy thông tin đánh giá và ghi chú của lần nấu này.</Text> : null}
                 {!pickedImage && !isCooked ? <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }} selectable>Bạn có thể bỏ qua ảnh và hoàn thành món ngay.</Text> : null}
                 {pickedImage ? <ExpoImage source={{ uri: pickedImage.uri }} style={{ width: "100%", height: 160, borderRadius: 12, backgroundColor: colors.surface }} /> : null}
 
@@ -245,18 +244,22 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                           borderRadius: 14,
                           alignItems: "center",
                           justifyContent: "center",
-                          backgroundColor: value <= rating ? colors.primary : colors.card,
+                          backgroundColor: value <= (rating ?? 0) ? colors.primary : colors.card,
                           borderWidth: 1,
-                          borderColor: value <= rating ? colors.primary : colors.line
+                          borderColor: value <= (rating ?? 0) ? colors.primary : colors.line
                         }}
                       >
-                        <Ionicons name="star" size={20} color={value <= rating ? colors.white : colors.muted} />
+                        <Ionicons name="star" size={20} color={value <= (rating ?? 0) ? colors.white : colors.muted} />
                       </Pressable>
                     ))}
                   </View>
+                  {isCooked ? <Text style={{ color: colors.muted }}>{rating == null ? "Chưa có đánh giá." : `${rating}/5 sao`}</Text> : null}
                 </View>
 
-                <TextInput
+                {isCooked ? <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.text, fontWeight: "700" }}>Ghi chú sau khi nấu</Text>
+                  <Text selectable style={{ color: note ? colors.text : colors.muted, lineHeight: 22 }}>{note || "Chưa có ghi chú."}</Text>
+                </View> : <TextInput
                   value={note}
                   accessibilityLabel="Ghi chú sau khi nấu"
                   editable={!isCompleting && !isCooked}
@@ -275,31 +278,13 @@ export default function TodayMenuItemDetailScreen({ route, navigation }: Props) 
                     fontWeight: "700",
                     backgroundColor: colors.surface2
                   }}
-                />
+                />}
 
-                {isCooked ? (
-                  <InfoRow icon="checkmark-circle" color={colors.success} text="Món này đã hoàn thành. Pantry đã được xử lý ở lần xác nhận hoàn thành." />
-                ) : (
+                {!isCooked ? (
                   <PrimaryButton title="Hoàn thành và lưu nhật ký" icon="check-circle" loading={isCompleting}
                     disabled={isCompleting} onPress={() => void submitCompletion()} />
-                )}
+                ) : null}
               </Section>
-
-              {completedResult?.warnings?.length ? (
-                <Section title="Lưu ý sau khi hoàn thành">
-                  {completedResult.warnings.map((warning) => (
-                    <InfoRow key={warning} icon="warning-outline" color={colors.warning} text={translatePantryWarning(warning)} />
-                  ))}
-                </Section>
-              ) : null}
-
-              {completedResult?.consumedIngredients?.length ? (
-                <Section title="Nguyên liệu đã trừ">
-                  {completedResult.consumedIngredients.map((log, index) => (
-                    <InfoRow key={log.id || `${log.ingredientId}-${index}`} icon="remove-circle-outline" color={colors.success} text={`${log.ingredientName}: ${log.quantityUsed} ${log.unit}${log.warning ? ` - ${translatePantryWarning(log.warning)}` : ""}`} />
-                  ))}
-                </Section>
-              ) : null}
             </>
           ) : (
             <View style={{ alignItems: "center", gap: 12, paddingVertical: 28 }}>

@@ -69,7 +69,8 @@ type FriendlyErrorContext = "default" | "imageUpload" | "auth";
 
 export function getFriendlyErrorMessage(error: unknown, fallback: string, context: FriendlyErrorContext = "default") {
   const rawMessage = error instanceof Error ? error.message : "";
-  const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 0;
+  const hasStatus = typeof (error as { status?: unknown })?.status === "number";
+  const status = hasStatus ? (error as { status: number }).status : 0;
   const lower = rawMessage.toLowerCase();
 
   if (lower.includes("ai_unavailable") || lower.includes("ai_timeout")) return "Hệ thống AI đang quá tải. Lượt của bạn không bị trừ. Bạn có thể thử lại.";
@@ -91,7 +92,7 @@ export function getFriendlyErrorMessage(error: unknown, fallback: string, contex
   if (context === "auth" && lower === "email already exists.") return "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.";
   if (context === "auth" && lower === "email delivery is not configured") return "Máy chủ chưa cấu hình gửi mã OTP. Vui lòng liên hệ quản trị viên.";
   if (status >= 500) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
-  if (status === 0 || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Không thể kết nối tới máy chủ. Máy chủ có thể chưa hoạt động hoặc kết nối mạng bị gián đoạn. Vui lòng thử lại sau.";
+  if ((hasStatus && status === 0) || lower.includes("failed to fetch") || lower.includes("network request failed")) return "Không thể kết nối tới máy chủ. Máy chủ có thể chưa hoạt động hoặc kết nối mạng bị gián đoạn. Vui lòng thử lại sau.";
 
   const translated = translateApiMessage(rawMessage);
   if (translated !== rawMessage) return translated;

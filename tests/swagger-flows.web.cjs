@@ -64,12 +64,14 @@ const server = http.createServer((req, res) => {
       if (p === '/api/me/today-menu/items/menu-1') return ok({ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' });
       if (p === '/api/me/today-menu/items/menu-1/ingredient-availability') return ok({ todayMenuItemId: 'menu-1', sufficient: true, ingredients: [{ ingredientId: iid, ingredientName: ingredient.name, requiredQuantity: 400, availableQuantity: 500, missingQuantity: 0, unit: 'g', unitMismatch: false }] });
       if (p === '/api/me/today-menu') return paged(url.searchParams.get('date') === '2026-10-05' ? [{ id: 'menu-1', recipeId: rid, mealName: recipe.name, servingSize: 4, status: completed ? 'COOKED' : 'PLANNED', plannedDate: '2026-10-05' }] : []);
+      if (p === '/api/me/cooking-logs') return paged(completed ? [{ id: 'log-1', todayMenuItemId: 'menu-1', mealName: recipe.name, cookedAt: '2026-10-04T10:00:00Z', rating: 3, note: 'Đã nấu xong' }] : []);
       if (p === '/api/me/today-menu/items/menu-1/complete') {
         assert.match(req.headers()['content-type'], /multipart\/form-data/);
         assert.match(req.postData(), /name="imageFile"/);
+        assert.match(req.postData(), /name="rating"\r\n\r\n3/);
         if (failComplete) { failComplete = false; return route.fulfill({ status: 500, json: { message: 'Synthetic save failure' } }); }
         completed = true;
-        return ok({ cookingLog: { id: 'log-1', mealName: recipe.name, cookedAt: '2026-10-04T10:00:00Z' }, consumedIngredients: [], updatedPantryItems: [], warnings: [] });
+        return ok({ cookingLog: { id: 'log-1', todayMenuItemId: 'menu-1', mealName: recipe.name, cookedAt: '2026-10-04T10:00:00Z', rating: 3, note: 'Đã nấu xong' }, consumedIngredients: [], updatedPantryItems: [], warnings: ['Not enough pantry quantity for Carrot.'] });
       }
       if (p === `/api/users/${uid}`) return ok({ id: uid, fullName: 'Nguyễn Minh Khang', email: 'fixture@example.invalid', role });
       if (p === '/api/me/pantry/items/batch') {
@@ -154,6 +156,7 @@ const server = http.createServer((req, res) => {
       user.getByRole('button', { name: 'Thêm ảnh thành phẩm (không bắt buộc)', exact: true }).click()
     ]);
     await completionChooser.setFiles({ name: 'cooked.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(out, 'reset-mobile.png')) });
+    await user.getByRole('button', { name: 'Đánh giá món 3 sao', exact: true }).click();
     await user.getByLabel('Ghi chú sau khi nấu', { exact: true }).fill('Đã nấu xong');
     await user.getByRole('button', { name: 'Hoàn thành và lưu nhật ký', exact: true }).click();
     await user.getByText('Dịch vụ tải ảnh đang gặp sự cố.', { exact: false }).first().waitFor();
@@ -161,6 +164,18 @@ const server = http.createServer((req, res) => {
     await user.getByRole('button', { name: 'Đổi ảnh thành phẩm', exact: true }).waitFor();
     await user.getByRole('button', { name: 'Hoàn thành và lưu nhật ký', exact: true }).click();
     await user.getByText('Món đã hoàn thành', { exact: true }).last().waitFor();
+    assert.equal(calls.filter(c => c.p.endsWith('/complete')).length, 2);
+    // Read the completed meal again, including after a full app reload.
+    for (const reload of [false, true]) {
+      if (reload) await user.goto(`http://127.0.0.1:${server.address().port}`);
+      await user.waitForFunction(() => window.__navigate?.('TodayMenuItemDetail', { itemId: 'menu-1' }) === true);
+      await user.getByText('3/5 sao', { exact: true }).waitFor();
+      await user.getByText('Đã nấu xong', { exact: true }).waitFor();
+      for (const label of ['Nguyên liệu đã trừ', 'Nguyên liệu trong tủ', 'Nguyên liệu còn thiếu']) {
+        for (const node of await user.getByText(label, { exact: true }).all()) assert.equal(await node.isVisible(), false);
+      }
+      assert.equal(await user.getByRole('button', { name: 'Hoàn thành và lưu nhật ký', exact: true }).isVisible(), false);
+    }
     assert.equal(calls.filter(c => c.p.endsWith('/complete')).length, 2);
     const menuCalls = calls.filter(c => c.p === '/api/me/today-menu/items' && c.method === 'POST');
     assert.equal(menuCalls.length, 2); assert.equal(menuCalls[1].body.servingSize, 4); assert.equal(menuCalls[1].body.mealType, 'DINNER'); assert.equal(menuCalls[1].body.note, 'Ít muối');

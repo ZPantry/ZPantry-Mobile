@@ -24,7 +24,9 @@ export const colors = {
   tabText: "#424843",
   onDark: "#FFFFFF",
   onDarkMuted: "#C8D9C8",
-  input: "#F4F4F2"
+  input: "#F4F4F2",
+  inputBorder: "#B7C2B9",
+  transparent: "#00000000"
 };
 
 // Shared values from the new Z-Pantry mobile frames (440px, light surfaces).

@@ -11,7 +11,7 @@ Nguồn kiểm tra: `D:/EXE101/ZPantry-java-BackEnd`, commit `d7bbdee`. Đọc c
 | Phân tích văn bản | `/api/me/pantry/parse` trả về `PantryImportPreviewItem`: `rawName`, `canonicalIngredientName`, `ingredientId`, `resolverStatus`, `reviewRequired`, `candidates`; text tối đa 2000 ký tự | Dùng trực tiếp preview của BE, giữ mã nguyên liệu và trạng thái cần kiểm tra; bỏ mapper cũ `name/matched`. Thay đổi API client không bật lại mục nhập văn bản đang ẩn trong UI. |
 | Định lượng nguyên liệu | `IngredientResponse.defaultQuantity` | Dùng định lượng mặc định của BE cho thao tác tăng/giảm. Tiếp tục nhận `quantityStep` cũ và fallback theo đơn vị nếu không có giá trị hợp lệ. |
 | Thực đơn cũ | `TodayMenuService.resolvedRecipeId`: dùng `recipeId`, nếu thiếu dùng `mealId` | Áp dụng cùng fallback khi FE tải chi tiết và khi tổng hợp nguyên liệu từ thực đơn; tính định lượng theo khẩu phần. |
-| Hoàn thành món ăn | Java có thể trả success kèm warnings, ví dụ ảnh không tải lên được; `consumedIngredients` có thể không có `id`, `updatedPantryItems` chỉ gồm id/ingredientId/quantity | Giữ màn hình sau thành công có cảnh báo để người dùng đọc, khóa gửi lại, dịch cảnh báo ảnh, sửa React key và kiểu dữ liệu. Chỉ tự chuyển về thực đơn khi không có cảnh báo. |
+| Hoàn thành món ăn | Java có thể trả success kèm warnings, ví dụ ảnh không tải lên được; `consumedIngredients` có thể không có `id`, `updatedPantryItems` chỉ gồm id/ingredientId/quantity | Sau khi lưu, chuyển về thực đơn và khóa gửi lại. Theo yêu cầu UI mới, bỏ phần liệt kê trừ/thiếu nguyên liệu; chỉ thông báo ngắn khi ảnh chưa tải lên được. Kiểu dữ liệu vẫn giữ đúng contract. |
 
 ## Các nhóm API đã đối chiếu
 
@@ -25,14 +25,28 @@ Nguồn kiểm tra: `D:/EXE101/ZPantry-java-BackEnd`, commit `d7bbdee`. Đọc c
 - Subscription — current/plans/checkout/cancel khớp controller; checkout gửi `{provider: "PAYOS"}`.
 - Envelope phân trang của Java dùng `data`, `pageIndex`, `pageSize`, `totalItems`, `totalPages`, `hasNextPage`, `hasPreviousPage`; FE xử lý đúng dạng này.
 
-Các kiểu upload ảnh được chuyển thành Blob chứa bytes trước khi gọi `expo/fetch`, giữ filename/MIME. Không đặt thủ công multipart boundary.
+Upload ảnh native dùng part có `name`, `type`, `bytes()` đọc từ `expo-file-system.File` theo bộ mã hóa multipart của Expo, giữ filename/MIME. Không dùng `File.slice()` hoặc tạo RN Blob từ ArrayBuffer vì React Native không hỗ trợ. Ảnh web giữ nguyên browser File. Không đặt thủ công multipart boundary.
 
 ## Kiểm chứng và giới hạn
 
 - TypeScript: `npm run typecheck`.
-- 66 bài kiểm tra API/UI handler qua `npm run test:api`, gồm fixture theo DTO Java cho parse text, AUTO, multipart hoàn thành có/không ảnh, recipe fallback, cảnh báo completion và khóa gửi lặp.
+- 69 bài kiểm tra API/UI handler qua `npm run test:api`, gồm fixture theo DTO Java cho parse text, AUTO, multipart hoàn thành có/không ảnh, recipe fallback, hiển thị nhật ký đã lưu và khóa gửi lặp. Kiểm tra upload native dùng FormData patch và encoder thật từ Expo SDK đang cài; mock File không kế thừa Blob và từ chối slice như giới hạn RN, thay cho mock Node Blob trước đây.
 - Export web: `npm run build` thành công.
 - Browser tests ở chế độ `LOGIC_FIXES_ONLY=1` đã qua: quyền USER, ngày thực đơn đã chọn, upload completion lỗi/giữ draft/thử lại, xác nhận nhập ảnh; không có runtime error. Kết quả local ở `scratch/release-backend-browser/results.json`. Bộ test được cập nhật theo nhãn UI hiện tại và response ingredient-availability của Java; bỏ kiểm tra chat nổi vì component này hiện không được mount. API client gợi ý từ câu nhập được kiểm tra riêng bằng unit tests.
 - Browser tests dùng API giả lập; không xác minh dịch vụ AI, Cloudinary, PayOS hoặc database triển khai.
 - Chưa chạy end-to-end có tài khoản thật với backend này; source local có thể khác bản Render đang triển khai. Chưa tạo APK release mới trong lượt kiểm tra này.
 - Backend giữ nguyên trạng thái Git sạch tại commit `d7bbdee`.
+
+## Chẩn đoán thông báo mất kết nối khi hoàn thành món
+
+Kiểm tra read-only ngày 2026-10-19: host trong `.env` là `https://zpantry-java-backend.onrender.com`; `/health` và GET `/api/ingredients?pageIndex=1&pageSize=1` đều trả HTTP 200 từ máy phát triển. Điều này xác nhận host truy cập được tại thời điểm kiểm tra, không chứng minh toàn bộ đường truyền Android luôn hoạt động.
+
+Phát hiện FE dùng `File.slice()` tạo Blob từ bytes trước khi gửi request; mã RN BlobManager từ chối ArrayBuffer/ArrayBufferView. Lỗi JavaScript này lại bị UI coi là lỗi mạng vì Error không có HTTP status cũng bị quy về status 0. Đã bỏ bước slice, thêm lỗi đọc/chuẩn bị ảnh riêng và chỉ coi status 0 rõ ràng hoặc thông báo network đã biết là lỗi kết nối. Chưa xác nhận thao tác hoàn thành thật trên tài khoản người dùng sau bản sửa.
+
+## Mở lại món đã hoàn thành
+
+GET chi tiết thực đơn không có rating hoặc ghi chú sau khi nấu; `note` của menu là ghi chú lúc lên thực đơn. FE đọc thêm `/api/me/cooking-logs`, dò theo `todayMenuItemId` qua từng trang và dừng khi tìm thấy. Không ghép bằng recipeId vì một công thức có thể được nấu nhiều lần. Món đã hoàn thành không cần tải công thức/pantry/ingredient-availability để xem nhật ký.
+
+Hiển thị rating và note của cooking log ở chế độ chỉ đọc, ưu tiên ảnh thành phẩm đã lưu. Nếu không có log/rating/note, hiển thị trạng thái thiếu dữ liệu thay vì tự đặt 5 sao hay lấy ghi chú lên thực đơn. Khi gửi note rỗng, FE vẫn gửi trường rỗng để Java không tự dùng lại ghi chú lên thực đơn. Không hiển thị danh sách nguyên liệu đã trừ hoặc cảnh báo không đủ để trừ sau khi hoàn thành.
+
+Kiểm tra trình duyệt đã qua với dữ liệu giả lập: lưu 3 sao và ghi chú, mở lại món, nạp lại toàn bộ app rồi mở lại món; vẫn hiển thị đúng `3/5 sao` và ghi chú đã lưu, không hiện phần trừ/thiếu nguyên liệu hoặc nút hoàn thành lần nữa. Unit tests kiểm tra tìm log ở trang sau theo đúng todayMenuItemId và trạng thái thiếu lịch sử.

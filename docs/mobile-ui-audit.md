@@ -1,5 +1,13 @@
 # Kiểm tra UI/UX điện thoại — 19/10/2026
 
+## Cập nhật màu ô chọn — 19/10/2026
+
+- Đồng bộ các ô chọn ở cá nhân hóa bữa ăn, ngày xem thực đơn và form lên thực đơn với bảng màu chung: nền trung tính, chữ và viền theo theme; viền cam khi mở, mục đang chọn có nền cam nhạt.
+- Android dùng các thành phần dropdown native của Expo UI với màu chỉ định rõ và chiều rộng đầy đủ, loại bỏ màu nền Material tự sinh, vùng nền bị chia đôi và gạch chân mặc định. Web dùng cùng token màu; AppInput dùng token viền chung.
+- Đã kiểm tra trực tiếp trên Android emulator: các ô cá nhân hóa, mở menu chọn và form lên thực đơn với ngày/tháng/năm. Chỉ điều hướng đọc dữ liệu, không gửi gợi ý AI hoặc thêm thực đơn.
+- `npm run typecheck`, `npm run test:api` (69/69), `npm run build` và `tests/mobile-layout.web.cjs` đều đạt. Kiểm tra layout bao gồm các chiều rộng 320/390/430/740/1024.
+- Chưa kiểm tra trực tiếp iOS. Không cần thay đổi backend hay cài thêm thư viện native cho bản sửa màu này.
+
 ## Các lỗi đã sửa
 
 - Lưới dùng chiều rộng cửa sổ và phần trăm cột nhưng không trừ gap: đo container thật, trừ gap và giảm số cột nếu thiếu chỗ. Thẻ cuối không tự giãn thành toàn hàng.

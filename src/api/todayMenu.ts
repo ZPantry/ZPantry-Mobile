@@ -44,6 +44,7 @@ export type TodayMenuItem = {
 };
 
 export type TodayMenuItemDetail = TodayMenuItem & {
+  cookingLog?: CookingLog | null;
   recipe?: Recipe | null;
   requiredIngredients?: RecipeIngredient[];
   pantryItems?: TodayMenuPantryItem[];
@@ -115,13 +116,27 @@ function createCompleteFormData(payload: CompleteTodayMenuItemPayload) {
   const formData = new FormData();
   appendText(formData, "cookedAt", payload.cookedAt);
   appendText(formData, "rating", payload.rating);
-  appendText(formData, "note", payload.note);
+  // An explicit empty note must not fall back to the old planning note in Java.
+  if (payload.note !== undefined) formData.append("note", payload.note);
 
   if (payload.imageFile) {
     appendUploadFile(formData, "imageFile", payload.imageFile);
   }
 
   return formData;
+}
+
+async function findCookingLog(itemId: string): Promise<CookingLog | null> {
+  // Java exposes paged history, without a per-menu-item log endpoint/filter.
+  for (let page = 1; page <= 1000; page++) {
+    const result = await apiRequest<PaginatedResponse<CookingLog>>(
+      `${endpoints.todayMenu.cookingLogs}?pageIndex=${page}&pageSize=100`, { auth: true }
+    );
+    const log = result.data.find(row => row.todayMenuItemId === itemId);
+    if (log) return log;
+    if (!result.hasNextPage || !result.data.length) return null;
+  }
+  throw new Error("Chưa tải được nhật ký của món ăn. Vui lòng thử lại.");
 }
 
 export const todayMenuApi = {
@@ -134,6 +149,12 @@ export const todayMenuApi = {
   async get(id: string): Promise<TodayMenuItemDetail> {
     const item = await apiRequest<TodayMenuItemDetail>(endpoints.todayMenu.item(id), { auth: true });
     const recipeId = item.recipeId || item.mealId;
+    const isCooked = ["cooked", "completed"].includes((item.status || "").toLowerCase());
+    if (isCooked) {
+      // Rating and post-cooking note belong to CookingLog, not menu metadata.
+      const cookingLog = await findCookingLog(id);
+      return { ...item, cookingLog, imageUrl: cookingLog?.imageUrl || item.imageUrl };
+    }
     // Current Java detail returns menu metadata. Compose its documented endpoints.
     const [recipe, pantry] = await Promise.all([
       item.recipe ?? (recipeId ? recipesApi.get(recipeId) : Promise.resolve(null)),

@@ -11,8 +11,8 @@ export default function WebFormStyles() {
     style.id = "zpantry-form-styles";
     style.textContent = `
       [data-testid="draggable-ai"] img { pointer-events: none; -webkit-user-drag: none; user-select: none; }
-      select { color-scheme: light; background-color: ${colors.secondary} !important; color: ${colors.text} !important; border-color: ${colors.line} !important; height: 46px !important; width: 100%; box-shadow: none !important; font-family: 'BeVietnamPro_400Regular', sans-serif !important; }
-      select:has(option:checked[value=""]) { background-color: ${colors.input} !important; }
+      select { color-scheme: light; background-color: ${colors.input} !important; color: ${colors.text} !important; border: 0 !important; border-radius: 0 !important; height: 54px !important; width: 100%; box-shadow: none !important; font-family: 'BeVietnamPro_400Regular', sans-serif !important; }
+      select:disabled { background-color: ${colors.background} !important; color: ${colors.muted} !important; cursor: default; }
       [data-expo-ui-slider] { --_track-fill: ${colors.primary} !important; --_track-bg: ${colors.line} !important; min-height: 44px; touch-action: pan-y; }
       select:focus-visible { outline: 2px solid ${colors.primary} !important; outline-offset: -2px; }
       select option { background: ${colors.surface}; color: ${colors.text}; }

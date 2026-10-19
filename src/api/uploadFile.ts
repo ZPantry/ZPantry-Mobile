@@ -10,10 +10,24 @@ export function appendUploadFile(form: FormData, field: string, file: UploadFile
     return;
   }
   const upload = file as Extract<UploadFile, { uri: string }>;
-  const localFile = new ExpoFile(upload.uri);
-  if (!localFile.exists) throw new ApiError("Không tìm thấy ảnh đã chọn. Hãy chọn lại ảnh.", 400);
-  // Materialize a Blob so Expo's FormData also honors our filename and MIME.
-  // Expo File implements Blob but is not an instanceof the global Blob class.
-  const blob = localFile.slice(0, localFile.size, upload.type || localFile.type || "application/octet-stream");
-  form.append(field, blob, upload.name || "image.jpg");
+  try {
+    const localFile = new ExpoFile(upload.uri);
+    if (!localFile.exists) throw new ApiError("Không tìm thấy ảnh đã chọn. Hãy chọn lại ảnh.", 400);
+    // Expo's multipart encoder supports file-backed parts exposing bytes().
+    // Do not call File.slice(): it creates an ArrayBuffer-backed RN Blob, which
+    // Android rejects. Preserve metadata without copying into that Blob class.
+    const part = {
+      name: upload.name || localFile.name || "image.jpg",
+      type: upload.type || localFile.type || "application/octet-stream",
+      async bytes() {
+        try { return await localFile.bytes(); }
+        catch { throw new ApiError("Không đọc được ảnh đã chọn. Hãy chọn lại ảnh rồi thử lại.", 400); }
+      }
+    };
+    // RN's DOM typing only accepts Blob; Expo's encoder also accepts bytes parts.
+    form.append(field, part as unknown as Blob);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError("Không chuẩn bị được ảnh đã chọn. Hãy chọn lại ảnh rồi thử lại.", 400);
+  }
 }
