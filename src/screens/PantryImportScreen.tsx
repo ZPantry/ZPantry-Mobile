@@ -16,6 +16,7 @@ import { colors } from "@/constants/colors";
 import { useToast } from "@/context/ToastContext";
 import { pickUploadImage, type PickedUploadImage } from "@/utils/pickUploadImage";
 import { getFriendlyErrorMessage } from "@/utils/localize";
+import { getIngredientQuantityStep } from "@/utils/ingredientQuantity";
 import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 
@@ -225,7 +226,13 @@ export default function PantryImportScreen() {
             </Pressable>
           </View>
           <Action soft label={editing === r.key ? "Đóng tìm kiếm" : r.ingredientId ? "Đổi nguyên liệu" : "Chọn nguyên liệu"} disabled={busy}
-            onPress={() => { setEditing(editing === r.key ? null : r.key); setQuery(""); }} />
+            onPress={() => {
+              const opening = editing !== r.key;
+              setEditing(opening ? r.key : null);
+              // When catalog resolution failed, begin with Gemini's detected name so the user does
+              // not have to type it again before choosing the correct catalog ingredient.
+              setQuery(opening && !r.ingredientId && pendingConfirmation ? r.rawName : "");
+            }} />
           {editing === r.key ? <View style={{ gap: 10 }}>
             <AppInput accessibilityLabel="Tìm nguyên liệu" value={query} onChangeText={setQuery} placeholder="Tìm trong danh mục…" placeholderTextColor={colors.muted} style={inputStyle} editable={!busy} />
             {searching ? <ActivityIndicator color={colors.primary} /> : null}
@@ -234,8 +241,9 @@ export default function PantryImportScreen() {
             {matches.map((i) => <Pressable disabled={busy} key={i.id} onPress={() => {
               patchRow(r.key, {
                 ingredientId: i.id, canonicalIngredientName: i.name, resolverStatus: "RESOLVED", reviewRequired: false, flags: [],
-                unitText: r.unitText.trim() || i.unit || i.defaultUnit || "piece",
-                quantityText: r.quantityText.trim() || "1"
+                unitText: i.unit || i.defaultUnit || "piece",
+                quantityText: String(getIngredientQuantityStep(i, i.unit || i.defaultUnit || "piece")),
+                quantityTouched: false
               });
               setEditing(null);
             }} style={{ minHeight: 44, padding: 10, borderBottomWidth: 1, borderColor: colors.line }}>
