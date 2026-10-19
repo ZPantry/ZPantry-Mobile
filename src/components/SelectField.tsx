@@ -17,10 +17,11 @@ type Props = {
   options: readonly SelectOption[];
   onValueChange: (value: string) => void;
   hint?: string;
+  error?: string;
   disabled?: boolean;
 };
 
-export default function SelectField({ label, value, options, onValueChange, hint, displayLabel, disabled = false }: Props) {
+export default function SelectField({ label, value, options, onValueChange, hint, error, displayLabel, disabled = false }: Props) {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     document.querySelectorAll('select[data-testid]').forEach(el => { if (el.getAttribute('data-testid') === `select-${label}`) el.setAttribute('aria-label', label); });
@@ -40,7 +41,7 @@ export default function SelectField({ label, value, options, onValueChange, hint
           overflow: "hidden",
           backgroundColor: value ? colors.secondary : colors.input,
           borderWidth: 1,
-          borderColor: colors.line,
+          borderColor: error ? colors.danger : colors.line,
           justifyContent: "center"
         }}
       >
@@ -52,7 +53,11 @@ export default function SelectField({ label, value, options, onValueChange, hint
           </Picker>
         </Host>
       </View>
-      {hint ? (
+      {error ? (
+        <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 12, lineHeight: 16 }} selectable>
+          {error}
+        </Text>
+      ) : hint ? (
         <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 16, fontWeight: "700" }} selectable>
           {hint}
         </Text>
