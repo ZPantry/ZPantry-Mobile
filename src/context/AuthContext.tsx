@@ -13,8 +13,8 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   user: StoredUser | null;
-  onboardingStep: "profile_setup" | "interactive_guide" | "done";
-  completeOnboardingStep: (step: "interactive_guide" | "done") => Promise<void>;
+  onboardingStep: "profile_setup" | "policy" | "interactive_guide" | "done";
+  completeOnboardingStep: (step: "policy" | "interactive_guide" | "done") => Promise<void>;
   signIn: (session: LoginResponse, remember?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
-  const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "interactive_guide" | "done">("done");
+  const [onboardingStep, setOnboardingStep] = useState<"profile_setup" | "policy" | "interactive_guide" | "done">("done");
 
   const userId = user?.userId;
   useEffect(() => {

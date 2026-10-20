@@ -262,12 +262,12 @@ export const authStorage = {
     listeners.forEach(listener => listener());
   },
 
-  async getOnboardingStep(userId: string): Promise<"profile_setup" | "done"> {
+  async getOnboardingStep(userId: string): Promise<"profile_setup" | "policy" | "done"> {
     const val = await getStoredValue(`onboarding_step_${userId}`);
-    return val === 'profile_setup' ? 'profile_setup' : 'done';
+    return val === 'profile_setup' || val === 'policy' ? val : 'done';
   },
 
-  async setOnboardingStep(userId: string, step: "interactive_guide" | "done") {
+  async setOnboardingStep(userId: string, step: "policy" | "interactive_guide" | "done") {
     await setStoredValue(`onboarding_step_${userId}`, step === 'interactive_guide' ? 'done' : step);
   },
 

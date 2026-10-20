@@ -1,5 +1,4 @@
 import KeyboardSafeView from "@/components/KeyboardSafeView";
-import { authStorage } from "@/utils/authStorage";
 import FigmaAsset, { type DesignAsset } from '@/components/FigmaAsset';
 import { surveyAssets as assets } from '@/constants/figmaAssets';
 import Text from "@/components/AppText";
@@ -54,13 +53,11 @@ export default function ProfileSetupScreen() {
     finally { setLoading(false); }
   }, [user?.userId]);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => { if (!editing && user?.userId) void authStorage.setOnboardingStep(user.userId, 'done').catch(() => {}); }, [editing, user?.userId]);
   const leave = async () => {
     if (busy.current) return;
     if (editing) { navigation.goBack(); return; }
     try {
-      await completeOnboardingStep("done");
-      navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      await completeOnboardingStep("policy");
     } catch { setError("Chưa thể tiếp tục. Vui lòng thử lại."); }
   };
   const save = async () => {
@@ -88,7 +85,7 @@ export default function ProfileSetupScreen() {
         return;
       }
       if (editing) navigation.goBack();
-      else { await completeOnboardingStep("done"); navigation.reset({ index: 0, routes: [{ name: "Tabs" }] }); }
+      else await completeOnboardingStep("policy");
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa lưu được hồ sơ. Các thông tin bạn nhập vẫn được giữ lại.")); }
     finally { busy.current = false; setSaving(false); }
   };

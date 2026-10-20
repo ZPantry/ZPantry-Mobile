@@ -60,6 +60,8 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   Onboarding: undefined;
   ProfileSetup: { editing?: boolean } | undefined;
+  Policy: undefined;
+  PrivacyPolicy: undefined;
   PantryImport: { method?: "TEXT" | "MENU" | "FOOD_IMAGE" | "RECEIPT" } | undefined;
   QuickAdd: undefined;
   ManualMealSuggestion: undefined;
