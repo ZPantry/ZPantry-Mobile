@@ -11,7 +11,7 @@ export default function FixedBackHeader({ navigation, route }: NativeStackHeader
   const { completeOnboardingStep } = useAuth();
   const firstSurvey = route.name === 'ProfileSetup' && !(route.params as { editing?: boolean } | undefined)?.editing;
   const back = async () => {
-    if (firstSurvey) { await completeOnboardingStep('done'); navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] }); }
+    if (firstSurvey) await completeOnboardingStep('policy');
     else if (navigation.canGoBack()) navigation.goBack();
     else navigation.navigate('Tabs');
   };

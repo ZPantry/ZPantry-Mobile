@@ -6,7 +6,7 @@ import type { RootStackParamList } from "@/types";
 
 import type { ComponentProps } from "react";
 import { useEffect, useRef, useState } from "react";
-import { AppState, ActivityIndicator, Pressable, TextInput, View } from "react-native";
+import { AppState, ActivityIndicator, Modal, Platform, Pressable, TextInput, View, useWindowDimensions } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "@/api/auth";
@@ -16,6 +16,8 @@ import { useAuth } from "@/context/AuthContext";
 import { getFriendlyErrorMessage } from "@/utils/localize";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import KeyboardSafeView from "@/components/KeyboardSafeView";
+import ModalBackdrop from "@/components/ModalBackdrop";
+import PolicyDocument from "./PolicyDocument";
 
 import Text from '@/components/AppText';
 import FigmaAsset from '@/components/FigmaAsset';
@@ -29,6 +31,7 @@ type AuthMode = "login" | "register" | "otp";
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isLandscape, isCompact } = useSizeClass();
+  const { height } = useWindowDimensions();
 
   const { signIn } = useAuth();
   const showUnavailable = useUnavailableFeature();
@@ -56,6 +59,11 @@ export default function LoginScreen() {
   const [authMessage, setAuthMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<"terms" | null>(null);
+  const openPrivacyPolicy = () => {
+    if (Platform.OS === "web") window.open("/chinh_sach_quyen_rieng_tu_z_pantry.html", "_blank", "noopener,noreferrer");
+    else navigation.navigate("PrivacyPolicy");
+  };
   const setModeAndClearMessages = (nextMode: AuthMode) => {
     if (requestInFlight.current) return;
     if (nextMode === "otp") {
@@ -207,7 +215,7 @@ export default function LoginScreen() {
             flexGrow: 1,
             paddingHorizontal: isCompact ? 16 : 24,
             paddingTop: 0,
-            paddingBottom: isLandscape ? 32 : 60,
+            paddingBottom: isLandscape ? 24 : 32,
             maxWidth: 480,
             width: "100%",
             alignSelf: "center",
@@ -271,8 +279,22 @@ export default function LoginScreen() {
           <Text style={{ color: "#424843", fontSize: 14 }}>{mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}</Text>
           <Text style={{ color: "#0D2818", fontSize: 15, fontWeight: "700" }}>{mode === "login" ? "Đăng ký ngay" : "Đăng nhập ngay"}</Text><FigmaAsset asset={assets.imgContainer5} />
         </Pressable>
+        {mode === "login" ? <Text style={{ marginTop: "auto", paddingTop: 24, color: colors.muted, fontSize: 11, lineHeight: 17, textAlign: "center" }}>
+          Khi nhấn "Đăng nhập", bạn đồng ý với <Text accessibilityRole="link" onPress={() => setLegalDocument("terms")} style={{ color: colors.primaryDark, textDecorationLine: "underline" }}>Terms of Service</Text> của Z-Pantry và xác nhận <Text accessibilityRole="link" onPress={openPrivacyPolicy} style={{ color: colors.primaryDark, textDecorationLine: "underline" }}>Privacy Policy</Text> của Z-Pantry áp dụng cho bạn.
+        </Text> : null}
       </ScrollView>
       </KeyboardSafeView>
+      <Modal transparent visible={legalDocument !== null} animationType="fade" onRequestClose={() => setLegalDocument(null)}>
+        <ModalBackdrop>
+          <View accessibilityViewIsModal style={{ width: "100%", maxWidth: 720, height: Math.max(260, Math.min(700, height - 72)), alignSelf: "center", backgroundColor: colors.surface, borderRadius: 16, overflow: "hidden" }}>
+            <View style={{ minHeight: 56, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderColor: colors.line }}>
+              <Text accessibilityRole="header" style={{ flex: 1, color: "#000", fontFamily: "Times New Roman", fontSize: 17, fontWeight: "700" }}>Terms of Service</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Đóng" onPress={() => setLegalDocument(null)} hitSlop={12} style={{ padding: 8 }}><Ionicons name="close" size={24} color={colors.text} /></Pressable>
+            </View>
+            {legalDocument ? <View style={{ flex: 1 }}><PolicyDocument type="terms" /></View> : null}
+          </View>
+        </ModalBackdrop>
+      </Modal>
     </SafeAreaView>
   );
 }

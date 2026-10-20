@@ -24,7 +24,7 @@ Nếu đã đóng Metro, chạy lại `npm run android` hoặc `npm run start` r
 - Hồ sơ ăn uống v2 → gợi ý theo hồ sơ, tủ hoặc tự chọn nguyên liệu.
 - Kho thực phẩm → thêm thủ công, văn bản, ảnh/hóa đơn tự nhận diện hoặc nguyên liệu từ thực đơn → kiểm tra → xác nhận lưu.
 - Công thức → đối chiếu lượng trong tủ → chọn ngày, bữa, khẩu phần, ghi chú → thực đơn → ảnh thành phẩm, đánh giá → nhật ký nấu ăn.
-- Quản trị theo vai trò → danh mục nguyên liệu/công thức, dị ứng, tên gọi khác; Admin/Super Admin quản lý người dùng và vai trò theo cấp quyền.
+- Tài khoản quản trị dùng trang Admin của ZPantry-Frontend. Ứng dụng Mobile chỉ mở các màn hình dành cho người dùng.
 
 ## Kiểm tra
 

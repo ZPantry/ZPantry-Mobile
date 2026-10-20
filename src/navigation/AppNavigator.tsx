@@ -13,10 +13,6 @@ import { colors } from "@/constants/colors";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
 import { useAuth } from "@/context/AuthContext";
-import AdminIngredientFormScreen from "@/screens/AdminIngredientFormScreen";
-import AdminManagementScreen from "@/screens/AdminManagementScreen";
-import AdminRecipeFormScreen from "@/screens/AdminRecipeFormScreen";
-import AdminUserFormScreen from "@/screens/AdminUserFormScreen";
 import AddIngredientScreen from "@/screens/AddIngredientScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -25,7 +21,6 @@ import MealRecommendationResultsScreen from "@/screens/MealRecommendationResults
 import RecommendationAnalysisSampleScreen from "@/screens/RecommendationAnalysisSampleScreen";
 import MealSuggestionScreen from "@/screens/MealSuggestionScreen";
 import ManualMealSuggestionScreen from "@/screens/ManualMealSuggestionScreen";
-import CreateRecipeScreen from "@/screens/CreateRecipeScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PantryItemDetailScreen from "@/screens/PantryItemDetailScreen";
 import PantryScreen from "@/screens/PantryScreen";
@@ -34,11 +29,12 @@ import InteractiveGuideScreen from "@/screens/InteractiveGuideScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import ProfileSetupScreen from "@/screens/ProfileSetupScreen";
+import PolicyScreen from "@/screens/PolicyScreen";
+import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import TodayMenuItemDetailScreen from "@/screens/TodayMenuItemDetailScreen";
 import type { RootStackParamList, TabParamList } from "@/types";
-import { canManageCatalog, canManageUsers } from "@/utils/roles";
 import CookingHistoryScreen from "@/screens/CookingHistoryScreen";
 import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
@@ -210,10 +206,9 @@ function Tabs() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, user, onboardingStep } = useAuth();
+  const { isAuthenticated, isLoading, onboardingStep } = useAuth();
   const [introStage, setIntroStage] = useState<"splash" | "onboarding" | "ready">("splash");
   const hasBeenAuthenticated = useRef(false);
-  const isAdmin = canManageCatalog(user?.role);
 
   useEffect(() => {
     if (isLoading) return;
@@ -242,26 +237,16 @@ export default function AppNavigator() {
     return <OnboardingScreen onStart={() => setIntroStage("ready")} />;
   }
 
-  let initialRoute: keyof RootStackParamList = "Tabs";
-  if (!isAuthenticated) {
-    initialRoute = "Login";
-  } else if (isAdmin) {
-    initialRoute = "AdminManagement";
-  } else {
-    initialRoute = onboardingStep === "profile_setup" ? "ProfileSetup" : "Tabs";
-  }
+  const gatedStep = isAuthenticated && (onboardingStep === "profile_setup" || onboardingStep === "policy") ? onboardingStep : null;
+  const initialRoute: keyof RootStackParamList = !isAuthenticated ? "Login" : gatedStep === "profile_setup" ? "ProfileSetup" : gatedStep === "policy" ? "Policy" : "Tabs";
 
   return (
     <View style={{ flex: 1 }}>
-    <Stack.Navigator initialRouteName={initialRoute} key={`${isAuthenticated ? "auth" : "guest"}-${isAdmin ? "admin" : "user"}`} screenOptions={({ route }) => ({ headerShown: !['Tabs', 'Login', 'AdminManagement'].includes(route.name), header: props => <FixedBackHeader {...props} />, contentStyle: { backgroundColor: colors.background } })}>
-      {isAuthenticated && isAdmin ? (
-        <>
-          <Stack.Screen name="AdminManagement" component={AdminManagementScreen} initialParams={{ showBackButton: false }} />
-          {canManageUsers(user?.role) && <Stack.Screen name="AdminUserForm" component={AdminUserFormScreen} />}
-          <Stack.Screen name="AdminRecipeForm" component={AdminRecipeFormScreen} />
-          <Stack.Screen name="AdminIngredientForm" component={AdminIngredientFormScreen} />
-          <Stack.Screen name="CreateRecipe" component={CreateRecipeScreen} />
-        </>
+    <Stack.Navigator initialRouteName={initialRoute} key={!isAuthenticated ? "guest" : gatedStep ?? "auth"} screenOptions={({ route }) => ({ headerShown: !['Tabs', 'Login', 'Policy'].includes(route.name), header: props => <FixedBackHeader {...props} />, contentStyle: { backgroundColor: colors.background } })}>
+      {gatedStep === "profile_setup" ? (
+        <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} options={{ gestureEnabled: false }} />
+      ) : gatedStep === "policy" ? (
+        <Stack.Screen name="Policy" component={PolicyScreen} options={{ gestureEnabled: false }} />
       ) : isAuthenticated ? (
         <>
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
@@ -284,6 +269,7 @@ export default function AppNavigator() {
       ) : (
         <>
         <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: "Privacy Policy" }} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </>
       )}
