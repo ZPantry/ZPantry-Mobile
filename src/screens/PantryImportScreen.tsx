@@ -35,7 +35,7 @@ function validQuantity(value: string) {
 }
 
 function needsConfirmation(row: Draft) {
-  return !row.ingredientId || row.reviewRequired || row.resolverStatus === "AMBIGUOUS" || row.resolverStatus === "UNRESOLVED" || Boolean(row.flags?.includes("LOW_CONFIDENCE"));
+  return !row.ingredientId;
 }
 export default function PantryImportScreen() {
   const navigation = useNavigation<any>();
@@ -236,13 +236,13 @@ export default function PantryImportScreen() {
           <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
             <View style={{ flex: 1, gap: 5 }}>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700" }}>AI nhận diện: {r.rawName}</Text>
-                <View style={{ borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: pendingConfirmation ? "#FEF3C7" : "#E4F3E7" }}>
-                  <Text style={{ color: pendingConfirmation ? "#B45309" : colors.success, fontSize: 12, fontWeight: "700" }}>{pendingConfirmation ? "Cần xác nhận" : "Đã xác nhận"}</Text>
-                </View>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "700" }}>{r.rawName}</Text>
+                {pendingConfirmation ? <View style={{ borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "#FEF3C7" }}>
+                  <Text style={{ color: "#B45309", fontSize: 12, fontWeight: "700" }}>Cần xác nhận</Text>
+                </View> : null}
               </View>
               <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
-                {pendingConfirmation ? "AI chưa chắc chắn. Hãy chọn nguyên liệu đúng trong danh mục." : `Đã chọn: ${r.canonicalIngredientName}`}
+                {pendingConfirmation ? "Chưa tìm được nguyên liệu tương ứng trong danh mục. Hãy chọn nguyên liệu đúng." : `Đã chọn: ${r.canonicalIngredientName || r.rawName}`}
               </Text>
             </View>
             <Pressable disabled={busy} accessibilityRole="button" accessibilityLabel={`Bỏ ${r.rawName}`} onPress={() => { setRows((current) => current?.filter((x) => x.key !== r.key) ?? null); if (editing === r.key) setEditing(null); }} style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}>

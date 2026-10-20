@@ -55,7 +55,10 @@ const server = http.createServer((req, res) => {
       if (p === '/api/recommendations/v2/meals') return ok({ recommendationId: recid, items: [{ recipeId: rid, recipeName: recipe.name, score: 0.8 }] });
       if (p === `/api/recommendations/${recid}/feedback`) return ok(null);
       if (p === '/api/recommendations/missing-ingredients') return ok({ missingIngredients: [] });
-      if (p === '/api/v2/ingredients/analyze-image') return route.fulfill({ json: { imageType: 'FOOD_IMAGE', confidence: 0.8, ingredients: [{ rawName: 'Cà rốt', canonicalIngredientName: 'Cà rốt', ingredientId: iid, quantity: 200, unit: 'g', resolverStatus: 'RESOLVED', reviewRequired: true }], warnings: [] } });
+      if (p === '/api/v2/ingredients/analyze-image') return route.fulfill({ json: { imageType: 'FOOD_IMAGE', confidence: 0.8, ingredients: [
+        { rawName: 'Cà rốt', canonicalIngredientName: 'Cà rốt', ingredientId: iid, quantity: 200, unit: 'g', resolverStatus: 'RESOLVED', reviewRequired: true, flags: ['LOW_CONFIDENCE'] },
+        { rawName: 'Rau chưa có trong danh mục', ingredientId: null, quantity: 100, unit: 'g', resolverStatus: 'UNRESOLVED', reviewRequired: true }
+      ], warnings: [] } });
       if (p === '/api/me/pantry-import/confirm') return ok(null);
       if (p === '/api/me/today-menu/items' && method === 'POST') {
         if (failMenu) { failMenu = false; return route.fulfill({ status: 500, json: { message: 'Synthetic failure' } }); }
@@ -191,6 +194,15 @@ const server = http.createServer((req, res) => {
     await (await chooser).setFiles({ name: 'food.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(out, 'reset-mobile.png')) });
     await importer.getByRole('button', { name: 'Phân tích ảnh', exact: true }).click();
     await importer.getByText('Cần xác nhận', { exact: true }).waitFor();
+    assert.equal(await importer.getByText('Cần xác nhận', { exact: true }).count(), 1);
+    await importer.getByText('Đã chọn: Cà rốt', { exact: true }).waitFor();
+    await importer.getByText('Đã chọn: Cà rốt', { exact: true }).locator('..').getByText('Cà rốt', { exact: true }).waitFor();
+    assert.equal(await importer.getByText(/AI nhận diện:/).count(), 0);
+    await importer.getByText('Chưa tìm được nguyên liệu tương ứng trong danh mục. Hãy chọn nguyên liệu đúng.', { exact: true }).waitFor();
+    await importer.getByText('Cần xác nhận', { exact: true }).scrollIntoViewIfNeeded();
+    await importer.screenshot({ path: path.join(out, 'image-import-catalog-match.png'), fullPage: true });
+    await importer.getByRole('button', { name: 'Bỏ Rau chưa có trong danh mục', exact: true }).click();
+    assert.equal(await importer.getByText('Cần xác nhận', { exact: true }).count(), 0);
     assert.equal(calls.filter(c => c.p === '/api/me/pantry-import/confirm').length, 0);
     await importer.getByRole('button', { name: 'Xác nhận lưu 1 nguyên liệu', exact: true }).click();
     await importer.getByRole('button', { name: 'Thêm nhanh', exact: true }).waitFor();
