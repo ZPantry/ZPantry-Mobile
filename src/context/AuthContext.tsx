@@ -30,10 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId || isLoading) return;
     let active = true;
+    const nameAtRequest = user?.fullName;
     // Stored login data may be stale or contain email in fullName.
     void usersApi.get(userId).then(async profile => {
       if (active && typeof profile.fullName === 'string') {
-        await authStorage.updateUser({ fullName: profile.fullName.trim() }, userId);
+        await authStorage.updateUser({ fullName: profile.fullName.trim() }, userId, nameAtRequest);
       }
     }).catch(() => { /* Keep the existing name while the profile is unavailable. */ });
     return () => { active = false; };

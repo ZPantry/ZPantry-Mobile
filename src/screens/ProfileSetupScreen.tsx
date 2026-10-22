@@ -44,10 +44,10 @@ export default function ProfileSetupScreen() {
     try {
       if (!user?.userId) throw new Error("Không xác định được tài khoản.");
       const p = await profileApi.getCurrent();
-      setBirthDate(p.birthDate ?? ""); setHeight(p.heightCm == null ? "" : String(p.heightCm));
-      setWeight(p.weightKg == null ? "" : String(p.weightKg)); setGender(p.gender ?? "");
-      setSelectedGoals(p.goals ?? []); setDiet(p.dietPreference ?? "NONE"); setActivity(p.activityLevel ?? "");
-      setAllergies((p.allergies ?? []).filter((value): value is FoodAllergen => value !== "NO_ALLERGIES"));
+      setBirthDate(p?.birthDate ?? ""); setHeight(p?.heightCm == null ? "" : String(p.heightCm));
+      setWeight(p?.weightKg == null ? "" : String(p.weightKg)); setGender(p?.gender ?? "");
+      setSelectedGoals(p?.goals ?? []); setDiet(p?.dietPreference ?? "NONE"); setActivity(p?.activityLevel ?? "");
+      setAllergies((p?.allergies ?? []).filter((value): value is FoodAllergen => value !== "NO_ALLERGIES"));
       setSavedProfile(p); setLoaded(true);
     } catch (e) { setError(getFriendlyErrorMessage(e, "Chưa tải được hồ sơ.")); }
     finally { setLoading(false); }
