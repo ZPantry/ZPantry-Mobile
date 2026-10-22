@@ -1,7 +1,7 @@
 import KeyboardSafeView from "@/components/KeyboardSafeView";
 import Text from "@/components/AppText";
-import { useState } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { TextInput, View } from "react-native";
 import ScrollView from "@/components/ScreenScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +21,16 @@ export default function AccountSettingsScreen() {
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   const [failed,setFailed]=useState(false);
+  const nameEdited = useRef(false);
+  useFocusEffect(useCallback(() => {
+    if (!user?.userId) return;
+    let active = true;
+    nameEdited.current = false;
+    void usersApi.get(user.userId).then(account => {
+      if (active && !nameEdited.current) setName(account.fullName ?? "");
+    }).catch(() => { /* Keep the current draft when offline. */ });
+    return () => { active = false; };
+  }, [user?.userId]));
   async function save() {
     if (!user || busy) return;
     setFailed(true);
@@ -29,8 +39,10 @@ export default function AccountSettingsScreen() {
     if (!password && confirm) return setMessage("Vui lòng nhập mật khẩu mới.");
     setBusy(true);setMessage("");
     try {
-      const result = await usersApi.update(user.userId,{fullName:name.trim(),...(password?{password}:{})});
-      await authStorage.updateUser({fullName:result.fullName||name.trim()});
+      await usersApi.update(user.userId,{fullName:name.trim(),...(password?{password}:{})});
+      const persisted = await usersApi.get(user.userId);
+      if (persisted.fullName?.trim() !== name.trim()) throw new Error("Máy chủ chưa trả lại tên vừa lưu. Vui lòng thử lại.");
+      await authStorage.updateUser({fullName:persisted.fullName}, user.userId);
       setPassword("");setConfirm("");setFailed(false);setMessage("Đã lưu thông tin tài khoản.");
     } catch(e) {setMessage(getFriendlyErrorMessage(e,"Chưa lưu được tài khoản."));}
     finally {setBusy(false);}
@@ -39,7 +51,7 @@ export default function AccountSettingsScreen() {
     <Text style={{color:colors.text,fontSize:26,fontWeight:"700"}}>Thông tin tài khoản</Text>
     <Text style={{color:colors.muted}}>{user?.email}</Text>
     {[
-      {label:"Tên hiển thị",value:name,onChange:setName,secure:false},
+      {label:"Tên hiển thị",value:name,onChange:(value:string)=>{nameEdited.current=true;setName(value);},secure:false},
       {label:"Mật khẩu mới (để trống nếu không đổi)",value:password,onChange:setPassword,secure:true},
       {label:"Xác nhận mật khẩu mới",value:confirm,onChange:setConfirm,secure:true}
     ].map(field=><View key={field.label} style={{gap:8}}><Text style={{color:colors.text,fontWeight:"600"}}>{field.label}</Text><TextInput accessibilityLabel={field.label} placeholder={field.label} placeholderTextColor={colors.muted} value={field.value} onChangeText={field.onChange} secureTextEntry={field.secure} autoCapitalize={field.secure?"none":"words"} editable={!busy} style={{color:colors.text,backgroundColor:colors.card,padding:14,borderRadius:10}}/></View>)}

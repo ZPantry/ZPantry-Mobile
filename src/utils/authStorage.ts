@@ -241,10 +241,12 @@ export const authStorage = {
     });
   },
 
-  async updateUser(values: Partial<Pick<StoredUser, "fullName">>, expectedUserId?: string) {
+  async updateUser(values: Partial<Pick<StoredUser, "fullName">>, expectedUserId?: string, expectedFullName?: string) {
     await mutate(async () => {
       const user = await this.getUser();
-      if (user && (!expectedUserId || user.userId === expectedUserId)) await setStoredValue(USER_KEY, JSON.stringify({ ...user, ...values }));
+      if (user && (!expectedUserId || user.userId === expectedUserId) &&
+        (expectedFullName === undefined || user.fullName === expectedFullName))
+        await setStoredValue(USER_KEY, JSON.stringify({ ...user, ...values }));
     });
     listeners.forEach(listener => listener());
   },

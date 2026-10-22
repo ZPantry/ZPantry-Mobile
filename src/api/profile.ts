@@ -59,8 +59,21 @@ export const profileApi = {
   save(userId: string, payload: LegacyProfilePayload) {
     return apiRequest<LegacyHealthProfile>(endpoints.profile(userId), { method: "PUT", auth: true, body: JSON.stringify(payload) });
   },
-  getCurrent() { return apiRequest<HealthProfile>(endpoints.profileV2, { auth: true }); },
-  saveCurrent(payload: ProfilePayload) {
-    return apiRequest<HealthProfile>(endpoints.profileV2, { method: "PUT", auth: true, body: JSON.stringify(payload) });
+  async getCurrent() {
+    const profile = await apiRequest<HealthProfile | null>(endpoints.profileV2, { auth: true });
+    return profile?.birthDate ? profile : null;
+  },
+  async saveCurrent(payload: ProfilePayload) {
+    await apiRequest<HealthProfile>(endpoints.profileV2, { method: "PUT", auth: true, body: JSON.stringify(payload) });
+    const saved = await profileApi.getCurrent();
+    const sameSet = (a: readonly string[] | null, b: readonly string[]) =>
+      Array.isArray(a) && a.length === b.length && a.every(value => b.includes(value));
+    if (!saved || saved.birthDate !== payload.birthDate || saved.gender !== payload.gender ||
+      saved.heightCm !== payload.heightCm || saved.weightKg !== payload.weightKg ||
+      saved.activityLevel !== payload.activityLevel || saved.dietPreference !== payload.dietPreference ||
+      !sameSet(saved.goals, payload.goals) || !sameSet(saved.allergies, payload.allergies)) {
+      throw new Error("Máy chủ chưa trả lại hồ sơ vừa lưu. Vui lòng thử lại.");
+    }
+    return saved;
   }
 };
