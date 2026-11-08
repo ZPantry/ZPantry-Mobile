@@ -33,6 +33,17 @@ const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+let lastTrackedScreen: string | undefined;
+
+function trackCurrentScreen() {
+  const screen = navigationRef.getCurrentRoute()?.name;
+  if (!screen || screen === lastTrackedScreen) return;
+  lastTrackedScreen = screen;
+  void analyticsApi.track("SCREEN_VIEW", screen).catch((error) => {
+    // Product telemetry must never block navigation, but failures remain diagnosable in Metro logs.
+    console.warn("analytics_event_failed", { eventName: "SCREEN_VIEW", screen, message: error instanceof Error ? error.message : String(error) });
+  });
+}
 
 if (typeof window !== "undefined") {
   (window as any).__navigate = (name: any, params: any) => {
@@ -60,10 +71,7 @@ export default function App() {
       <WebFormStyles />
       <AuthProvider>
         <ToastProvider>
-          <UnavailableFeatureProvider><NavigationContainer ref={navigationRef} linking={linking} onStateChange={() => {
-            const screen = navigationRef.getCurrentRoute()?.name;
-            if (screen) void analyticsApi.track("SCREEN_VIEW", screen).catch(() => undefined);
-          }}>
+          <UnavailableFeatureProvider><NavigationContainer ref={navigationRef} linking={linking} onReady={trackCurrentScreen} onStateChange={trackCurrentScreen}>
             <StatusBar style="dark" />
             <AppNavigator />
           </NavigationContainer></UnavailableFeatureProvider>
