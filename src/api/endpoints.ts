@@ -24,6 +24,10 @@ export const endpoints = {
     confirm: "/api/me/pantry-import/confirm",
     autoImage: "/api/v2/ingredients/analyze-image"
   },
+  analytics: {
+    events: "/api/me/analytics/events",
+    recognitionFeedback: (analysisId: string) => `/api/me/analytics/ai-recognition/${encodeURIComponent(analysisId)}/feedback`
+  },
   ingredients: {
     list: "/api/ingredients",
     item: (id: string) => item("/api/ingredients", id),

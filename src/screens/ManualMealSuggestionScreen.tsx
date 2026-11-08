@@ -12,6 +12,7 @@ import type { Ingredient } from "@/api/ingredients";
 import { ingredientsApi } from "@/api/ingredients";
 import type { MealRecommendation } from "@/api/recommendations";
 import { recommendationsApi } from "@/api/recommendations";
+import { analyticsApi } from "@/api/analytics";
 import type { Recipe } from "@/api/recipes";
 import { recipesApi } from "@/api/recipes";
 import CategoryChip from "@/components/CategoryChip";
@@ -190,6 +191,7 @@ export default function ManualMealSuggestionScreen() {
     setIsSuggesting(true);
     setErrorMessage("");
     try {
+      void analyticsApi.track("AI_RECIPE_REQUESTED", "ManualMealSuggestion", { source: "MANUAL" }).catch(() => undefined);
       const response = await recommendationsApi.suggestMeals({
         inputIngredientText: freeText.trim(),
         ingredients: [...selectedIngredients.map((item) => item.name), ...freeTextTokens],
@@ -204,6 +206,7 @@ export default function ManualMealSuggestionScreen() {
       });
 
       void warnLowQuota("MEAL_SUGGESTION");
+      void analyticsApi.track("AI_RECIPE_COMPLETED", "ManualMealSuggestion", { resultCount: response.recommendations?.length ?? 0 }).catch(() => undefined);
       setRecommendations(response.recommendations ?? []);
     } catch (error) {
       setErrorMessage(getFriendlyErrorMessage(error, "Chưa tạo được gợi ý. Vui lòng thử lại."));

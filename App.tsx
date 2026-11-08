@@ -12,6 +12,7 @@ import { BeVietnamPro_400Regular, BeVietnamPro_500Medium, BeVietnamPro_600SemiBo
 import { PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import type { RootStackParamList } from "./src/types";
+import { analyticsApi } from "./src/api/analytics";
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ["zpantry://"],
@@ -59,7 +60,10 @@ export default function App() {
       <WebFormStyles />
       <AuthProvider>
         <ToastProvider>
-          <UnavailableFeatureProvider><NavigationContainer ref={navigationRef} linking={linking}>
+          <UnavailableFeatureProvider><NavigationContainer ref={navigationRef} linking={linking} onStateChange={() => {
+            const screen = navigationRef.getCurrentRoute()?.name;
+            if (screen) void analyticsApi.track("SCREEN_VIEW", screen).catch(() => undefined);
+          }}>
             <StatusBar style="dark" />
             <AppNavigator />
           </NavigationContainer></UnavailableFeatureProvider>

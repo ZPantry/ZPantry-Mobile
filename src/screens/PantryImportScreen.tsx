@@ -21,6 +21,7 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 import { getIngredientQuantityStep } from "@/utils/ingredientQuantity";
 import AllergyConflictBanner, { isAllergyConflictMessage } from "@/components/AllergyConflictBanner";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
+import { analyticsApi } from "@/api/analytics";
 
 type Draft = ImportPreviewItem & { key: number; quantityText: string; unitText: string; quantityAutofilled: boolean; quantityTouched: boolean };
 const unitOptions = [
@@ -60,6 +61,7 @@ export default function PantryImportScreen() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [analysisNotice, setAnalysisNotice] = useState("");
   const [analysisId, setAnalysisId] = useState<string | undefined>();
+  const [feedbackSent, setFeedbackSent] = useState<"LIKE" | "DISLIKE" | undefined>();
   const confirmKey = useRef<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
@@ -95,6 +97,7 @@ export default function PantryImportScreen() {
     }));
     setWarnings(result.warnings || []);
     setAnalysisId(result.analysisId);
+    setFeedbackSent(undefined);
     confirmKey.current = undefined;
     setAttemptedConfirm(false);
     if (!result.items.length && result.reason) setAnalysisNotice(unknownReasonMessage(result.reason));
@@ -139,15 +142,22 @@ export default function PantryImportScreen() {
     if (!image || lock.current) return;
     lock.current = true; setBusy(true); setError(""); setEditing(null);
     try {
+      void analyticsApi.track("AI_RECOGNITION_STARTED", "PantryImport").catch(() => undefined);
       const result = await pantryImportApi.analyze(source, image.file);
       void warnLowQuota("OCR");
       showPreview(result);
+      void analyticsApi.track("AI_RECOGNITION_COMPLETED", "PantryImport", { imageType: result.sourceType, itemCount: result.items.length }).catch(() => undefined);
     } catch (e) {
       const message = getFriendlyErrorMessage(e, "Chưa phân tích được ảnh. Vui lòng thử lại.");
       setRetryableAiError(message.includes("Lượt của bạn không bị trừ"));
       setError(message);
     }
     finally { lock.current = false; setBusy(false); }
+  };
+  const sendFeedback = async (feedback: "LIKE" | "DISLIKE") => {
+    if (!analysisId || feedbackSent) return;
+    try { await analyticsApi.recognitionFeedback(analysisId, feedback); setFeedbackSent(feedback); toast.show("Cảm ơn phản hồi của bạn."); }
+    catch (e) { setError(getFriendlyErrorMessage(e, "Chưa gửi được phản hồi. Vui lòng thử lại.")); }
   };
   const patchRow = (key: number, update: Partial<Draft>) => {
     setError("");
@@ -225,6 +235,10 @@ export default function PantryImportScreen() {
       {retryableAiError && image && rows === null ? <Action label="Thử lại nhận diện" onPress={analyze} disabled={busy} soft /> : null}
       {analysisNotice ? <Text accessibilityRole="alert" selectable style={{ color: colors.warning, lineHeight: 22 }}>{analysisNotice} Lượt AI của bạn không bị trừ.</Text> : null}
       {warnings.map((w, index) => <Text key={index} selectable style={{ color: colors.primary }}>{w === "No food ingredients were detected." ? "Chưa nhận diện được nguyên liệu. Hãy thử ảnh rõ hơn hoặc thêm thủ công." : w}</Text>)}
+      {rows !== null && analysisId ? <View style={{ gap: 8, padding: 12, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line }}>
+        <Text style={{ color: colors.text, fontWeight: "600" }}>Kết quả nhận diện có hữu ích không?</Text>
+        <View style={{ flexDirection: "row", gap: 10 }}><Action soft label={feedbackSent === "LIKE" ? "Đã thích" : "Hữu ích"} disabled={!!feedbackSent} onPress={() => sendFeedback("LIKE")} /><Action soft label={feedbackSent === "DISLIKE" ? "Đã gửi góp ý" : "Chưa đúng"} disabled={!!feedbackSent} onPress={() => sendFeedback("DISLIKE")} /></View>
+      </View> : null}
       {rows !== null ? <>
         <Text style={{ color: colors.text, fontSize: 21, fontWeight: "700" }}>Kiểm tra {rows.length} nguyên liệu</Text>
         <Text style={{ color: colors.muted, lineHeight: 22 }}>Kết quả có thể chưa chính xác. Chọn đúng nguyên liệu, số lượng và đơn vị; bỏ các dòng không cần lưu.</Text>

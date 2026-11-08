@@ -22,6 +22,7 @@ import { getFriendlyErrorMessage } from "@/utils/localize";
 import { useQuotaWarning } from "@/hooks/useQuotaWarning";
 import { useSizeClass } from "@/hooks/useSizeClass";
 import { layoutTokens } from "@/constants/responsive";
+import { analyticsApi } from "@/api/analytics";
 
 export default function MealSuggestionScreen() {
   const { isCompact, isLandscape } = useSizeClass();
@@ -68,9 +69,11 @@ export default function MealSuggestionScreen() {
     if (busy.current || (requiresPantry && (!loaded || !pantry.length))) return;
     busy.current = true; setSuggesting(true); setError("");
     try {
+      void analyticsApi.track("AI_RECIPE_REQUESTED", "MealSuggestion", { mode }).catch(() => undefined);
       const result = await recommendationsApi.personalized(Number(topK), { mode, servings: Number(servings),
         ...(mealType ? { mealType } : {}), ...(cookTime ? { maxCookTimeMinutes: Number(cookTime) } : {}) });
       void warnLowQuota("MEAL_SUGGESTION");
+      void analyticsApi.track("AI_RECIPE_COMPLETED", "MealSuggestion", { mode, resultCount: result.recommendations.length }).catch(() => undefined);
       navigation.navigate("MealRecommendationResults", {
         recommendations: result.recommendations,
         mode,
